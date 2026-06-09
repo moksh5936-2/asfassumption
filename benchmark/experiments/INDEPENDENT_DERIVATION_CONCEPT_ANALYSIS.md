@@ -202,12 +202,13 @@ These 197 assumptions across 5 architectures represent security concerns that:
 
 ## Next Steps
 
-1. **Run GPT-4o and Gemini 2.5 Pro** through the same 5 architecture prompts (fresh chats)
-2. **Build the 5×3 consensus matrix** (ASF × Claude × GPT × Gemini)
-3. **Extract the Tier D assumptions** — those that ALL 3 AIs missed but ASF found
-4. **Rank by AUS** — which Tier D assumptions have the highest potential value
-5. **Human validation** — put the top 50 ASF-unique assumptions in front of 3-5 senior security practitioners
+1. ✅ ~~Run GPT-4o and Gemini 2.5 Pro~~ — Complete. GPT corrected IDR: 6.1% (from initial 0% model artifact). See `GPT_INDEPENDENT_DERIVATION_CONCEPT_ANALYSIS.md` and `INDEPENDENT_DERIVATION_FOUR_MODEL_COMPARISON.md` for full 4-model comparison.
+2. ✅ ~~Build 4-model consensus matrix~~ — Complete. ASF-only across all 4 models: ~60.6%.
+3. **Rank by AUS** — which ASF-only assumptions have the highest potential value (pending)
+4. **Human validation** — put the top ASF-only assumptions in front of 5-10 senior security practitioners via the blinded expert study
 
-The question is no longer "can ASF find assumptions everyone agrees with?" — it does, 28% of the time.
+**GPT-4o correction notice:** The initial run produced identical 11-item meta-checklists (0% IDR) due to a model behavior artifact. A fresh re-run with the same prompts produced 40-50 assumptions per architecture and a corrected IDR of 6.1%. This is marginally above zero but far below Claude's 28.1%. GPT produces generic security truisms, not architecture-specific reasoning, except for SAML protocol details (well-covered in training data) and SOX SoD patterns (well-documented compliance frameworks).
 
-The question is: **"Are the 197 assumptions that only ASF found worth paying for?"**
+The question is no longer "can ASF find assumptions everyone agrees with?" — it does, 28% of the time with Claude (and ~39% including partials).
+
+The question is: **"Are the 197+ assumptions that only ASF found worth paying for?"**

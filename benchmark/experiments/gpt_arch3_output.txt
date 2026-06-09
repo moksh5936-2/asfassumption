@@ -1,0 +1,499 @@
+# Architecture 3 – Implicit Security Assumptions (GPT-4o, Fresh Run)
+
+Assumption 1: Kubernetes worker nodes are trusted
+
+Why it matters:
+All workloads ultimately run on cluster nodes.
+
+If false:
+A compromised node may bypass mTLS, steal secrets, inspect traffic, and compromise workloads.
+
+⸻
+
+Assumption 2: The Kubernetes control plane is secure
+
+Why it matters:
+The control plane governs cluster-wide security.
+
+If false:
+An attacker could modify workloads, permissions, certificates, or networking policies.
+
+⸻
+
+Assumption 3: etcd is protected
+
+Why it matters:
+etcd stores cluster state, secrets, RBAC definitions, and configuration.
+
+If false:
+Attackers may gain full cluster compromise.
+
+⸻
+
+Assumption 4: etcd access is restricted
+
+Why it matters:
+Unauthorized access to etcd is effectively cluster-admin access.
+
+If false:
+Sensitive information and credentials may be exposed.
+
+⸻
+
+Assumption 5: etcd data integrity is maintained
+
+Why it matters:
+The cluster depends on trusted configuration data.
+
+If false:
+Attackers could manipulate permissions and workloads.
+
+⸻
+
+Assumption 6: Citadel CA is trustworthy
+
+Why it matters:
+The entire mesh trust model depends on the CA.
+
+If false:
+Attackers may issue fraudulent service certificates.
+
+⸻
+
+Assumption 7: CA private keys are protected
+
+Why it matters:
+CA compromise breaks service identity.
+
+If false:
+Any service can be impersonated.
+
+⸻
+
+Assumption 8: Certificate issuance is properly controlled
+
+Why it matters:
+Only legitimate workloads should receive certificates.
+
+If false:
+Malicious workloads may join the mesh.
+
+⸻
+
+Assumption 9: Certificate revocation works effectively
+
+Why it matters:
+Compromised identities must be removed quickly.
+
+If false:
+Attackers may continue using stolen certificates.
+
+⸻
+
+Assumption 10: Certificate rotation functions correctly
+
+Why it matters:
+mTLS relies on valid certificates.
+
+If false:
+Expired or compromised certificates may remain trusted.
+
+⸻
+
+Assumption 11: Istio Pilot is trustworthy
+
+Why it matters:
+Pilot distributes service mesh configuration.
+
+If false:
+Traffic may be redirected or intercepted.
+
+⸻
+
+Assumption 12: Pilot configuration is accurate
+
+Why it matters:
+Security policies are propagated through Pilot.
+
+If false:
+Services may communicate in unintended ways.
+
+⸻
+
+Assumption 13: Sidecar proxies cannot be bypassed
+
+Why it matters:
+mTLS enforcement occurs through sidecars.
+
+If false:
+Traffic may travel outside the mesh unprotected.
+
+⸻
+
+Assumption 14: All service traffic actually traverses the mesh
+
+Why it matters:
+The policy only states mTLS is enabled.
+
+If false:
+Some traffic may be unencrypted.
+
+⸻
+
+Assumption 15: Service identities are unique
+
+Why it matters:
+mTLS authorization depends on identity.
+
+If false:
+Identity confusion may occur.
+
+⸻
+
+Assumption 16: Service certificates correctly represent workloads
+
+Why it matters:
+Authorization decisions depend on identity accuracy.
+
+If false:
+Unauthorized services may gain access.
+
+⸻
+
+Assumption 17: mTLS is enforced rather than optional
+
+Why it matters:
+Some meshes support permissive modes.
+
+If false:
+Services may accept plaintext connections.
+
+⸻
+
+Assumption 18: Services validate peer certificates
+
+Why it matters:
+Mutual TLS requires validation by both sides.
+
+If false:
+Impersonation attacks become possible.
+
+⸻
+
+Assumption 19: Ingress Gateway is hardened
+
+Why it matters:
+It is the primary external attack surface.
+
+If false:
+Attackers may gain entry into the cluster.
+
+⸻
+
+Assumption 20: Ingress routing rules are secure
+
+Why it matters:
+Routing determines traffic destinations.
+
+If false:
+Requests may reach unauthorized services.
+
+⸻
+
+Assumption 21: Kubernetes API authentication is secure
+
+Why it matters:
+The API controls the cluster.
+
+If false:
+Unauthorized users may gain administrative access.
+
+⸻
+
+Assumption 22: Kubernetes API authorization is correct
+
+Why it matters:
+Authentication alone is insufficient.
+
+If false:
+Users may obtain excessive privileges.
+
+⸻
+
+Assumption 23: Service accounts are protected
+
+Why it matters:
+Pods commonly authenticate using service accounts.
+
+If false:
+Attackers may impersonate workloads.
+
+⸻
+
+Assumption 24: Service account tokens cannot be stolen
+
+Why it matters:
+Tokens grant cluster permissions.
+
+If false:
+Cluster compromise may occur.
+
+⸻
+
+Assumption 25: Namespace RBAC is correctly implemented
+
+Why it matters:
+The documented policy relies on namespace RBAC.
+
+If false:
+Users may access resources outside intended boundaries.
+
+⸻
+
+Assumption 26: Cluster-admin privileges are tightly controlled
+
+Why it matters:
+Cluster-admin bypasses all namespace controls.
+
+If false:
+A single compromise may affect the entire environment.
+
+⸻
+
+Assumption 27: Pod Security Policies (or equivalent controls) are enforced
+
+Why it matters:
+Policy assumes privileged containers are restricted.
+
+If false:
+Containers may gain host-level access.
+
+⸻
+
+Assumption 28: Containers cannot escape to the host
+
+Why it matters:
+Container isolation is fundamental.
+
+If false:
+Attackers may compromise worker nodes.
+
+⸻
+
+Assumption 29: Container runtimes are secure
+
+Why it matters:
+Runtime vulnerabilities affect isolation.
+
+If false:
+Workloads may break containment.
+
+⸻
+
+Assumption 30: Images are trusted
+
+Why it matters:
+Applications originate from container images.
+
+If false:
+Malicious code may enter production.
+
+⸻
+
+Assumption 31: Image registries are secure
+
+Why it matters:
+Registries distribute workloads.
+
+If false:
+Attackers may introduce malicious images.
+
+⸻
+
+Assumption 32: Network policies are correctly defined
+
+Why it matters:
+The architecture relies on namespace isolation.
+
+If false:
+Unexpected communication paths may exist.
+
+⸻
+
+Assumption 33: Network policies are actually enforced
+
+Why it matters:
+Definition alone is insufficient.
+
+If false:
+Isolation may not exist in practice.
+
+⸻
+
+Assumption 34: No alternate networking path bypasses policies
+
+Why it matters:
+Pods may communicate through unintended routes.
+
+If false:
+Security boundaries may be circumvented.
+
+⸻
+
+Assumption 35: DNS inside the cluster is trustworthy
+
+Why it matters:
+Service discovery depends on DNS.
+
+If false:
+Traffic may be redirected to malicious services.
+
+⸻
+
+Assumption 36: Secrets management is secure
+
+Why it matters:
+Services require credentials and keys.
+
+If false:
+Attackers may gain unauthorized access.
+
+⸻
+
+Assumption 37: Secrets are encrypted when stored
+
+Why it matters:
+Kubernetes secrets are not inherently secure.
+
+If false:
+Credentials may be exposed.
+
+⸻
+
+Assumption 38: StatefulSet database permissions are least privilege
+
+Why it matters:
+Applications rarely require full database control.
+
+If false:
+Application compromise yields excessive impact.
+
+⸻
+
+Assumption 39: Persistent Volumes are protected
+
+Why it matters:
+Data survives pod restarts.
+
+If false:
+Attackers may access sensitive information directly.
+
+⸻
+
+Assumption 40: Persistent Volume snapshots are secure
+
+Why it matters:
+Snapshots often contain complete datasets.
+
+If false:
+Sensitive data may leak outside the cluster.
+
+⸻
+
+Assumption 41: Monitoring systems are trustworthy
+
+Why it matters:
+Detection depends on accurate telemetry.
+
+If false:
+Attacks may go unnoticed.
+
+⸻
+
+Assumption 42: Logs cannot be modified by attackers
+
+Why it matters:
+Forensics require trustworthy evidence.
+
+If false:
+Attackers may erase traces of compromise.
+
+⸻
+
+Assumption 43: Time synchronization is accurate
+
+Why it matters:
+Certificates, logs, and tokens depend on time.
+
+If false:
+Authentication failures and forensic confusion may occur.
+
+⸻
+
+Assumption 44: Admission controllers prevent unauthorized workloads
+
+Why it matters:
+Workload deployment is a critical trust point.
+
+If false:
+Malicious pods may enter the cluster.
+
+⸻
+
+Assumption 45: Operators and administrators are trustworthy
+
+Why it matters:
+Privileged users control the environment.
+
+If false:
+Insider threats may bypass technical controls.
+
+⸻
+
+Assumption 46: No hidden cluster-wide permissions exist
+
+Why it matters:
+Complex RBAC environments often accumulate privilege.
+
+If false:
+Attackers may exploit unintended access paths.
+
+⸻
+
+Assumption 47: Service A trusts only authorized callers
+
+Why it matters:
+Identity alone should not imply authorization.
+
+If false:
+Any authenticated workload may gain access.
+
+⸻
+
+Assumption 48: Service B enforces authorization decisions
+
+Why it matters:
+mTLS proves identity, not permission.
+
+If false:
+Lateral movement becomes easier.
+
+⸻
+
+Assumption 49: Service C protects sensitive operations
+
+Why it matters:
+Backend services often hold critical data.
+
+If false:
+Attackers may access protected resources.
+
+⸻
+
+Assumption 50: No undocumented trust relationships exist
+
+Why it matters:
+Real-world clusters are often more complex than diagrams.
+
+If false:
+Attackers may exploit hidden communication paths that bypass intended security controls.

@@ -1,0 +1,499 @@
+# Architecture 4 – Implicit Security Assumptions (GPT-4o, Fresh Run)
+
+Assumption 1: Patient devices are trusted
+
+Why it matters:
+Patients access PHI through the portal using personal devices.
+
+If false:
+Malware may steal credentials, session tokens, or PHI displayed in the portal.
+
+⸻
+
+Assumption 2: Patient Portal properly validates user identity
+
+Why it matters:
+The portal serves as the first security boundary.
+
+If false:
+Unauthorized individuals may gain access to patient records.
+
+⸻
+
+Assumption 3: Auth0 is securely configured
+
+Why it matters:
+Authentication security depends heavily on identity provider configuration.
+
+If false:
+Authentication bypasses or weak access controls may occur.
+
+⸻
+
+Assumption 4: Auth0 infrastructure is secure
+
+Why it matters:
+Auth0 functions as a trust anchor.
+
+If false:
+Compromise could affect every authenticated user.
+
+⸻
+
+Assumption 5: Administrative access to Auth0 is protected
+
+Why it matters:
+Identity administrators can alter authentication behavior.
+
+If false:
+Attackers could create users, reset passwords, or bypass controls.
+
+⸻
+
+Assumption 6: Strong authentication methods are used
+
+Why it matters:
+The architecture does not explicitly mention MFA.
+
+If false:
+Credential theft may be sufficient to access PHI.
+
+⸻
+
+Assumption 7: Password recovery processes are secure
+
+Why it matters:
+Recovery workflows frequently become attack targets.
+
+If false:
+Attackers may gain accounts through social engineering.
+
+⸻
+
+Assumption 8: TLS protects Portal-to-Application communication
+
+Why it matters:
+PHI frequently traverses this boundary.
+
+If false:
+Sensitive patient data may be intercepted.
+
+⸻
+
+Assumption 9: TLS certificates are trusted and valid
+
+Why it matters:
+Encrypted communication relies on certificate trust.
+
+If false:
+Man-in-the-middle attacks become possible.
+
+⸻
+
+Assumption 10: Session management is secure
+
+Why it matters:
+Authentication is typically represented by sessions or tokens.
+
+If false:
+Session hijacking may occur.
+
+⸻
+
+Assumption 11: Session identifiers are unpredictable
+
+Why it matters:
+Weak session entropy enables guessing attacks.
+
+If false:
+Unauthorized users may impersonate patients.
+
+⸻
+
+Assumption 12: Session expiration is properly enforced
+
+Why it matters:
+Long-lived sessions increase risk.
+
+If false:
+Stolen sessions may remain valid indefinitely.
+
+⸻
+
+Assumption 13: Application authorization is correctly implemented
+
+Why it matters:
+Patients should only access their own PHI.
+
+If false:
+Patients may access records belonging to others.
+
+⸻
+
+Assumption 14: Object-level authorization is enforced
+
+Why it matters:
+Healthcare applications commonly expose records by identifier.
+
+If false:
+IDOR vulnerabilities may expose PHI.
+
+⸻
+
+Assumption 15: Minimum necessary access is correctly implemented
+
+Why it matters:
+The policy states it is enforced.
+
+If false:
+Users may view more PHI than necessary.
+
+⸻
+
+Assumption 16: Employees receive only necessary permissions
+
+Why it matters:
+Internal users often have broad access opportunities.
+
+If false:
+Insider misuse becomes easier.
+
+⸻
+
+Assumption 17: Privileged access is tightly controlled
+
+Why it matters:
+Administrators often possess broad PHI access.
+
+If false:
+Compromise may expose the entire patient database.
+
+⸻
+
+Assumption 18: User provisioning is accurate
+
+Why it matters:
+Healthcare access decisions depend on role assignments.
+
+If false:
+Unauthorized access may occur.
+
+⸻
+
+Assumption 19: User deprovisioning is timely
+
+Why it matters:
+Departed employees should lose access immediately.
+
+If false:
+Former personnel may continue accessing PHI.
+
+⸻
+
+Assumption 20: Application input validation is effective
+
+Why it matters:
+Users control application inputs.
+
+If false:
+Injection attacks may occur.
+
+⸻
+
+Assumption 21: Database queries are parameterized
+
+Why it matters:
+The application directly accesses PHI.
+
+If false:
+SQL injection may expose patient records.
+
+⸻
+
+Assumption 22: App servers are hardened
+
+Why it matters:
+Application compromise can expose PHI.
+
+If false:
+Attackers may gain backend access.
+
+⸻
+
+Assumption 23: Secrets are securely managed
+
+Why it matters:
+Applications require credentials, tokens, and encryption keys.
+
+If false:
+Attackers may impersonate systems.
+
+⸻
+
+Assumption 24: Database credentials are protected
+
+Why it matters:
+Database authentication relies on secrets.
+
+If false:
+Attackers may bypass application controls.
+
+⸻
+
+Assumption 25: PHI Database access is restricted
+
+Why it matters:
+Only authorized systems should access PHI.
+
+If false:
+Unauthorized systems may retrieve medical records.
+
+⸻
+
+Assumption 26: Database permissions follow least privilege
+
+Why it matters:
+Applications rarely require administrative rights.
+
+If false:
+Application compromise yields excessive impact.
+
+⸻
+
+Assumption 27: Database software is patched
+
+Why it matters:
+Known vulnerabilities are routinely exploited.
+
+If false:
+Attackers may compromise PHI directly.
+
+⸻
+
+Assumption 28: AES-256 encryption is implemented correctly
+
+Why it matters:
+Encryption strength depends on implementation quality.
+
+If false:
+PHI may be recoverable despite encryption.
+
+⸻
+
+Assumption 29: Encryption keys are protected
+
+Why it matters:
+Encryption security depends on key security.
+
+If false:
+Encrypted PHI may be decrypted.
+
+⸻
+
+Assumption 30: Key rotation procedures exist
+
+Why it matters:
+Long-term keys increase exposure risk.
+
+If false:
+Compromised keys may remain valid indefinitely.
+
+⸻
+
+Assumption 31: Backups are encrypted
+
+Why it matters:
+Backups often contain complete PHI datasets.
+
+If false:
+PHI may leak from backup systems.
+
+⸻
+
+Assumption 32: Backup access is restricted
+
+Why it matters:
+Backup repositories are high-value targets.
+
+If false:
+Unauthorized disclosure may occur.
+
+⸻
+
+Assumption 33: Audit logs are complete
+
+Why it matters:
+HIPAA investigations depend on accurate audit trails.
+
+If false:
+Improper access may go undetected.
+
+⸻
+
+Assumption 34: Audit logs cannot be altered
+
+Why it matters:
+Logs must be trustworthy evidence.
+
+If false:
+Attackers may erase traces of activity.
+
+⸻
+
+Assumption 35: Audit logging captures all PHI access events
+
+Why it matters:
+Incomplete logging creates visibility gaps.
+
+If false:
+Unauthorized access may never be detected.
+
+⸻
+
+Assumption 36: SIEM receives logs reliably
+
+Why it matters:
+Monitoring depends on log delivery.
+
+If false:
+Critical security events may be missed.
+
+⸻
+
+Assumption 37: SIEM integrity is maintained
+
+Why it matters:
+Security monitoring relies on trustworthy data.
+
+If false:
+Attackers may manipulate alerts.
+
+⸻
+
+Assumption 38: Monitoring personnel review alerts
+
+Why it matters:
+Detection alone is insufficient.
+
+If false:
+Security incidents may persist undetected.
+
+⸻
+
+Assumption 39: Business Associate Agreements are honored
+
+Why it matters:
+The policy assumes subprocessors follow HIPAA obligations.
+
+If false:
+PHI may be mishandled by third parties.
+
+⸻
+
+Assumption 40: Subprocessors maintain equivalent security controls
+
+Why it matters:
+BAAs do not guarantee technical security.
+
+If false:
+PHI exposure may occur through vendors.
+
+⸻
+
+Assumption 41: Insider personnel are trustworthy
+
+Why it matters:
+Healthcare records are highly sensitive.
+
+If false:
+Authorized users may abuse access.
+
+⸻
+
+Assumption 42: Workforce security training is effective
+
+Why it matters:
+Human error is a major source of breaches.
+
+If false:
+Phishing and accidental disclosure risks increase.
+
+⸻
+
+Assumption 43: Physical security protects infrastructure
+
+Why it matters:
+Physical access can bypass logical controls.
+
+If false:
+Attackers may directly access systems or storage.
+
+⸻
+
+Assumption 44: Time synchronization is accurate
+
+Why it matters:
+Audit records rely on timestamps.
+
+If false:
+Investigations may become unreliable.
+
+⸻
+
+Assumption 45: Disaster recovery processes function correctly
+
+Why it matters:
+Availability is part of healthcare security.
+
+If false:
+Patient care may be disrupted.
+
+⸻
+
+Assumption 46: Data retention policies are followed
+
+Why it matters:
+Healthcare data has regulatory retention requirements.
+
+If false:
+Compliance and legal risks increase.
+
+⸻
+
+Assumption 47: No unauthorized data exports occur
+
+Why it matters:
+PHI often leaves systems through exports.
+
+If false:
+Large-scale disclosures may occur.
+
+⸻
+
+Assumption 48: Third-party integrations are secure
+
+Why it matters:
+Healthcare systems commonly connect to external services.
+
+If false:
+Attackers may exploit indirect trust relationships.
+
+⸻
+
+Assumption 49: No undocumented PHI access paths exist
+
+Why it matters:
+Architectural diagrams rarely capture all data flows.
+
+If false:
+PHI may bypass intended controls.
+
+⸻
+
+Assumption 50: Regulatory controls are correctly mapped to technical controls
+
+Why it matters:
+Compliance language does not automatically produce security.
+
+If false:
+The system may appear compliant while remaining vulnerable.

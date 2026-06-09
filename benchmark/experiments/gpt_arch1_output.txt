@@ -1,0 +1,399 @@
+# Architecture 1 – Implicit Security Assumptions (GPT-4o, Fresh Run)
+
+Assumption 1: User laptops are trusted endpoints
+
+Why it matters:
+The architecture assumes the laptop connecting through the VPN is not compromised by malware, spyware, keyloggers, or remote-access trojans.
+
+If false:
+An attacker could steal AD credentials, hijack VPN sessions, access the payroll application, and potentially retrieve sensitive payroll data despite all documented controls.
+
+⸻
+
+Assumption 2: VPN authentication is strong enough to resist credential theft
+
+Why it matters:
+The documented policy only states that VPN access is required. It does not specify MFA, certificate authentication, or phishing resistance.
+
+If false:
+Stolen usernames and passwords may be sufficient for remote access.
+
+⸻
+
+Assumption 3: VPN users are properly authenticated before access is granted
+
+Why it matters:
+The VPN gateway serves as the first trust boundary.
+
+If false:
+Unauthorized users could enter the internal network and attack internal systems.
+
+⸻
+
+Assumption 4: VPN gateway software is not vulnerable
+
+Why it matters:
+The VPN gateway is a highly exposed security-critical component.
+
+If false:
+Attackers could bypass authentication entirely or gain internal network access.
+
+⸻
+
+Assumption 5: VPN gateway configuration is secure
+
+Why it matters:
+Even secure software can be insecurely configured.
+
+If false:
+Misconfigurations could expose internal resources directly.
+
+⸻
+
+Assumption 6: TLS is correctly configured between VPN and application
+
+Why it matters:
+TLS only provides security when implemented correctly.
+
+If false:
+Traffic interception, modification, or credential theft may occur.
+
+⸻
+
+Assumption 7: Certificates used by TLS are trusted
+
+Why it matters:
+TLS trust depends on certificate validity.
+
+If false:
+Man-in-the-middle attacks become possible.
+
+⸻
+
+Assumption 8: Internal DNS is trustworthy
+
+Why it matters:
+Users and systems rely on DNS resolution.
+
+If false:
+Traffic could be redirected to attacker-controlled systems.
+
+⸻
+
+Assumption 9: Active Directory is secure
+
+Why it matters:
+Application authentication depends on AD.
+
+If false:
+Attackers could create accounts, elevate privileges, or impersonate users.
+
+⸻
+
+Assumption 10: AD credentials are protected
+
+Why it matters:
+Passwords represent the primary identity proof.
+
+If false:
+Payroll data may be exposed through credential compromise.
+
+⸻
+
+Assumption 11: AD authorization groups are correctly maintained
+
+Why it matters:
+Authentication alone does not determine access rights.
+
+If false:
+Unauthorized employees may gain payroll access.
+
+⸻
+
+Assumption 12: User accounts are deprovisioned promptly
+
+Why it matters:
+Former employees should lose access immediately.
+
+If false:
+Ex-employees may retain payroll system access.
+
+⸻
+
+Assumption 13: Service accounts are protected
+
+Why it matters:
+Applications often use privileged accounts.
+
+If false:
+Attackers may gain backend access.
+
+⸻
+
+Assumption 14: Application authorization is implemented correctly
+
+Why it matters:
+Authenticated users should only access permitted functions.
+
+If false:
+Privilege escalation may occur.
+
+⸻
+
+Assumption 15: Session management is secure
+
+Why it matters:
+Applications rely on sessions after authentication.
+
+If false:
+Session hijacking becomes possible.
+
+⸻
+
+Assumption 16: Session identifiers are unpredictable
+
+Why it matters:
+Weak session IDs can be guessed.
+
+If false:
+Attackers may impersonate legitimate users.
+
+⸻
+
+Assumption 17: Application input validation is effective
+
+Why it matters:
+User input is attacker-controlled.
+
+If false:
+Injection attacks become possible.
+
+⸻
+
+Assumption 18: SQL queries are parameterized
+
+Why it matters:
+The application directly accesses the database.
+
+If false:
+SQL injection could expose payroll records.
+
+⸻
+
+Assumption 19: Application servers are hardened
+
+Why it matters:
+Compromised servers undermine all higher-level controls.
+
+If false:
+Attackers may gain direct database access.
+
+⸻
+
+Assumption 20: Administrative interfaces are restricted
+
+Why it matters:
+Management functions are highly privileged.
+
+If false:
+Attackers could take over the application.
+
+⸻
+
+Assumption 21: Secrets are securely stored
+
+Why it matters:
+Applications require credentials and keys.
+
+If false:
+Attackers may impersonate systems.
+
+⸻
+
+Assumption 22: Database credentials are protected
+
+Why it matters:
+The application must authenticate to the database.
+
+If false:
+Direct database access becomes possible.
+
+⸻
+
+Assumption 23: The private subnet is actually isolated
+
+Why it matters:
+The documented policy states the DB is private.
+
+If false:
+External attackers may directly reach the database.
+
+⸻
+
+Assumption 24: Firewall rules are correct
+
+Why it matters:
+Network segmentation relies on them.
+
+If false:
+Unauthorized network paths may exist.
+
+⸻
+
+Assumption 25: Only the application can access the database
+
+Why it matters:
+Trust boundary enforcement depends on this.
+
+If false:
+Attackers may bypass application controls.
+
+⸻
+
+Assumption 26: Database permissions follow least privilege
+
+Why it matters:
+Applications rarely require full admin rights.
+
+If false:
+Application compromise yields excessive access.
+
+⸻
+
+Assumption 27: Database software is patched
+
+Why it matters:
+Known vulnerabilities are routinely exploited.
+
+If false:
+Attackers may compromise payroll records.
+
+⸻
+
+Assumption 28: Database encryption keys are protected
+
+Why it matters:
+Encryption is only as secure as the keys.
+
+If false:
+Encrypted data may be readable.
+
+⸻
+
+Assumption 29: Backups are protected
+
+Why it matters:
+Backups often contain full payroll datasets.
+
+If false:
+Attackers may steal data from backups.
+
+⸻
+
+Assumption 30: Backup access is restricted
+
+Why it matters:
+Backup repositories are attractive targets.
+
+If false:
+Data leakage may occur outside production systems.
+
+⸻
+
+Assumption 31: Backup integrity is verified
+
+Why it matters:
+Nightly backups are only useful if valid.
+
+If false:
+Recovery may fail after an incident.
+
+⸻
+
+Assumption 32: Logs cannot be altered by attackers
+
+Why it matters:
+Incident investigation depends on trustworthy logs.
+
+If false:
+Evidence may be destroyed.
+
+⸻
+
+Assumption 33: Security monitoring exists
+
+Why it matters:
+Controls are ineffective if compromise goes unnoticed.
+
+If false:
+Attackers may persist for long periods.
+
+⸻
+
+Assumption 34: Time synchronization is accurate
+
+Why it matters:
+Authentication and logging rely on timestamps.
+
+If false:
+Incident analysis becomes unreliable.
+
+⸻
+
+Assumption 35: Administrators are trustworthy
+
+Why it matters:
+Privileged insiders can bypass controls.
+
+If false:
+Payroll data may be intentionally abused.
+
+⸻
+
+Assumption 36: Change management prevents insecure modifications
+
+Why it matters:
+Security posture changes over time.
+
+If false:
+Controls may silently weaken.
+
+⸻
+
+Assumption 37: Physical security protects infrastructure
+
+Why it matters:
+Physical access often defeats logical controls.
+
+If false:
+Systems may be directly compromised.
+
+⸻
+
+Assumption 38: Cloud provider isolation works correctly (if hosted)
+
+Why it matters:
+Multi-tenant environments rely on isolation.
+
+If false:
+Cross-tenant compromise becomes possible.
+
+⸻
+
+Assumption 39: Network devices enforce policy correctly
+
+Why it matters:
+Segmentation depends on routers, switches, and firewalls.
+
+If false:
+Unauthorized communication paths may emerge.
+
+⸻
+
+Assumption 40: No undocumented access paths exist
+
+Why it matters:
+Architectural diagrams rarely capture everything.
+
+If false:
+Attackers may exploit hidden routes around security controls.

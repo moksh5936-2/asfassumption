@@ -1,0 +1,499 @@
+# Architecture 5 – Implicit Security Assumptions (GPT-4o, Fresh Run)
+
+Assumption 1: Finance users are properly authenticated
+
+Why it matters:
+The ERP relies on accurate user identity before any SOX controls can function.
+
+If false:
+Unauthorized individuals may create, modify, or approve financial records.
+
+⸻
+
+Assumption 2: User credentials are protected
+
+Why it matters:
+Identity is the foundation of accountability.
+
+If false:
+Attackers may impersonate finance personnel.
+
+⸻
+
+Assumption 3: MFA or equivalent protections exist
+
+Why it matters:
+The architecture does not explicitly mention MFA.
+
+If false:
+Credential theft may lead directly to ERP access.
+
+⸻
+
+Assumption 4: Session management is secure
+
+Why it matters:
+Authenticated sessions represent user identity.
+
+If false:
+Session hijacking may bypass authentication controls.
+
+⸻
+
+Assumption 5: Session identifiers are unpredictable
+
+Why it matters:
+Weak session tokens can be guessed.
+
+If false:
+Unauthorized users may assume valid sessions.
+
+⸻
+
+Assumption 6: Authorization is implemented correctly
+
+Why it matters:
+Authentication alone does not enforce financial controls.
+
+If false:
+Users may perform unauthorized actions.
+
+⸻
+
+Assumption 7: User roles accurately reflect job responsibilities
+
+Why it matters:
+Segregation of duties depends on role accuracy.
+
+If false:
+Users may receive excessive permissions.
+
+⸻
+
+Assumption 8: Role assignments are reviewed regularly
+
+Why it matters:
+Privileges tend to accumulate over time.
+
+If false:
+Excessive access may persist undetected.
+
+⸻
+
+Assumption 9: User provisioning is accurate
+
+Why it matters:
+Access must align with business functions.
+
+If false:
+Unauthorized users may gain ERP access.
+
+⸻
+
+Assumption 10: User deprovisioning occurs promptly
+
+Why it matters:
+Former employees should not retain access.
+
+If false:
+Ex-employees may continue interacting with financial systems.
+
+⸻
+
+Assumption 11: Segregation-of-duties rules are correctly defined
+
+Why it matters:
+SOX controls depend on proper separation of responsibilities.
+
+If false:
+Single users may gain excessive financial authority.
+
+⸻
+
+Assumption 12: Segregation-of-duties controls are technically enforced
+
+Why it matters:
+Policies alone do not provide security.
+
+If false:
+Users may bypass separation requirements.
+
+⸻
+
+Assumption 13: No user can both create and approve the same transaction
+
+Why it matters:
+This is a core financial control.
+
+If false:
+Fraud becomes significantly easier.
+
+⸻
+
+Assumption 14: Approval workflows cannot be bypassed
+
+Why it matters:
+Approvals serve as control checkpoints.
+
+If false:
+Unauthorized transactions may be processed.
+
+⸻
+
+Assumption 15: Approval decisions are authenticated
+
+Why it matters:
+The system must know who approved a transaction.
+
+If false:
+Approvals may be forged.
+
+⸻
+
+Assumption 16: Approval records cannot be modified
+
+Why it matters:
+Auditability depends on immutable records.
+
+If false:
+Fraudulent activity may be concealed.
+
+⸻
+
+Assumption 17: Workflow logic is implemented correctly
+
+Why it matters:
+Complex approval chains often contain edge cases.
+
+If false:
+Improper approvals may occur.
+
+⸻
+
+Assumption 18: Emergency override procedures are controlled
+
+Why it matters:
+Financial systems often include exception paths.
+
+If false:
+Attackers may abuse emergency privileges.
+
+⸻
+
+Assumption 19: ERP application code is secure
+
+Why it matters:
+Application vulnerabilities undermine business controls.
+
+If false:
+Attackers may bypass approval processes.
+
+⸻
+
+Assumption 20: Input validation is effective
+
+Why it matters:
+Users provide data to the ERP.
+
+If false:
+Injection attacks may occur.
+
+⸻
+
+Assumption 21: Backend APIs enforce authorization
+
+Why it matters:
+Front-end controls are insufficient.
+
+If false:
+Attackers may call backend functions directly.
+
+⸻
+
+Assumption 22: Administrative functions are restricted
+
+Why it matters:
+Administrative users possess elevated privileges.
+
+If false:
+Unauthorized changes to financial records may occur.
+
+⸻
+
+Assumption 23: Administrative actions are logged
+
+Why it matters:
+SOX requires accountability.
+
+If false:
+Privilege abuse may go undetected.
+
+⸻
+
+Assumption 24: Financial database access is restricted
+
+Why it matters:
+The database contains authoritative financial information.
+
+If false:
+Attackers may bypass ERP controls.
+
+⸻
+
+Assumption 25: Database permissions follow least privilege
+
+Why it matters:
+Applications rarely require full administrative rights.
+
+If false:
+Application compromise leads to excessive damage.
+
+⸻
+
+Assumption 26: Database integrity protections exist
+
+Why it matters:
+Financial reporting depends on trustworthy data.
+
+If false:
+Reports may contain manipulated information.
+
+⸻
+
+Assumption 27: Database software is patched
+
+Why it matters:
+Known vulnerabilities are commonly exploited.
+
+If false:
+Attackers may compromise financial records.
+
+⸻
+
+Assumption 28: Secrets and credentials are protected
+
+Why it matters:
+ERP systems require numerous privileged credentials.
+
+If false:
+Attackers may gain backend access.
+
+⸻
+
+Assumption 29: Encryption protects sensitive financial data
+
+Why it matters:
+Financial information often contains confidential business data.
+
+If false:
+Data exposure risks increase.
+
+⸻
+
+Assumption 30: Encryption keys are properly managed
+
+Why it matters:
+Encryption depends on key security.
+
+If false:
+Protected data may be decrypted.
+
+⸻
+
+Assumption 31: Audit logs are complete
+
+Why it matters:
+SOX compliance depends on auditability.
+
+If false:
+Critical actions may not be recorded.
+
+⸻
+
+Assumption 32: Audit logs cannot be altered
+
+Why it matters:
+Logs must remain trustworthy evidence.
+
+If false:
+Fraud may be concealed.
+
+⸻
+
+Assumption 33: Audit logs capture all journal-entry activity
+
+Why it matters:
+Journal entries are specifically subject to SOX controls.
+
+If false:
+Improper entries may avoid detection.
+
+⸻
+
+Assumption 34: Time synchronization is accurate
+
+Why it matters:
+Audit trails rely on timestamps.
+
+If false:
+Investigations become unreliable.
+
+⸻
+
+Assumption 35: Reporting engine faithfully reflects source data
+
+Why it matters:
+The reporting engine creates information for auditors.
+
+If false:
+Reports may misrepresent financial reality.
+
+⸻
+
+Assumption 36: Reporting logic is accurate
+
+Why it matters:
+Errors in calculations affect financial statements.
+
+If false:
+Incorrect financial reporting may occur.
+
+⸻
+
+Assumption 37: Data transferred to reporting systems maintains integrity
+
+Why it matters:
+Trust boundary exists between ERP and reporting.
+
+If false:
+Reports may be manipulated.
+
+⸻
+
+Assumption 38: Reporting engine access is controlled
+
+Why it matters:
+Reports often contain sensitive financial information.
+
+If false:
+Unauthorized disclosure may occur.
+
+⸻
+
+Assumption 39: Auditor accounts are properly authenticated
+
+Why it matters:
+Auditors access financial information.
+
+If false:
+Unauthorized parties may obtain reports.
+
+⸻
+
+Assumption 40: Read-only access is technically enforced
+
+Why it matters:
+The policy explicitly requires read-only auditor access.
+
+If false:
+Auditors could alter financial data.
+
+⸻
+
+Assumption 41: Read-only restrictions cannot be bypassed
+
+Why it matters:
+Complex systems may expose hidden write paths.
+
+If false:
+Financial records may be modified.
+
+⸻
+
+Assumption 42: Auditors cannot elevate privileges
+
+Why it matters:
+Auditor independence relies on limited authority.
+
+If false:
+Financial integrity may be compromised.
+
+⸻
+
+Assumption 43: Quarterly recertification is meaningful
+
+Why it matters:
+Recertification should identify inappropriate access.
+
+If false:
+Privilege creep remains unchecked.
+
+⸻
+
+Assumption 44: Recertification reviews are actually performed
+
+Why it matters:
+Controls are ineffective if ignored.
+
+If false:
+Unauthorized access may persist.
+
+⸻
+
+Assumption 45: Exceptions identified during recertification are remediated
+
+Why it matters:
+Detection alone does not reduce risk.
+
+If false:
+Known problems remain unresolved.
+
+⸻
+
+Assumption 46: Insider personnel are trustworthy
+
+Why it matters:
+Finance staff often have significant authority.
+
+If false:
+Fraud risks increase substantially.
+
+⸻
+
+Assumption 47: Change management prevents unauthorized modifications
+
+Why it matters:
+Financial controls evolve over time.
+
+If false:
+Security controls may weaken unnoticed.
+
+⸻
+
+Assumption 48: Backup and recovery processes preserve integrity
+
+Why it matters:
+Financial records must remain accurate after recovery.
+
+If false:
+Corrupted data may be restored.
+
+⸻
+
+Assumption 49: Disaster recovery procedures maintain control effectiveness
+
+Why it matters:
+SOX requirements continue during outages.
+
+If false:
+Emergency operations may bypass controls.
+
+⸻
+
+Assumption 50: No undocumented financial processing paths exist
+
+Why it matters:
+Architectural diagrams rarely capture every integration, batch process, spreadsheet export, or manual workflow.
+
+If false:
+Transactions may bypass approval workflows, segregation-of-duties controls, audit logging, and reporting integrity checks.

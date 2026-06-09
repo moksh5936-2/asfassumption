@@ -1,0 +1,449 @@
+# Architecture 2 – Implicit Security Assumptions (GPT-4o, Fresh Run)
+
+Assumption 1: User devices are trusted
+
+Why it matters:
+The architecture assumes browsers and endpoints used to access Okta are not compromised.
+
+If false:
+Malware could steal sessions, credentials, MFA tokens, or SAML assertions.
+
+⸻
+
+Assumption 2: Browsers properly validate TLS certificates
+
+Why it matters:
+Authentication begins at the browser-to-IdP boundary.
+
+If false:
+Users may submit credentials to attacker-controlled systems.
+
+⸻
+
+Assumption 3: TLS is correctly configured between browsers and Okta
+
+Why it matters:
+SAML authentication relies on secure transport.
+
+If false:
+Credentials or session tokens may be intercepted.
+
+⸻
+
+Assumption 4: Okta infrastructure is secure
+
+Why it matters:
+Okta acts as the central identity authority.
+
+If false:
+Compromise of the IdP compromises every connected application.
+
+⸻
+
+Assumption 5: Administrative access to Okta is protected
+
+Why it matters:
+IdP administrators control authentication policy.
+
+If false:
+Attackers could modify authentication rules or create accounts.
+
+⸻
+
+Assumption 6: MFA methods are resistant to phishing
+
+Why it matters:
+The policy only states MFA is enforced.
+
+If false:
+Attackers may bypass MFA using phishing kits or adversary-in-the-middle attacks.
+
+⸻
+
+Assumption 7: MFA enrollment is secure
+
+Why it matters:
+Weak enrollment procedures undermine MFA.
+
+If false:
+Attackers may register their own devices.
+
+⸻
+
+Assumption 8: MFA recovery procedures are secure
+
+Why it matters:
+Account recovery often bypasses normal authentication.
+
+If false:
+Attackers may take over accounts through help-desk abuse.
+
+⸻
+
+Assumption 9: Authentication policies are correctly configured
+
+Why it matters:
+MFA enforcement depends on policy implementation.
+
+If false:
+Certain users or applications may bypass MFA.
+
+⸻
+
+Assumption 10: SAML assertions are digitally signed
+
+Why it matters:
+Service providers must trust assertions from the IdP.
+
+If false:
+Attackers may forge identities.
+
+⸻
+
+Assumption 11: Service providers verify SAML signatures
+
+Why it matters:
+Signing alone is insufficient.
+
+If false:
+Forged assertions may be accepted.
+
+⸻
+
+Assumption 12: Service providers validate assertion expiration
+
+Why it matters:
+Assertions should have limited lifetime.
+
+If false:
+Replay attacks become possible.
+
+⸻
+
+Assumption 13: Service providers validate audience restrictions
+
+Why it matters:
+Assertions should only be usable by intended applications.
+
+If false:
+An assertion issued for one application may be accepted by another.
+
+⸻
+
+Assumption 14: Service providers validate issuer identity
+
+Why it matters:
+Applications must confirm assertions originated from Okta.
+
+If false:
+Malicious IdPs could be trusted.
+
+⸻
+
+Assumption 15: SAML certificates are managed securely
+
+Why it matters:
+Federation trust depends on certificates.
+
+If false:
+Attackers may forge authentication assertions.
+
+⸻
+
+Assumption 16: Certificate rotation occurs correctly
+
+Why it matters:
+Certificates eventually expire.
+
+If false:
+Authentication failures or trust issues may occur.
+
+⸻
+
+Assumption 17: Clock synchronization is accurate
+
+Why it matters:
+SAML relies heavily on timestamps.
+
+If false:
+Valid assertions may be rejected or expired assertions accepted.
+
+⸻
+
+Assumption 18: AD is secure
+
+Why it matters:
+AD serves as the authoritative user store.
+
+If false:
+Attackers could create users or elevate privileges.
+
+⸻
+
+Assumption 19: Directory synchronization is trustworthy
+
+Why it matters:
+Identity information flows from AD to Okta.
+
+If false:
+Unauthorized accounts may propagate.
+
+⸻
+
+Assumption 20: Synchronization channels are protected
+
+Why it matters:
+Directory data contains sensitive identity information.
+
+If false:
+Attackers may tamper with user records.
+
+⸻
+
+Assumption 21: User provisioning logic is correct
+
+Why it matters:
+JIT provisioning automatically creates accounts.
+
+If false:
+Improper access rights may be granted.
+
+⸻
+
+Assumption 22: JIT provisioning only creates legitimate users
+
+Why it matters:
+Automatic account creation expands trust.
+
+If false:
+Attackers may obtain application accounts.
+
+⸻
+
+Assumption 23: JIT provisioning assigns appropriate roles
+
+Why it matters:
+Provisioning affects authorization.
+
+If false:
+Users may receive excessive permissions.
+
+⸻
+
+Assumption 24: User deprovisioning is timely
+
+Why it matters:
+Access should end when employment ends.
+
+If false:
+Former employees retain access.
+
+⸻
+
+Assumption 25: Group memberships are accurate
+
+Why it matters:
+Authorization often depends on group assignments.
+
+If false:
+Users may gain unauthorized privileges.
+
+⸻
+
+Assumption 26: Service providers enforce authorization independently
+
+Why it matters:
+Authentication does not equal authorization.
+
+If false:
+Any authenticated user may gain excessive access.
+
+⸻
+
+Assumption 27: Session timeout is enforced consistently
+
+Why it matters:
+Policy specifies 8-hour timeout.
+
+If false:
+Sessions may persist indefinitely.
+
+⸻
+
+Assumption 28: Session termination invalidates tokens
+
+Why it matters:
+Timeouts must actually revoke access.
+
+If false:
+Stolen sessions remain usable.
+
+⸻
+
+Assumption 29: Session identifiers are unpredictable
+
+Why it matters:
+Session security depends on entropy.
+
+If false:
+Sessions may be guessed or forged.
+
+⸻
+
+Assumption 30: Session storage is secure
+
+Why it matters:
+Browsers store authentication state.
+
+If false:
+Attackers may steal active sessions.
+
+⸻
+
+Assumption 31: Single Logout works correctly
+
+Why it matters:
+Users expect logout to end access everywhere.
+
+If false:
+Applications may remain accessible after logout.
+
+⸻
+
+Assumption 32: Applications correctly consume SAML attributes
+
+Why it matters:
+Authorization often depends on attributes.
+
+If false:
+Users may receive incorrect permissions.
+
+⸻
+
+Assumption 33: Applications do not trust unvalidated attributes
+
+Why it matters:
+Attribute tampering can affect authorization.
+
+If false:
+Privilege escalation may occur.
+
+⸻
+
+Assumption 34: Federation metadata is accurate
+
+Why it matters:
+Trust relationships depend on metadata.
+
+If false:
+Applications may trust incorrect endpoints.
+
+⸻
+
+Assumption 35: Federation metadata updates are authenticated
+
+Why it matters:
+Metadata controls trust anchors.
+
+If false:
+Attackers could redirect authentication flows.
+
+⸻
+
+Assumption 36: Administrative actions are logged
+
+Why it matters:
+Identity systems require accountability.
+
+If false:
+Malicious changes may go undetected.
+
+⸻
+
+Assumption 37: Logs cannot be altered
+
+Why it matters:
+Audit records must remain trustworthy.
+
+If false:
+Attackers may erase evidence.
+
+⸻
+
+Assumption 38: Monitoring detects identity attacks
+
+Why it matters:
+SSO systems are high-value targets.
+
+If false:
+Credential abuse may persist undetected.
+
+⸻
+
+Assumption 39: Help-desk processes are secure
+
+Why it matters:
+Identity recovery often involves support staff.
+
+If false:
+Social engineering may bypass authentication controls.
+
+⸻
+
+Assumption 40: Insider administrators are trustworthy
+
+Why it matters:
+Identity administrators control access to every application.
+
+If false:
+A single insider may compromise the entire environment.
+
+⸻
+
+Assumption 41: Service providers are individually secure
+
+Why it matters:
+SSO centralizes authentication but not application security.
+
+If false:
+Compromise of one application may expose sensitive data.
+
+⸻
+
+Assumption 42: No application has a local authentication bypass
+
+Why it matters:
+Policy states all apps require SSO.
+
+If false:
+Attackers may bypass federation entirely.
+
+⸻
+
+Assumption 43: Legacy protocols are disabled
+
+Why it matters:
+Older protocols may bypass MFA.
+
+If false:
+Attackers may exploit weaker authentication paths.
+
+⸻
+
+Assumption 44: Identity data integrity is preserved
+
+Why it matters:
+Authorization decisions depend on accurate identity information.
+
+If false:
+Privilege assignments become unreliable.
+
+⸻
+
+Assumption 45: No undocumented trust relationships exist
+
+Why it matters:
+Architectural diagrams rarely show every federation connection.
+
+If false:
+Hidden trust paths may bypass intended controls.
