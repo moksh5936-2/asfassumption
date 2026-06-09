@@ -1,0 +1,753 @@
+{
+  "policy_000": [
+    {
+      "id": "asm_7c01c7f9af31",
+      "text": "System assumes access control: Only Finance employees may access the payroll system.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_dfdce8efb3b3",
+      "confidence": 0.0,
+      "keywords": [
+        "only",
+        "finance",
+        "employees",
+        "access",
+        "payroll",
+        "system"
+      ]
+    }
+  ],
+  "policy_001": [
+    {
+      "id": "asm_c0bfd46bb1ff",
+      "text": "System assumes access control: SSH access to production servers is restricted to the SRE team.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_b68a43bb389b",
+      "confidence": 0.0,
+      "keywords": [
+        "ssh",
+        "access",
+        "production",
+        "servers",
+        "restricted",
+        "sre",
+        "team"
+      ]
+    }
+  ],
+  "policy_002": [],
+  "policy_003": [
+    {
+      "id": "asm_206863d9a6a9",
+      "text": "System assumes access control: Production environment access requires an approved change ticket.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_fa3fd3bbbee1",
+      "confidence": 0.0,
+      "keywords": [
+        "production",
+        "environment",
+        "access",
+        "requires",
+        "approved",
+        "change",
+        "ticket"
+      ]
+    }
+  ],
+  "policy_004": [],
+  "policy_005": [
+    {
+      "id": "asm_e19da1536651",
+      "text": "System assumes access control: Root access to all systems is logged and reviewed weekly.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_ee00096823ce",
+      "confidence": 0.0,
+      "keywords": [
+        "root",
+        "access",
+        "systems",
+        "logged",
+        "reviewed",
+        "weekly"
+      ]
+    }
+  ],
+  "policy_006": [
+    {
+      "id": "asm_aae52d51789f",
+      "text": "System assumes access control: Service accounts are restricted to their designated function only.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_7aaa844a87e0",
+      "confidence": 0.0,
+      "keywords": [
+        "service",
+        "accounts",
+        "restricted",
+        "their",
+        "designated",
+        "function",
+        "only"
+      ]
+    }
+  ],
+  "policy_007": [],
+  "policy_008": [
+    {
+      "id": "asm_40d26c06ce6c",
+      "text": "System assumes access control: Customer data access requires a documented business justification.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_274ddf2be5d4",
+      "confidence": 0.0,
+      "keywords": [
+        "customer",
+        "data",
+        "access",
+        "requires",
+        "documented",
+        "business",
+        "justification"
+      ]
+    }
+  ],
+  "policy_009": [
+    {
+      "id": "asm_9f68f8d3d7b3",
+      "text": "System assumes access control: The admin console is accessible only to the security team.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_97d95be93f24",
+      "confidence": 0.0,
+      "keywords": [
+        "admin",
+        "console",
+        "accessible",
+        "only",
+        "security",
+        "team"
+      ]
+    }
+  ],
+  "policy_010": [],
+  "policy_011": [
+    {
+      "id": "asm_5109a60aa63c",
+      "text": "System assumes identity posture: Cloud console access requires SSO authentication.",
+      "assumption_type": "IDENTITY",
+      "claim_id": "clm_9e7e962808d3",
+      "confidence": 0.0,
+      "keywords": [
+        "cloud",
+        "console",
+        "access",
+        "requires",
+        "sso",
+        "authentication"
+      ]
+    }
+  ],
+  "policy_012": [
+    {
+      "id": "asm_bff4e03ae932",
+      "text": "System assumes access control: Database read replicas are restricted to reporting tools only.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_b2b2b567476c",
+      "confidence": 0.0,
+      "keywords": [
+        "database",
+        "read",
+        "replicas",
+        "restricted",
+        "reporting",
+        "tools",
+        "only"
+      ]
+    }
+  ],
+  "policy_013": [
+    {
+      "id": "asm_b2138e71d441",
+      "text": "System assumes configuration state: Backup storage access is limited to the backup service account.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_229bb375d83a",
+      "confidence": 0.0,
+      "keywords": [
+        "backup",
+        "storage",
+        "access",
+        "limited",
+        "backup",
+        "service",
+        "account"
+      ]
+    }
+  ],
+  "policy_014": [
+    {
+      "id": "asm_d0589f683162",
+      "text": "System assumes configuration state: Monitoring dashboards are view-only for engineering staff.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_f40d939698ec",
+      "confidence": 0.0,
+      "keywords": [
+        "monitoring",
+        "dashboards",
+        "view",
+        "only",
+        "engineering",
+        "staff"
+      ]
+    }
+  ],
+  "policy_015": [
+    {
+      "id": "asm_dc9e69a3d5fb",
+      "text": "System assumes access control: Secret store access is restricted to authorized applications.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_bf9e579090fa",
+      "confidence": 0.0,
+      "keywords": [
+        "secret",
+        "store",
+        "access",
+        "restricted",
+        "authorized",
+        "applications"
+      ]
+    }
+  ],
+  "policy_016": [],
+  "policy_017": [],
+  "policy_018": [
+    {
+      "id": "asm_7792cc3b309b",
+      "text": "System assumes access control: Kubernetes cluster admin access is restricted to platform team.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_b121552bb997",
+      "confidence": 0.0,
+      "keywords": [
+        "kubernetes",
+        "cluster",
+        "admin",
+        "access",
+        "restricted",
+        "platform",
+        "team"
+      ]
+    }
+  ],
+  "policy_019": [],
+  "policy_020": [
+    {
+      "id": "asm_1c1ff1ca7b4e",
+      "text": "System assumes identity posture: MFA is required for all administrative access to production.",
+      "assumption_type": "IDENTITY",
+      "claim_id": "clm_1970aa11ffb4",
+      "confidence": 0.0,
+      "keywords": [
+        "mfa",
+        "required",
+        "administrative",
+        "access",
+        "production"
+      ]
+    }
+  ],
+  "policy_021": [],
+  "policy_022": [],
+  "policy_023": [
+    {
+      "id": "asm_0d9c8794f2e1",
+      "text": "System assumes identity posture: Data center physical access requires biometric authentication.",
+      "assumption_type": "IDENTITY",
+      "claim_id": "clm_d259fd75faab",
+      "confidence": 0.0,
+      "keywords": [
+        "data",
+        "center",
+        "physical",
+        "access",
+        "requires",
+        "biometric",
+        "authentication"
+      ]
+    }
+  ],
+  "policy_024": [],
+  "policy_025": [],
+  "policy_026": [],
+  "policy_027": [
+    {
+      "id": "asm_54ce73a1333f",
+      "text": "System assumes identity posture: Password rotation is required every 90 days.",
+      "assumption_type": "IDENTITY",
+      "claim_id": "clm_b6f8524ad35b",
+      "confidence": 0.0,
+      "keywords": [
+        "password",
+        "rotation",
+        "required",
+        "days"
+      ]
+    }
+  ],
+  "policy_028": [],
+  "policy_029": [],
+  "policy_030": [
+    {
+      "id": "asm_204cd76dfb5c",
+      "text": "System assumes access control: Privileged access requires just-in-time approval.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_6e4d49184bb5",
+      "confidence": 0.0,
+      "keywords": [
+        "privileged",
+        "access",
+        "requires",
+        "time",
+        "approval"
+      ]
+    }
+  ],
+  "policy_031": [],
+  "policy_032": [
+    {
+      "id": "asm_88c2316edb7a",
+      "text": "System assumes identity posture: Smart card authentication is required for classified systems.",
+      "assumption_type": "IDENTITY",
+      "claim_id": "clm_fb63e1a8fb9c",
+      "confidence": 0.0,
+      "keywords": [
+        "smart",
+        "card",
+        "authentication",
+        "required",
+        "classified",
+        "systems"
+      ]
+    }
+  ],
+  "policy_033": [],
+  "policy_034": [
+    {
+      "id": "asm_4773a318a6d9",
+      "text": "System assumes governance compliance: Break-glass accounts are monitored and reviewed monthly.",
+      "assumption_type": "GOVERNANCE",
+      "claim_id": "clm_25a289640593",
+      "confidence": 0.0,
+      "keywords": [
+        "break",
+        "glass",
+        "accounts",
+        "monitored",
+        "reviewed",
+        "monthly"
+      ]
+    }
+  ],
+  "policy_035": [
+    {
+      "id": "asm_5ae84e7dad8c",
+      "text": "System assumes network posture: The production network is segmented from non-production environments.",
+      "assumption_type": "NETWORK",
+      "claim_id": "clm_02baba81fa1a",
+      "confidence": 0.0,
+      "keywords": [
+        "production",
+        "network",
+        "segmented",
+        "non",
+        "production",
+        "environments"
+      ]
+    }
+  ],
+  "policy_036": [],
+  "policy_037": [
+    {
+      "id": "asm_285c00283983",
+      "text": "System assumes network posture: Database servers are not directly accessible from the internet.",
+      "assumption_type": "NETWORK",
+      "claim_id": "clm_d8d3722777b1",
+      "confidence": 0.0,
+      "keywords": [
+        "database",
+        "servers",
+        "directly",
+        "accessible",
+        "internet"
+      ]
+    }
+  ],
+  "policy_038": [],
+  "policy_039": [
+    {
+      "id": "asm_1a2f3cc58cca",
+      "text": "System assumes configuration state: Internal traffic between services is encrypted.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_0ffb4d3e9260",
+      "confidence": 0.0,
+      "keywords": [
+        "internal",
+        "traffic",
+        "between",
+        "services",
+        "encrypted"
+      ]
+    }
+  ],
+  "policy_040": [
+    {
+      "id": "asm_96a69da28138",
+      "text": "System assumes access control: VPN is required for all remote network access.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_36392049a33b",
+      "confidence": 0.0,
+      "keywords": [
+        "vpn",
+        "required",
+        "remote",
+        "network",
+        "access"
+      ]
+    }
+  ],
+  "policy_041": [],
+  "policy_042": [],
+  "policy_043": [],
+  "policy_044": [
+    {
+      "id": "asm_9f603badc458",
+      "text": "System assumes network posture: Network ACLs restrict traffic between subnets.",
+      "assumption_type": "NETWORK",
+      "claim_id": "clm_4f38995a05c4",
+      "confidence": 0.0,
+      "keywords": [
+        "network",
+        "acls",
+        "restrict",
+        "traffic",
+        "between",
+        "subnets"
+      ]
+    }
+  ],
+  "policy_045": [
+    {
+      "id": "asm_24e634f6999f",
+      "text": "System assumes network posture: Wireless networks are isolated from the corporate wired network.",
+      "assumption_type": "NETWORK",
+      "claim_id": "clm_bcad918c3118",
+      "confidence": 0.0,
+      "keywords": [
+        "wireless",
+        "networks",
+        "isolated",
+        "corporate",
+        "wired",
+        "network"
+      ]
+    }
+  ],
+  "policy_046": [],
+  "policy_047": [
+    {
+      "id": "asm_fee397fd58c2",
+      "text": "System assumes access control: VPC peering is limited to production and monitoring accounts.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_3fd88b814e34",
+      "confidence": 0.0,
+      "keywords": [
+        "vpc",
+        "peering",
+        "limited",
+        "production",
+        "monitoring",
+        "accounts"
+      ]
+    }
+  ],
+  "policy_048": [],
+  "policy_049": [
+    {
+      "id": "asm_878c4398ab8e",
+      "text": "System assumes network posture: Network flow logs are enabled for all critical network segments.",
+      "assumption_type": "NETWORK",
+      "claim_id": "clm_18799a1cd09a",
+      "confidence": 0.0,
+      "keywords": [
+        "network",
+        "flow",
+        "logs",
+        "enabled",
+        "critical",
+        "network",
+        "segments"
+      ]
+    }
+  ],
+  "policy_050": [
+    {
+      "id": "asm_45363bfc7ab5",
+      "text": "System assumes configuration state: All data is encrypted at rest using AES-256.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_c4a223e90000",
+      "confidence": 0.0,
+      "keywords": [
+        "data",
+        "encrypted",
+        "rest",
+        "using",
+        "aes"
+      ]
+    }
+  ],
+  "policy_051": [
+    {
+      "id": "asm_c56a18eb7e3e",
+      "text": "System assumes configuration state: Backups are encrypted before transfer to storage.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_91fa3dbc5ac4",
+      "confidence": 0.0,
+      "keywords": [
+        "backups",
+        "encrypted",
+        "before",
+        "transfer",
+        "storage"
+      ]
+    }
+  ],
+  "policy_052": [
+    {
+      "id": "asm_43c7d1a35269",
+      "text": "System assumes configuration state: Backup retention policy: 30 days of daily, 12 months of monthly backups.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_a67fb6aa0a35",
+      "confidence": 0.0,
+      "keywords": [
+        "backup",
+        "retention",
+        "policy",
+        "days",
+        "daily",
+        "months",
+        "monthly",
+        "backups"
+      ]
+    }
+  ],
+  "policy_053": [
+    {
+      "id": "asm_cfa79169a87a",
+      "text": "System assumes configuration state: Backup restore testing is performed quarterly.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_f87cbf072ee3",
+      "confidence": 0.0,
+      "keywords": [
+        "backup",
+        "restore",
+        "testing",
+        "performed",
+        "quarterly"
+      ]
+    }
+  ],
+  "policy_054": [
+    {
+      "id": "asm_e2ee618f9f04",
+      "text": "System assumes configuration state: Logging is enabled for all production services.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_787a7eed6fb1",
+      "confidence": 0.0,
+      "keywords": [
+        "logging",
+        "enabled",
+        "production",
+        "services"
+      ]
+    }
+  ],
+  "policy_055": [
+    {
+      "id": "asm_1b3e282aeab1",
+      "text": "System assumes configuration state: Audit logs are retained for a minimum of 1 year.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_02760e45f8a6",
+      "confidence": 0.0,
+      "keywords": [
+        "audit",
+        "logs",
+        "retained",
+        "minimum",
+        "year"
+      ]
+    }
+  ],
+  "policy_056": [
+    {
+      "id": "asm_532980d8d5d0",
+      "text": "System assumes configuration state: System configurations are baselined and monitored for drift.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_16e865493ae5",
+      "confidence": 0.0,
+      "keywords": [
+        "system",
+        "configurations",
+        "baselined",
+        "monitored",
+        "drift"
+      ]
+    }
+  ],
+  "policy_057": [],
+  "policy_058": [],
+  "policy_059": [
+    {
+      "id": "asm_c497394772a1",
+      "text": "System assumes configuration state: Full disk encryption is enabled on all company laptops.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_76d95ecaa10f",
+      "confidence": 0.0,
+      "keywords": [
+        "full",
+        "disk",
+        "encryption",
+        "enabled",
+        "company",
+        "laptops"
+      ]
+    }
+  ],
+  "policy_060": [],
+  "policy_061": [],
+  "policy_062": [],
+  "policy_063": [],
+  "policy_064": [],
+  "policy_065": [
+    {
+      "id": "asm_97c495524131",
+      "text": "System assumes process compliance: All production changes require approval from the change board.",
+      "assumption_type": "PROCESS",
+      "claim_id": "clm_01044764ce94",
+      "confidence": 0.0,
+      "keywords": [
+        "production",
+        "changes",
+        "require",
+        "approval",
+        "change",
+        "board"
+      ]
+    }
+  ],
+  "policy_066": [],
+  "policy_067": [],
+  "policy_068": [
+    {
+      "id": "asm_889a687ba339",
+      "text": "System assumes process compliance: Code review is required before merging to the main branch.",
+      "assumption_type": "PROCESS",
+      "claim_id": "clm_b9d655429199",
+      "confidence": 0.0,
+      "keywords": [
+        "code",
+        "review",
+        "required",
+        "before",
+        "merging",
+        "main",
+        "branch"
+      ]
+    }
+  ],
+  "policy_069": [
+    {
+      "id": "asm_4e70246973c1",
+      "text": "System assumes governance compliance: Penetration testing is performed annually by an external firm.",
+      "assumption_type": "GOVERNANCE",
+      "claim_id": "clm_f76a0c442145",
+      "confidence": 0.0,
+      "keywords": [
+        "penetration",
+        "testing",
+        "performed",
+        "annually",
+        "external",
+        "firm"
+      ]
+    }
+  ],
+  "policy_070": [],
+  "policy_071": [],
+  "policy_072": [],
+  "policy_073": [
+    {
+      "id": "asm_6f77a843ed3b",
+      "text": "System assumes access control: User access reviews are conducted quarterly.",
+      "assumption_type": "ACCESS",
+      "claim_id": "clm_d4f42467eedb",
+      "confidence": 0.0,
+      "keywords": [
+        "user",
+        "access",
+        "reviews",
+        "conducted",
+        "quarterly"
+      ]
+    }
+  ],
+  "policy_074": [],
+  "policy_075": [],
+  "policy_076": [],
+  "policy_077": [],
+  "policy_078": [],
+  "policy_079": [],
+  "policy_080": [
+    {
+      "id": "asm_3f943c5abc41",
+      "text": "System assumes configuration state: SOC 2 Type II audit is completed annually.",
+      "assumption_type": "CONFIGURATION",
+      "claim_id": "clm_776ab8f909af",
+      "confidence": 0.0,
+      "keywords": [
+        "soc",
+        "type",
+        "audit",
+        "completed",
+        "annually"
+      ]
+    }
+  ],
+  "policy_081": [],
+  "policy_082": [],
+  "policy_083": [],
+  "policy_084": [],
+  "policy_085": [],
+  "policy_086": [],
+  "policy_087": [],
+  "policy_088": [],
+  "policy_089": [],
+  "policy_090": [],
+  "policy_091": [],
+  "policy_092": [
+    {
+      "id": "asm_04e19c550ac9",
+      "text": "System assumes governance compliance: Network topology is documented and reviewed annually.",
+      "assumption_type": "GOVERNANCE",
+      "claim_id": "clm_bfc89382588b",
+      "confidence": 0.0,
+      "keywords": [
+        "network",
+        "topology",
+        "documented",
+        "reviewed",
+        "annually"
+      ]
+    }
+  ],
+  "policy_093": [],
+  "policy_094": [],
+  "policy_095": [],
+  "policy_096": [],
+  "policy_097": [],
+  "policy_098": [],
+  "policy_099": []
+}

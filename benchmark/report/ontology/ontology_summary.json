@@ -1,0 +1,87 @@
+{
+  "total_assumptions": 1697,
+  "ontology_distribution": {
+    "Derived": 582,
+    "Operational": 339,
+    "Implicit": 282,
+    "Dependency": 225,
+    "Trust": 142,
+    "Explicit": 100,
+    "Environmental": 20,
+    "Architectural": 7
+  },
+  "missed_by_ontology": {
+    "Derived": 537,
+    "Operational": 325,
+    "Implicit": 249,
+    "Dependency": 203,
+    "Trust": 109,
+    "Explicit": 59,
+    "Environmental": 12,
+    "Architectural": 4
+  },
+  "cross_type_ontology": {
+    "ACCESS": {
+      "Explicit": 20,
+      "Trust": 70,
+      "Dependency": 50,
+      "Implicit": 2
+    },
+    "CONFIGURATION": {
+      "Operational": 101,
+      "Implicit": 140,
+      "Derived": 217,
+      "Environmental": 6,
+      "Dependency": 2,
+      "Trust": 2,
+      "Architectural": 1,
+      "Explicit": 15
+    },
+    "DEPENDENCY": {
+      "Implicit": 27,
+      "Environmental": 5,
+      "Dependency": 11,
+      "Architectural": 1,
+      "Explicit": 5
+    },
+    "DOCUMENTATION": {
+      "Derived": 105,
+      "Implicit": 6,
+      "Explicit": 5,
+      "Dependency": 5
+    },
+    "GOVERNANCE": {
+      "Derived": 241,
+      "Dependency": 102,
+      "Implicit": 100,
+      "Environmental": 5,
+      "Architectural": 1,
+      "Explicit": 10,
+      "Operational": 4
+    },
+    "IDENTITY": {
+      "Trust": 69,
+      "Dependency": 52,
+      "Environmental": 2,
+      "Implicit": 2,
+      "Explicit": 15
+    },
+    "NETWORK": {
+      "Explicit": 15,
+      "Derived": 15,
+      "Architectural": 4,
+      "Environmental": 2,
+      "Implicit": 1,
+      "Dependency": 1
+    },
+    "PROCESS": {
+      "Operational": 234,
+      "Implicit": 4,
+      "Trust": 1,
+      "Derived": 4,
+      "Explicit": 15,
+      "Dependency": 2
+    }
+  },
+  "methodology": "Rule-based classification using keyword/pattern matching against assumption text and commentary. 8-type ontology: Explicit (directly written), Implicit (implied), Derived (logical consequence), Trust (relationship-based), Operational (process/procedure), Dependency (external), Architectural (design constraint), Environmental (infrastructure)."
+}

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asf-validator"
+version = "0.1.0"
+description = "Assumption Security Framework Validator — experimental research platform for testing security assumptions against evidence"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "pydantic>=2.0.0",
+    "networkx>=2.8",
+    "pdfplumber>=0.10.0",
+    "python-docx>=1.0.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.scripts]
+asf = "asf.cli.main:cli"
+asf-benchmark = "benchmark.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["asf*", "benchmark*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]

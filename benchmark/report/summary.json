@@ -1,0 +1,12 @@
+{
+  "total_policies": 100,
+  "total_ground_truth": 1697,
+  "total_asf_assumptions": 41,
+  "experiments_run": 4,
+  "experiments_passed": 1,
+  "scores": {
+    "precision": null,
+    "recall": null,
+    "f1": null
+  }
+}

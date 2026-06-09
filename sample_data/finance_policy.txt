@@ -1,0 +1,39 @@
+FINANCE ACCESS CONTROL POLICY
+
+Effective Date: January 1, 2025
+Version: 2.1
+
+1. ACCESS CONTROL
+
+Only Finance employees may access the payroll processing system.
+All payroll data is encrypted at rest and in transit.
+The payroll application is only accessible from the internal corporate network.
+Only the VP of Finance can approve payroll runs.
+
+2. SYSTEM ACCESS
+
+Production databases are not internet accessible.
+All administrative access requires multi-factor authentication.
+Database access is restricted to database administrators only.
+SSH access to production servers is restricted to the infrastructure team.
+
+3. AUDIT AND COMPLIANCE
+
+All access to financial systems is logged and monitored.
+Security reviews are conducted quarterly.
+Access permissions are reviewed on a monthly basis.
+All configuration changes must be approved by the security team.
+
+4. BACKUP AND RECOVERY
+
+All financial data is backed up daily.
+Backup data is encrypted using AES-256.
+Backups are tested monthly to ensure recoverability.
+Offsite backup storage is maintained at a separate geographic location.
+
+5. NETWORK SECURITY
+
+The finance network segment is isolated from other network segments.
+No external access is permitted to the finance application.
+All network traffic is inspected by the intrusion detection system.
+Security groups restrict access to only required ports and protocols.

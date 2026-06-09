@@ -1,0 +1,266 @@
+[
+  {
+    "name": "Human Agreement",
+    "status": "FAIL",
+    "metrics": {
+      "recall": 0.1173,
+      "precision": 1.0,
+      "f1": 0.2099,
+      "gt_covered": 199,
+      "asf_relevant": 41,
+      "asf_irrelevant": 0,
+      "match_threshold": 0.35,
+      "total_ground_truth": 1697,
+      "total_asf_output": 41
+    },
+    "findings": [
+      "ASF recall is 11.7% \u2014 well below the 70% target.",
+      "ASF precision is strong \u2014 extracted assumptions are relevant and on-topic.",
+      "F1 Score: 21.0% \u2014 harmonic mean of precision and recall."
+    ],
+    "recommendations": [
+      "Major expansion needed in assumption extraction engine to capture implicit security assumptions.",
+      "Run Experiment 2 (Novel Discovery) to determine whether missed ground truth assumptions are actually false negatives or legitimate novel discoveries."
+    ]
+  },
+  {
+    "name": "Novel Discovery",
+    "status": "FAIL",
+    "metrics": {
+      "total_novel": 0,
+      "total_asf": 41,
+      "novel_rate": 0.0,
+      "novel_by_type": {},
+      "top_candidates": []
+    },
+    "findings": [
+      "Low novel discovery rate: 0.0% of ASF assumptions (0/41) are novel.",
+      "Novel discoveries by type: {}"
+    ],
+    "recommendations": [
+      "ASF may be overfitting to ground truth patterns rather than discovering genuinely new assumptions."
+    ]
+  },
+  {
+    "name": "Differentiation",
+    "status": "PASS",
+    "metrics": {
+      "total_scenarios": 100,
+      "asf_detects": 100,
+      "vulnscan_detects": 35,
+      "edr_detects": 7,
+      "compliance_detects": 68,
+      "iam_detects": 32,
+      "asf_unique": 11,
+      "asf_unique_examples": [
+        "No backup restore test performed in over 12 months.",
+        "Configuration drift alert fired but no action taken.",
+        "DR plan not tested in over 18 months.",
+        "Forensics readiness plan not updated in 2+ years.",
+        "Runbooks missing for 3 of 5 critical systems.",
+        "Architecture diagram does not match deployed infrastructure.",
+        "Network topology diagram outdated by 2+ years.",
+        "Incident response playbook not updated after major incident.",
+        "Software deployment without signed commit verification.",
+        "Critical application dependency undocumented."
+      ],
+      "by_category": {
+        "Access": {
+          "asf": 20,
+          "vulnscan": 8,
+          "edr": 1,
+          "compliance": 7,
+          "iam": 17,
+          "total": 20
+        },
+        "Identity": {
+          "asf": 15,
+          "vulnscan": 2,
+          "edr": 1,
+          "compliance": 11,
+          "iam": 13,
+          "total": 15
+        },
+        "Network": {
+          "asf": 15,
+          "vulnscan": 13,
+          "edr": 0,
+          "compliance": 13,
+          "iam": 0,
+          "total": 15
+        },
+        "Configuration": {
+          "asf": 15,
+          "vulnscan": 8,
+          "edr": 3,
+          "compliance": 12,
+          "iam": 1,
+          "total": 15
+        },
+        "Process": {
+          "asf": 15,
+          "vulnscan": 2,
+          "edr": 2,
+          "compliance": 13,
+          "iam": 1,
+          "total": 15
+        },
+        "Governance": {
+          "asf": 10,
+          "vulnscan": 1,
+          "edr": 0,
+          "compliance": 10,
+          "iam": 0,
+          "total": 10
+        },
+        "Documentation": {
+          "asf": 5,
+          "vulnscan": 0,
+          "edr": 0,
+          "compliance": 1,
+          "iam": 0,
+          "total": 5
+        },
+        "Dependency": {
+          "asf": 5,
+          "vulnscan": 1,
+          "edr": 0,
+          "compliance": 1,
+          "iam": 0,
+          "total": 5
+        }
+      },
+      "all_tools_detect": 0
+    },
+    "findings": [
+      "ASF detects 100/100 scenarios \u2014 broadest coverage of any single tool type.",
+      "ASF uniquely detects 11 scenarios no other tool covers.",
+      "ASF shares 35 scenarios with vulnerability scanners, 7 with EDR, 68 with compliance tools, 32 with IAM tools.",
+      "Moderate differentiation: 11 uniquely detected scenarios. Moat exists but is narrow.",
+      "  Access: ASF detects 20/20, unique in 0",
+      "  Configuration: ASF detects 15/15, unique in 2",
+      "  Dependency: ASF detects 5/5, unique in 3",
+      "  Documentation: ASF detects 5/5, unique in 4",
+      "  Governance: ASF detects 10/10, unique in 0",
+      "  Identity: ASF detects 15/15, unique in 0",
+      "  Network: ASF detects 15/15, unique in 0",
+      "  Process: ASF detects 15/15, unique in 2"
+    ],
+    "recommendations": []
+  },
+  {
+    "name": "Executive Value",
+    "status": "INCONCLUSIVE",
+    "metrics": {
+      "total_reports": 10,
+      "critical_count": 4,
+      "high_count": 4,
+      "medium_count": 2,
+      "would_change_count": 8,
+      "reports": [
+        {
+          "id": "ER-001",
+          "title": "Payroll Access Contradiction",
+          "finding": "Policy states only Finance employees may access payroll, but evidence shows 3 Engineering users have payroll access.",
+          "risk": "Unauthorized access to salary data \u2014 potential insider threat and GDPR violation.",
+          "severity": "CRITICAL",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-002",
+          "title": "MFA Enrollment Gap",
+          "finding": "Policy requires MFA for all admin access, but 40% of admin users lack MFA enrollment.",
+          "risk": "Account takeover via credential compromise \u2014 most common initial access vector in breaches.",
+          "severity": "CRITICAL",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-003",
+          "title": "Untested Backup Assumption",
+          "finding": "Policy states backups are performed daily, but no restore test has been performed in 18 months.",
+          "risk": "Data loss in disaster scenario \u2014 backups may be non-functional and organization is operating on an untested assumption.",
+          "severity": "HIGH",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-004",
+          "title": "Network Isolation Contradiction",
+          "finding": "Policy states database servers are not internet accessible, but a production database has a public IP.",
+          "risk": "Direct data exposure to internet \u2014 database accessible to any attacker scanning the IP range.",
+          "severity": "CRITICAL",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-005",
+          "title": "Access Review Not Performed",
+          "finding": "Policy requires quarterly access reviews, but no review conducted in current quarter.",
+          "risk": "Permission creep undetected \u2014 users accumulate access privileges over time without review.",
+          "severity": "HIGH",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-006",
+          "title": "DR Plan Assumption",
+          "finding": "Disaster recovery plan exists but has not been tested in 24 months.",
+          "risk": "DR plan may be non-functional \u2014 organization assuming protection that does not exist.",
+          "severity": "HIGH",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-007",
+          "title": "Service Account Over-Provisioned",
+          "finding": "Backup service account has admin privileges across all production systems.",
+          "risk": "Compromised backup service account provides unrestricted access to all production data.",
+          "severity": "CRITICAL",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-008",
+          "title": "Configuration Drift",
+          "finding": "3 production servers have configuration that differs from the security baseline.",
+          "risk": "Security controls may be ineffective on non-compliant systems \u2014 undetected drift undermines baseline.",
+          "severity": "MEDIUM",
+          "would_change_decision": false
+        },
+        {
+          "id": "ER-009",
+          "title": "Dependency on Deprecated Service",
+          "finding": "Critical application depends on a service that is in end-of-life with no migration plan.",
+          "risk": "Unpatched vulnerabilities in EOL software \u2014 no security patches available.",
+          "severity": "HIGH",
+          "would_change_decision": true
+        },
+        {
+          "id": "ER-010",
+          "title": "Documentation Out of Date",
+          "finding": "Network topology diagram describes architecture that was decommissioned 18 months ago.",
+          "risk": "Incident response teams operating on inaccurate information \u2014 delayed containment.",
+          "severity": "MEDIUM",
+          "would_change_decision": false
+        }
+      ]
+    },
+    "findings": [
+      "Generated 10 executive-ready ASF findings (4 CRITICAL, 4 HIGH, 2 MEDIUM).",
+      "8/10 findings are designed to change decisions \u2014 the test of executive value.",
+      "70%+ of findings target decision-changing severity \u2014 strong signal for executive value.",
+      "",
+      "EXPERIMENT REQUIRES HUMAN PARTICIPATION \u2014 Cannot be fully automated.",
+      "",
+      "Recommended Protocol:",
+      "  1. Present reports ER-001 through ER-010 to security managers/architects.",
+      "  2. For each report, ask: 'Would this finding change a decision or investment?'",
+      "  3. Ask: 'Would you pay for a tool that produced this finding automatically?'",
+      "  4. Ask: 'Is this finding available from any existing tool you use?'",
+      "  5. Score: YES = 1, MAYBE = 0.5, NO = 0",
+      "",
+      "Target: average score >= 0.7 across all reviewers."
+    ],
+    "recommendations": [
+      "Schedule 30-min sessions with 3+ security decision makers.",
+      "Document verbatim responses \u2014 qualitative feedback is as important as scores.",
+      "If executives consistently say 'we already know this', pivot to Experiment 2 (novel discovery) results.",
+      "If executives consistently say 'this is valuable but we have no budget', probe for what would unlock budget."
+    ]
+  }
+]

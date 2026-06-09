@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASF Validator v0.1</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>ASF Validator v0.1</h1>
+    <div class="subtitle">Assumption Security Framework — reality vs. assumption</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="tab-summary">Summary</button>
+    <button class="tab" data-tab="tab-findings">Findings</button>
+    <button class="tab" data-tab="tab-gaps">Gaps</button>
+    <button class="tab" data-tab="tab-graph">Graph</button>
+    <button class="tab" data-tab="tab-upload">Upload &amp; Analyze</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="tab-panel active" id="tab-summary">
+    <div class="card">
+      <div class="grid" id="summaryContent">
+        <div class="stat"><span class="stat-label">Status</span><span class="stat-value">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Findings -->
+  <div class="tab-panel" id="tab-findings">
+    <div class="card" id="findingsContent">
+      <div class="finding-item">Run an analysis to see findings.</div>
+    </div>
+  </div>
+
+  <!-- Gaps -->
+  <div class="tab-panel" id="tab-gaps">
+    <div class="card" id="gapsContent">
+      <div class="finding-item">Run an analysis to see gaps.</div>
+    </div>
+  </div>
+
+  <!-- Graph -->
+  <div class="tab-panel" id="tab-graph">
+    <div class="card" id="graphContent">
+      <div class="finding-item">Run an analysis to build the graph.</div>
+    </div>
+  </div>
+
+  <!-- Upload & Analyze -->
+  <div class="tab-panel" id="tab-upload">
+    <div class="card">
+      <h3>Upload Document</h3>
+      <form onsubmit="return false">
+        <input type="file" id="docFile" accept=".pdf,.docx,.txt">
+        <button type="button" id="uploadDoc" class="secondary">Extract Claims</button>
+      </form>
+      <div id="docResult"></div>
+      <div id="claimList"></div>
+    </div>
+
+    <div class="card">
+      <h3>Upload Evidence</h3>
+      <form onsubmit="return false">
+        <input type="file" id="evFile" accept=".csv,.json">
+        <button type="button" id="uploadEv" class="secondary">Load Evidence</button>
+      </form>
+      <div id="evResult"></div>
+    </div>
+
+    <div class="card">
+      <h3>Run Analysis</h3>
+      <p style="color:#8b949e;font-size:13px;margin-bottom:12px;">
+        Enter file paths relative to the server. Uploading via the forms above doesn't persist paths — 
+        use the CLI for file-based analysis, or enter paths here for server-side files.
+      </p>
+      <form onsubmit="return false">
+        <label>Document paths (one per line)</label>
+        <textarea id="analysisDocs" rows="3" placeholder="sample_data/finance_policy.txt"></textarea>
+        <label>Evidence paths (one per line)</label>
+        <textarea id="analysisEv" rows="3" placeholder="sample_data/payroll_acl.csv"></textarea>
+        <button type="button" id="runAnalysis">Run Analysis</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

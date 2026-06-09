@@ -1,0 +1,1352 @@
+{
+  "metadata": {
+    "name": "ASF Trust Graph Model v1",
+    "version": "1.0",
+    "date_generated": "2026-06-09",
+    "total_node_types": 14,
+    "total_edge_types": 35,
+    "description": "Trust Graph Model for deriving hidden security assumptions from system architecture relationships across 20 reference architecture patterns"
+  },
+  "node_types": {
+    "User": {
+      "id": "NODE-USER",
+      "description": "Human actor or external entity interacting with the system",
+      "properties": [
+        "identity",
+        "role",
+        "clearance",
+        "location",
+        "auth_method",
+        "mfa_status"
+      ],
+      "related_assumption_categories": [
+        "Trust",
+        "Implicit",
+        "Operational"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "External User",
+        "Internal User",
+        "Admin User",
+        "Service Account",
+        "Partner User"
+      ],
+      "example_architectures": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        20
+      ]
+    },
+    "Service": {
+      "id": "NODE-SVC",
+      "description": "Application service, microservice, backend component, or function",
+      "properties": [
+        "name",
+        "protocol",
+        "port",
+        "language",
+        "framework",
+        "iam_role",
+        "service_identity"
+      ],
+      "related_assumption_categories": [
+        "Dependency",
+        "Trust",
+        "Configuration",
+        "Operational"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "Lambda",
+        "EC2 App",
+        "Container",
+        "Web App",
+        "Background Worker",
+        "API Service"
+      ],
+      "example_architectures": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    "Data Store": {
+      "id": "NODE-DS",
+      "description": "Persistent data storage: databases, caches, queues, object stores",
+      "properties": [
+        "type",
+        "engine",
+        "encryption",
+        "backup_status",
+        "replication",
+        "retention"
+      ],
+      "related_assumption_categories": [
+        "Dependency",
+        "Configuration",
+        "Operational",
+        "Explicit"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "RDS",
+        "DynamoDB",
+        "S3",
+        "Redshift",
+        "ElastiCache",
+        "TimeSeries DB",
+        "Immutable Audit DB"
+      ],
+      "example_architectures": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    "Network Gateway": {
+      "id": "NODE-NET",
+      "description": "Network ingress/egress: load balancers, API gateways, proxies, VPNs, CDNs",
+      "properties": [
+        "type",
+        "tls_version",
+        "certificate",
+        "ip_whitelist",
+        "rate_limit",
+        "health_check"
+      ],
+      "related_assumption_categories": [
+        "Architectural",
+        "Network",
+        "Configuration"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "ALB",
+        "API Gateway",
+        "VPN Gateway",
+        "CDN",
+        "Ingress Gateway",
+        "Transit Gateway",
+        "Direct Connect"
+      ],
+      "example_architectures": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        9,
+        13,
+        14,
+        15,
+        17,
+        18
+      ]
+    },
+    "Auth Service": {
+      "id": "NODE-AUTH",
+      "description": "Identity provider, SSO, MFA, federation service",
+      "properties": [
+        "provider",
+        "protocol",
+        "mfa_enforced",
+        "session_ttl",
+        "federation_enabled",
+        "directory_source"
+      ],
+      "related_assumption_categories": [
+        "Trust",
+        "Identity",
+        "Dependency"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "Okta",
+        "Azure AD",
+        "Auth0",
+        "Keycloak",
+        "Cognito",
+        "Ping Identity"
+      ],
+      "example_architectures": [
+        3,
+        4,
+        5,
+        9,
+        11,
+        13,
+        15
+      ]
+    },
+    "Infrastructure": {
+      "id": "NODE-INFRA",
+      "description": "Cloud regions, availability zones, clusters, namespaces, VPCs",
+      "properties": [
+        "provider",
+        "region",
+        "environment",
+        "compliance_scope",
+        "isolation_level",
+        "multi_az"
+      ],
+      "related_assumption_categories": [
+        "Environmental",
+        "Architectural",
+        "Dependency"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "AWS Region",
+        "VPC",
+        "K8s Namespace",
+        "Availability Zone",
+        "On-Prem DC",
+        "K8s Cluster"
+      ],
+      "example_architectures": [
+        5,
+        7,
+        14,
+        17,
+        18,
+        19
+      ]
+    },
+    "Security Control": {
+      "id": "NODE-SEC",
+      "description": "WAFs, firewalls, network policies, security groups, DDoS protection",
+      "properties": [
+        "type",
+        "rule_count",
+        "mode",
+        "logging_enabled",
+        "default_action",
+        "tls_enforcement"
+      ],
+      "related_assumption_categories": [
+        "Explicit",
+        "Configuration",
+        "Architectural"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "WAF",
+        "Security Group",
+        "Network ACL",
+        "Pod Security Policy",
+        "DDoS Protection"
+      ],
+      "example_architectures": [
+        5,
+        14,
+        18
+      ]
+    },
+    "Pipeline": {
+      "id": "NODE-PIPE",
+      "description": "CI/CD, build systems, artifact registries, deployment automation",
+      "properties": [
+        "type",
+        "scan_enabled",
+        "signing_enabled",
+        "approval_gates",
+        "source_of_truth"
+      ],
+      "related_assumption_categories": [
+        "Operational",
+        "Configuration",
+        "Trust"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "GitHub Actions",
+        "ArgoCD",
+        "Jenkins",
+        "GitLab CI",
+        "Artifact Registry"
+      ],
+      "example_architectures": [
+        8,
+        16
+      ]
+    },
+    "External Entity": {
+      "id": "NODE-EXT",
+      "description": "Third-party vendors, partners, SaaS providers, external systems",
+      "properties": [
+        "name",
+        "certification",
+        "contract_status",
+        "data_residency",
+        "sla"
+      ],
+      "related_assumption_categories": [
+        "Dependency",
+        "Trust",
+        "Operational"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "SaaS Vendor",
+        "Partner Org",
+        "Payment Processor",
+        "Data Provider",
+        "External IdP"
+      ],
+      "example_architectures": [
+        6,
+        8,
+        9,
+        13
+      ]
+    },
+    "Observability": {
+      "id": "NODE-OBS",
+      "description": "Monitoring, logging, alerting, SIEM, audit systems",
+      "properties": [
+        "type",
+        "retention_days",
+        "coverage",
+        "alert_channels",
+        "immutable"
+      ],
+      "related_assumption_categories": [
+        "Operational",
+        "Configuration",
+        "Derived"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "CloudWatch",
+        "SIEM",
+        "Audit Trail",
+        "Prometheus",
+        "Datadog"
+      ],
+      "example_architectures": [
+        2,
+        10,
+        11,
+        12,
+        14,
+        20
+      ]
+    },
+    "Secrets Store": {
+      "id": "NODE-SECRETS",
+      "description": "Vault, KMS, key management, secrets rotation systems",
+      "properties": [
+        "type",
+        "auto_unseal",
+        "audit_enabled",
+        "dynamic_secrets",
+        "rotation_policy"
+      ],
+      "related_assumption_categories": [
+        "Trust",
+        "Configuration",
+        "Operational"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "HashiCorp Vault",
+        "AWS KMS",
+        "AWS Secrets Manager",
+        "Azure Key Vault",
+        "GCP KMS"
+      ],
+      "example_architectures": [
+        6,
+        19
+      ]
+    },
+    "Certificate Authority": {
+      "id": "NODE-CA",
+      "description": "Internal CA, mTLS certificate authority, certificate management",
+      "properties": [
+        "type",
+        "rotation_interval",
+        "signing_algorithm",
+        "revocation_check",
+        "chain_of_trust"
+      ],
+      "related_assumption_categories": [
+        "Trust",
+        "Identity",
+        "Operational"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "Istio Citadel",
+        "Internal CA",
+        "cert-manager",
+        "ACM PCA",
+        "Let's Encrypt"
+      ],
+      "example_architectures": [
+        5,
+        15
+      ]
+    },
+    "Orchestrator": {
+      "id": "NODE-ORCH",
+      "description": "Kubernetes, container orchestration, scheduler, service mesh control plane",
+      "properties": [
+        "type",
+        "rbac_enabled",
+        "network_policy_enabled",
+        "pod_security",
+        "auto_scaling"
+      ],
+      "related_assumption_categories": [
+        "Operational",
+        "Configuration",
+        "Architectural"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "Kubernetes",
+        "Istio Pilot",
+        "ECS",
+        "Nomad",
+        "Docker Swarm"
+      ],
+      "example_architectures": [
+        5,
+        8
+      ]
+    },
+    "Message Bus": {
+      "id": "NODE-MSG",
+      "description": "Event streams, message queues, Kafka, Kinesis, notification systems",
+      "properties": [
+        "type",
+        "encryption",
+        "retention",
+        "partition_count",
+        "replication_factor"
+      ],
+      "related_assumption_categories": [
+        "Dependency",
+        "Configuration",
+        "Operational"
+      ],
+      "inherits_from": null,
+      "subtypes": [
+        "Kafka",
+        "Kinesis",
+        "SQS",
+        "SNS",
+        "RabbitMQ"
+      ],
+      "example_architectures": [
+        10,
+        15
+      ]
+    }
+  },
+  "edge_types": {
+    "authenticates_to": {
+      "id": "EDGE-AUTH",
+      "description": "User or service authenticates identity to a system component",
+      "source_types": [
+        "User",
+        "Service"
+      ],
+      "target_types": [
+        "Auth Service",
+        "Network Gateway",
+        "Service"
+      ],
+      "trust_semantic": "Source trusts target to verify their identity correctly",
+      "assumption_categories": [
+        "Trust",
+        "Identity"
+      ],
+      "assumptions_implied": [
+        "Identity verification is accurate and not bypassed",
+        "Authentication channel is secure against interception",
+        "Credentials are not compromised or shared"
+      ],
+      "verification_method": "Penetration test authentication mechanisms",
+      "severity": "critical"
+    },
+    "authorizes": {
+      "id": "EDGE-AUTHZ",
+      "description": "Auth service issues authorization decision or token for a target",
+      "source_types": [
+        "Auth Service"
+      ],
+      "target_types": [
+        "Service",
+        "Network Gateway"
+      ],
+      "trust_semantic": "Source's authorization decision is accepted by target",
+      "assumption_categories": [
+        "Trust",
+        "Identity"
+      ],
+      "assumptions_implied": [
+        "Authorization decisions are consistent across all enforcement points",
+        "Token/assertion is signed and cannot be forged",
+        "Authorization is scoped to least privilege required"
+      ],
+      "verification_method": "Review authorization policies and audit logs",
+      "severity": "critical"
+    },
+    "invokes": {
+      "id": "EDGE-INVOKE",
+      "description": "One component invokes or calls another",
+      "source_types": [
+        "User",
+        "Service"
+      ],
+      "target_types": [
+        "Service",
+        "Network Gateway"
+      ],
+      "trust_semantic": "Source trusts target to respond correctly and securely",
+      "assumption_categories": [
+        "Dependency",
+        "Trust"
+      ],
+      "assumptions_implied": [
+        "Target service is available within SLA commitments",
+        "Invocation is authenticated and authorized",
+        "Response integrity is preserved in transit"
+      ],
+      "verification_method": "Test service availability and response integrity",
+      "severity": "high"
+    },
+    "reads_from": {
+      "id": "EDGE-READ",
+      "description": "Service reads data from a data store",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target to return correct, consistent, available data",
+      "assumption_categories": [
+        "Dependency",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Data read from store is consistent and uncorrupted",
+        "Read replicas are within acceptable replication lag",
+        "Data store is available and queries do not time out"
+      ],
+      "verification_method": "Validate query performance and replication lag metrics",
+      "severity": "high"
+    },
+    "writes_to": {
+      "id": "EDGE-WRITE",
+      "description": "Service writes data to a data store",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target to durably persist writes",
+      "assumption_categories": [
+        "Configuration",
+        "Operational"
+      ],
+      "assumptions_implied": [
+        "Write operations are validated and sanitized",
+        "Data written is encrypted at rest",
+        "Write capacity is sufficient for peak load"
+      ],
+      "verification_method": "Audit write operations and storage encryption configuration",
+      "severity": "high"
+    },
+    "routes_to": {
+      "id": "EDGE-ROUTE",
+      "description": "Network gateway routes traffic to a destination service",
+      "source_types": [
+        "Network Gateway"
+      ],
+      "target_types": [
+        "Service",
+        "Security Control"
+      ],
+      "trust_semantic": "Source correctly routes traffic without inspection or modification",
+      "assumption_categories": [
+        "Architectural",
+        "Network"
+      ],
+      "assumptions_implied": [
+        "Routing rules are correctly configured",
+        "No unintended traffic paths bypass the gateway",
+        "Health checks detect and route around failures"
+      ],
+      "verification_method": "Review route tables and health check configuration",
+      "severity": "high"
+    },
+    "protects": {
+      "id": "EDGE-PROTECT",
+      "description": "Security control protects a target from threats",
+      "source_types": [
+        "Security Control"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store",
+        "Infrastructure"
+      ],
+      "trust_semantic": "Target trusts source to filter malicious traffic",
+      "assumption_categories": [
+        "Explicit",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Security control rules are correctly configured and current",
+        "Control operates in blocking mode, not just detection",
+        "No bypass paths exist around the security control"
+      ],
+      "verification_method": "Penetration test security control bypass attempts",
+      "severity": "critical"
+    },
+    "monitors": {
+      "id": "EDGE-MONITOR",
+      "description": "Observability system monitors a target for health and security",
+      "source_types": [
+        "Observability"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store",
+        "Network Gateway"
+      ],
+      "trust_semantic": "Source trusts target to emit correct telemetry",
+      "assumption_categories": [
+        "Operational",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Target emits telemetry in expected format and intervals",
+        "Monitoring agent does not introduce vulnerabilities",
+        "Monitoring coverage includes all critical paths"
+      ],
+      "verification_method": "Verify monitoring coverage completeness",
+      "severity": "medium"
+    },
+    "deploys": {
+      "id": "EDGE-DEPLOY",
+      "description": "Pipeline deploys a service or artifact to target environment",
+      "source_types": [
+        "Pipeline"
+      ],
+      "target_types": [
+        "Service",
+        "Infrastructure"
+      ],
+      "trust_semantic": "Source trusts target to accept and run the correct artifact",
+      "assumption_categories": [
+        "Operational",
+        "Trust"
+      ],
+      "assumptions_implied": [
+        "Deployed artifact matches the approved version",
+        "Artifact is signed and verified before deployment",
+        "Deployment does not introduce configuration drift"
+      ],
+      "verification_method": "Verify artifact signing and deployment audit trail",
+      "severity": "high"
+    },
+    "manages": {
+      "id": "EDGE-MANAGE",
+      "description": "Orchestrator manages lifecycle of services",
+      "source_types": [
+        "Orchestrator"
+      ],
+      "target_types": [
+        "Service",
+        "Infrastructure"
+      ],
+      "trust_semantic": "Source is trusted to manage target's lifecycle and scaling",
+      "assumption_categories": [
+        "Operational",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Orchestrator has correct RBAC and policy configuration",
+        "Orchestrator control plane is available",
+        "Resource limits prevent noisy neighbor issues"
+      ],
+      "verification_method": "Audit orchestrator RBAC and resource quotas",
+      "severity": "high"
+    },
+    "stores_secrets": {
+      "id": "EDGE-SECRETS",
+      "description": "Secrets store manages secrets for a service",
+      "source_types": [
+        "Secrets Store"
+      ],
+      "target_types": [
+        "Service"
+      ],
+      "trust_semantic": "Source trusts target to fetch and use secrets correctly",
+      "assumption_categories": [
+        "Trust",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Secrets are encrypted at rest and in transit",
+        "Dynamic secrets have appropriate TTL",
+        "Audit logging is enabled for all secret access"
+      ],
+      "verification_method": "Verify secrets store audit logs and encryption configuration",
+      "severity": "critical"
+    },
+    "issues_cert": {
+      "id": "EDGE-CERT",
+      "description": "CA issues certificate for a service",
+      "source_types": [
+        "Certificate Authority"
+      ],
+      "target_types": [
+        "Service"
+      ],
+      "trust_semantic": "Source trusts target to use certificate correctly",
+      "assumption_categories": [
+        "Trust",
+        "Identity"
+      ],
+      "assumptions_implied": [
+        "Certificate is issued to the correct identity",
+        "Private key is stored securely on the target",
+        "Certificate rotation happens before expiry"
+      ],
+      "verification_method": "Review CA logs and certificate expiry monitoring",
+      "severity": "critical"
+    },
+    "depends_on": {
+      "id": "EDGE-DEP",
+      "description": "One service depends on another for functionality",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store",
+        "Auth Service"
+      ],
+      "trust_semantic": "Source's correct operation depends on target's availability",
+      "assumption_categories": [
+        "Dependency",
+        "Operational"
+      ],
+      "assumptions_implied": [
+        "Downstream service is available within SLA",
+        "API compatibility is maintained across versions",
+        "Circuit breakers prevent cascade failures"
+      ],
+      "verification_method": "Test dependency chain resilience with chaos engineering",
+      "severity": "high"
+    },
+    "sends_to": {
+      "id": "EDGE-SEND",
+      "description": "Service sends messages or events to a message bus",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Message Bus"
+      ],
+      "trust_semantic": "Source trusts bus to durably accept and route messages",
+      "assumption_categories": [
+        "Dependency",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Messages are durably persisted by the bus",
+        "Producer authentication prevents unauthorized publishing",
+        "Message schema is compatible with consumers"
+      ],
+      "verification_method": "Audit message delivery guarantees and schema registry",
+      "severity": "medium"
+    },
+    "consumes_from": {
+      "id": "EDGE-CONSUME",
+      "description": "Service consumes messages or events from a message bus",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Message Bus"
+      ],
+      "trust_semantic": "Source trusts bus to deliver messages with correct ordering and semantics",
+      "assumption_categories": [
+        "Dependency",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Messages are delivered at least once with correct ordering",
+        "Consumer offsets are correctly managed",
+        "Consumer group rebalancing handles failures gracefully"
+      ],
+      "verification_method": "Validate consumer lag metrics and rebalance behavior",
+      "severity": "medium"
+    },
+    "contains": {
+      "id": "EDGE-CONTAIN",
+      "description": "Infrastructure contains or hosts a component",
+      "source_types": [
+        "Infrastructure"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store",
+        "Network Gateway"
+      ],
+      "trust_semantic": "Source provides isolation and resource guarantees to target",
+      "assumption_categories": [
+        "Environmental",
+        "Architectural"
+      ],
+      "assumptions_implied": [
+        "Resource isolation between tenants/namespaces is effective",
+        "Infrastructure capacity is sufficient for hosted workloads",
+        "Boundary controls prevent cross-environment access"
+      ],
+      "verification_method": "Review namespace isolation and resource quotas",
+      "severity": "high"
+    },
+    "replicates_to": {
+      "id": "EDGE-REPL",
+      "description": "Data store replicates data to another data store",
+      "source_types": [
+        "Data Store"
+      ],
+      "target_types": [
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target to stay synchronized within RPO",
+      "assumption_categories": [
+        "Operational",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Replication lag stays within RPO limits",
+        "Replication link is encrypted in transit",
+        "Replica has sufficient capacity for read traffic"
+      ],
+      "verification_method": "Monitor replication lag and test failover",
+      "severity": "high"
+    },
+    "backups_to": {
+      "id": "EDGE-BACKUP",
+      "description": "Data store backups data to another store",
+      "source_types": [
+        "Data Store"
+      ],
+      "target_types": [
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target to retain backup data securely",
+      "assumption_categories": [
+        "Operational",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Backup jobs complete successfully within backup window",
+        "Backup integrity is verified through restore testing",
+        "Backup encryption keys are accessible during recovery"
+      ],
+      "verification_method": "Test restore from backup regularly",
+      "severity": "critical"
+    },
+    "syncs_from": {
+      "id": "EDGE-SYNC",
+      "description": "Data store synchronizes data from a source store",
+      "source_types": [
+        "Data Store"
+      ],
+      "target_types": [
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target's data to be authoritative and current",
+      "assumption_categories": [
+        "Dependency",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Source data is consistent and not corrupted",
+        "Sync frequency meets data freshness requirements",
+        "Conflict resolution handles concurrent writes correctly"
+      ],
+      "verification_method": "Validate data consistency between stores",
+      "severity": "medium"
+    },
+    "federates_with": {
+      "id": "EDGE-FED",
+      "description": "Auth service federates with another identity provider",
+      "source_types": [
+        "Auth Service"
+      ],
+      "target_types": [
+        "Auth Service"
+      ],
+      "trust_semantic": "Source trusts target's identity assertions",
+      "assumption_categories": [
+        "Trust",
+        "Identity"
+      ],
+      "assumptions_implied": [
+        "Federation metadata is current and validated",
+        "Partner IdP enforces equivalent authentication standards",
+        "SAML assertions are signed and validated on every request"
+      ],
+      "verification_method": "Review federation metadata refresh and assertion validation",
+      "severity": "critical"
+    },
+    "registers": {
+      "id": "EDGE-REG",
+      "description": "User or service registers identity with auth service",
+      "source_types": [
+        "User",
+        "Service"
+      ],
+      "target_types": [
+        "Auth Service"
+      ],
+      "trust_semantic": "Source trusts target to store identity securely",
+      "assumption_categories": [
+        "Trust",
+        "Identity"
+      ],
+      "assumptions_implied": [
+        "Registration process validates identity claims",
+        "Credentials are stored securely (hashed, encrypted)",
+        "Duplicate registrations are detected and prevented"
+      ],
+      "verification_method": "Audit registration process and credential storage",
+      "severity": "critical"
+    },
+    "connects_via": {
+      "id": "EDGE-CONNECT",
+      "description": "User connects to the system via a network gateway",
+      "source_types": [
+        "User"
+      ],
+      "target_types": [
+        "Network Gateway"
+      ],
+      "trust_semantic": "User trusts gateway to provide secure connectivity",
+      "assumption_categories": [
+        "Trust",
+        "Architectural"
+      ],
+      "assumptions_implied": [
+        "VPN/gateway is available and reachable",
+        "Connection is encrypted (TLS, IPSec)",
+        "Client configuration is correct and compliant"
+      ],
+      "verification_method": "Test gateway availability and TLS configuration",
+      "severity": "high"
+    },
+    "encrypts": {
+      "id": "EDGE-ENCRYPT",
+      "description": "Security control encrypts data at rest or in transit",
+      "source_types": [
+        "Security Control",
+        "Secrets Store"
+      ],
+      "target_types": [
+        "Data Store",
+        "Service",
+        "Message Bus"
+      ],
+      "trust_semantic": "Target trusts source to manage encryption correctly",
+      "assumption_categories": [
+        "Explicit",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Encryption keys are managed securely and rotated",
+        "Encryption algorithm is industry standard (AES-256)",
+        "Encryption does not introduce unacceptable latency"
+      ],
+      "verification_method": "Verify encryption configuration and key rotation policy",
+      "severity": "critical"
+    },
+    "audits": {
+      "id": "EDGE-AUDIT",
+      "description": "Observability system audits target activity",
+      "source_types": [
+        "Observability"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target to generate complete audit trail",
+      "assumption_categories": [
+        "Operational",
+        "Derived"
+      ],
+      "assumptions_implied": [
+        "Target generates logs for all security-relevant events",
+        "Logs are tamper-proof and immutable",
+        "Log retention meets compliance requirements"
+      ],
+      "verification_method": "Verify log completeness and immutability controls",
+      "severity": "high"
+    },
+    "alerts": {
+      "id": "EDGE-ALERT",
+      "description": "Observability system sends alerts to users or services",
+      "source_types": [
+        "Observability"
+      ],
+      "target_types": [
+        "User",
+        "Service"
+      ],
+      "trust_semantic": "Recipient trusts alerts are accurate and actionable",
+      "assumption_categories": [
+        "Operational",
+        "Derived"
+      ],
+      "assumptions_implied": [
+        "Alert thresholds are correctly configured",
+        "Alerts reach the correct recipients within SLA",
+        "Alert fatigue does not cause missed critical alerts"
+      ],
+      "verification_method": "Test alert delivery and review threshold configuration",
+      "severity": "medium"
+    },
+    "fails_over_to": {
+      "id": "EDGE-FAILOVER",
+      "description": "Component fails over to a standby for disaster recovery",
+      "source_types": [
+        "Service",
+        "Data Store"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts target to assume workload correctly",
+      "assumption_categories": [
+        "Operational",
+        "Dependency"
+      ],
+      "assumptions_implied": [
+        "Failover mechanism works automatically or via clear procedure",
+        "Standby has sufficient capacity for production load",
+        "Failover does not cause data loss beyond RPO"
+      ],
+      "verification_method": "Test failover procedure and validate RTO/RPO",
+      "severity": "critical"
+    },
+    "scales": {
+      "id": "EDGE-SCALE",
+      "description": "Orchestrator scales a service horizontally or vertically",
+      "source_types": [
+        "Orchestrator"
+      ],
+      "target_types": [
+        "Service"
+      ],
+      "trust_semantic": "Target trusts orchestrator to scale correctly",
+      "assumption_categories": [
+        "Operational",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Auto-scaling thresholds are correctly configured",
+        "Scale-up happens before resource exhaustion",
+        "Scale-down does not terminate in-flight requests"
+      ],
+      "verification_method": "Test auto-scaling behavior under load",
+      "severity": "medium"
+    },
+    "discovers": {
+      "id": "EDGE-DISCOVER",
+      "description": "Service discovers target via service registry",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Service"
+      ],
+      "trust_semantic": "Source trusts registry to return healthy endpoints",
+      "assumption_categories": [
+        "Dependency",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Service registry returns only healthy endpoints",
+        "DNS resolution is internal and not leaked externally",
+        "Service mesh discovers services within namespace boundaries"
+      ],
+      "verification_method": "Verify service registry health checks and DNS configuration",
+      "severity": "medium"
+    },
+    "caches": {
+      "id": "EDGE-CACHE",
+      "description": "Component caches data from a data store or origin",
+      "source_types": [
+        "Service",
+        "Network Gateway"
+      ],
+      "target_types": [
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts cached data to be fresh and correct",
+      "assumption_categories": [
+        "Configuration",
+        "Dependency"
+      ],
+      "assumptions_implied": [
+        "Cache TTL is appropriate for data freshness requirements",
+        "Cache invalidation works correctly on data changes",
+        "Cache does not serve stale or unauthorized data"
+      ],
+      "verification_method": "Validate cache invalidation and TTL configuration",
+      "severity": "medium"
+    },
+    "enforces_policy": {
+      "id": "EDGE-POLICY",
+      "description": "Security control enforces policy on target",
+      "source_types": [
+        "Security Control"
+      ],
+      "target_types": [
+        "Service",
+        "Network Gateway"
+      ],
+      "trust_semantic": "Target trusts source to enforce policy correctly",
+      "assumption_categories": [
+        "Explicit",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Policy rules are comprehensive and current",
+        "Default action is deny for unhandled traffic",
+        "Policy violations are logged and alerted"
+      ],
+      "verification_method": "Review policy rules and test enforcement",
+      "severity": "critical"
+    },
+    "delegates_to": {
+      "id": "EDGE-DELEGATE",
+      "description": "Service delegates responsibility to another service",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "Service"
+      ],
+      "trust_semantic": "Source trusts target to handle delegated task correctly",
+      "assumption_categories": [
+        "Trust",
+        "Dependency"
+      ],
+      "assumptions_implied": [
+        "Delegated service has equivalent security controls",
+        "Delegation context (identity, scope) is preserved",
+        "Delegated service is within the same trust boundary"
+      ],
+      "verification_method": "Review delegation chain and trust propagation",
+      "severity": "high"
+    },
+    "signs": {
+      "id": "EDGE-SIGN",
+      "description": "Pipeline signs an artifact to verify its integrity",
+      "source_types": [
+        "Pipeline",
+        "Certificate Authority"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store"
+      ],
+      "trust_semantic": "Recipient trusts signature to verify artifact origin",
+      "assumption_categories": [
+        "Trust",
+        "Operational"
+      ],
+      "assumptions_implied": [
+        "Signing key is stored securely",
+        "Signature verification is performed before deployment",
+        "Signing occurs immediately after build, before any modification"
+      ],
+      "verification_method": "Verify artifact signing pipeline and key management",
+      "severity": "high"
+    },
+    "verifies": {
+      "id": "EDGE-VERIFY",
+      "description": "Security control verifies artifact integrity",
+      "source_types": [
+        "Security Control",
+        "Pipeline"
+      ],
+      "target_types": [
+        "Service",
+        "Data Store"
+      ],
+      "trust_semantic": "Source trusts artifact signature and integrity metadata",
+      "assumption_categories": [
+        "Trust",
+        "Configuration"
+      ],
+      "assumptions_implied": [
+        "Verification failures block deployment",
+        "Verification chain validates all upstream signatures",
+        "Verification occurs at runtime, not just at build time"
+      ],
+      "verification_method": "Test verification of unsigned and tampered artifacts",
+      "severity": "high"
+    },
+    "notifies": {
+      "id": "EDGE-NOTIFY",
+      "description": "Service notifies user of events or results",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "User",
+        "External Entity"
+      ],
+      "trust_semantic": "Recipient trusts notification content and authenticity",
+      "assumption_categories": [
+        "Operational",
+        "Trust"
+      ],
+      "assumptions_implied": [
+        "Notification channel is secure and authenticated",
+        "Notifications are delivered in a timely manner",
+        "Notification content does not leak sensitive information"
+      ],
+      "verification_method": "Review notification content for data leakage",
+      "severity": "medium"
+    },
+    "invoices": {
+      "id": "EDGE-INVOICE",
+      "description": "Service generates invoices for user or external entity",
+      "source_types": [
+        "Service"
+      ],
+      "target_types": [
+        "User",
+        "External Entity"
+      ],
+      "trust_semantic": "Recipient trusts invoice accuracy and authenticity",
+      "assumption_categories": [
+        "Operational",
+        "Trust"
+      ],
+      "assumptions_implied": [
+        "Invoice calculations are accurate and auditable",
+        "Invoice data is tamper-proof",
+        "Payment information is handled via PCI-compliant systems"
+      ],
+      "verification_method": "Audit invoice generation and payment processing",
+      "severity": "high"
+    }
+  },
+  "inheritance_rules": [
+    {
+      "id": "INHERIT-001",
+      "description": "Service subtypes inherit trust edge types from parent Service",
+      "rule": "IF subtype_of(Service, subtype) AND edge(Service, E, Target) THEN edge(subtype, E, Target)",
+      "example": "Lambda inherits 'invokes' edge type from Service"
+    },
+    {
+      "id": "INHERIT-002",
+      "description": "Auth Service subtypes inherit federation edges from parent Auth Service",
+      "rule": "IF subtype_of(AuthService, subtype) AND edge(AuthService, E, Target) THEN edge(subtype, E, Target)",
+      "example": "Okta inherits 'federates_with' edge type from Auth Service"
+    },
+    {
+      "id": "INHERIT-003",
+      "description": "Data Store subtypes inherit storage edges from parent Data Store",
+      "rule": "IF subtype_of(DataStore, subtype) AND edge(DataStore, E, Target) THEN edge(subtype, E, Target)",
+      "example": "RDS inherits 'replicates_to' edge type from Data Store"
+    },
+    {
+      "id": "INHERIT-004",
+      "description": "Network Gateway subtypes inherit routing edges from parent Network Gateway",
+      "rule": "IF subtype_of(NetworkGateway, subtype) AND edge(NetworkGateway, E, Target) THEN edge(subtype, E, Target)",
+      "example": "CDN inherits 'routes_to' edge type from Network Gateway"
+    },
+    {
+      "id": "INHERIT-005",
+      "description": "Infrastructure subtypes inherit containment edges from parent Infrastructure",
+      "rule": "IF subtype_of(Infrastructure, subtype) AND edge(Infrastructure, E, Target) THEN edge(subtype, E, Target)",
+      "example": "VPC inherits 'contains' edge type from Infrastructure"
+    },
+    {
+      "id": "INHERIT-006",
+      "description": "Subtype edges can be specialized with stricter assumptions",
+      "rule": "IF subtype_of(Parent, Child) AND edge(Child, E, Target) THEN assumptions(Child, E) \u2287 assumptions(Parent, E)",
+      "example": "Lambda invocations add 'cold start does not expose partial state' assumption"
+    },
+    {
+      "id": "INHERIT-007",
+      "description": "Edge types with source = User also apply to User subtypes",
+      "rule": "IF subtype_of(User, subtype) AND edge(User, E, Target) THEN edge(subtype, E, Target)",
+      "example": "Admin User inherits 'authenticates_to' edge type from User"
+    },
+    {
+      "id": "INHERIT-008",
+      "description": "Reverse inheritance: edges targeting a parent type also target its subtypes",
+      "rule": "IF subtype_of(Parent, Child) AND edge(Source, E, Parent) THEN edge(Source, E, Child)",
+      "example": "protects(SC, Service) also applies to protects(SC, Lambda)"
+    }
+  ],
+  "graph_properties": {
+    "directed": true,
+    "allow_cycles": true,
+    "default_edge_weight": 1.0,
+    "trust_decay": "Trust decreases by 1 hop across untrusted boundaries",
+    "assumption_derivation_method": "For each edge in the graph, apply derivation rules to generate assumptions based on source type, target type, and relationship semantics"
+  }
+}
