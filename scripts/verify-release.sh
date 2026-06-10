@@ -11,9 +11,19 @@ set -euo pipefail
 
 BINARY="${1:-./asf-tui/asf-tui}"
 
+# If binary is a bare filename (no path), prepend ./
+case "$BINARY" in
+  */*) ;;
+  *) BINARY="./$BINARY" ;;
+esac
+
 if [ ! -f "$BINARY" ]; then
   echo "✗ Binary not found: $BINARY"
   exit 1
+fi
+
+if [ ! -x "$BINARY" ]; then
+  chmod +x "$BINARY" 2>/dev/null || true
 fi
 
 echo "=== ASF Release Verification ==="
@@ -40,7 +50,6 @@ check "version flag" "$BINARY" -v
 check "help flag" "$BINARY" --help
 check "doctor runs" "$BINARY" doctor
 check "doctor verbose" "$BINARY" doctor --verbose
-check "yaml config loading" "$BINARY" --help
 
 echo ""
 
