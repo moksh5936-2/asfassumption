@@ -8,32 +8,57 @@
 # Environment:
 #   ASF_VERSION=1.0.0       — pin a specific version
 #   GITHUB_TOKEN=ghp_xxx    — for private repos (set via gh auth token)
-#
-# The script works with public repos by default and private repos with GITHUB_TOKEN.
+#   ASF_INSTALL_DIR=        — custom install directory (default: /usr/local/bin)
 
 set -euo pipefail
 
 # ─── Config ────────────────────────────────────────────────
 REPO="moksh5936-2/asfassumption"
 VERSION="${ASF_VERSION:-}"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="${ASF_INSTALL_DIR:-/usr/local/bin}"
 ASF_HOME="${HOME}/.asf"
+BACKUP_DIR="${ASF_HOME}/backups"
 
-asf_config_dir() {
-  case "$OS_FINAL" in
-    darwin) echo "${HOME}/Library/Application Support/asf" ;;
-    linux)  echo "${XDG_CONFIG_HOME:-${HOME}/.config}/asf" ;;
-    *)      echo "${HOME}/.asf" ;;
-  esac
-}
+# ─── Platform detection ────────────────────────────────────
+OS="$(uname -s)"
+ARCH="$(uname -m)"
 
-asf_cache_dir() {
-  case "$OS_FINAL" in
-    darwin) echo "${HOME}/Library/Caches/asf" ;;
-    linux)  echo "${XDG_CACHE_HOME:-${HOME}/.cache}/asf" ;;
-    *)      echo "${HOME}/.cache/asf" ;;
-  esac
-}
+case "$OS" in
+  Darwin) OS_FINAL="darwin" ;;
+  Linux)  OS_FINAL="linux"  ;;
+  *)
+    echo "Unsupported OS: ${OS}. Windows users: run install.ps1 in PowerShell." >&2
+    exit 1
+    ;;
+esac
+
+case "$ARCH" in
+  x86_64|amd64) ARCH_FINAL="amd64"   ;;
+  arm64|aarch64) ARCH_FINAL="arm64"   ;;
+  *)
+    echo "Unsupported architecture: ${ARCH}" >&2
+    exit 1
+    ;;
+esac
+
+# ─── Path helpers ──────────────────────────────────────────
+ASF_CONFIG_DIR=""
+case "$OS_FINAL" in
+  darwin) ASF_CONFIG_DIR="${HOME}/Library/Application Support/asf" ;;
+  linux)  ASF_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/asf" ;;
+esac
+
+ASF_CACHE_DIR=""
+case "$OS_FINAL" in
+  darwin) ASF_CACHE_DIR="${HOME}/Library/Caches/asf" ;;
+  linux)  ASF_CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/asf" ;;
+esac
+
+ASF_DATA_DIR=""
+case "$OS_FINAL" in
+  linux)  ASF_DATA_DIR="${HOME}/.local/share/asf" ;;
+  darwin) ASF_DATA_DIR="${ASF_CONFIG_DIR}" ;;
+esac
 
 # ─── Colors ────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -67,11 +92,12 @@ for arg in "$@"; do
       echo "  curl ... | bash -s -- --upgrade"
       echo ""
       echo "Options:"
-      echo "  --upgrade, -u    Upgrade existing installation"
+      echo "  --upgrade, -u    Upgrade existing installation (backs up config)"
       echo "  --help, -h       Show this help"
       echo ""
       echo "Environment:"
       echo "  ASF_VERSION       Pin version (default: latest)"
+      echo "  ASF_INSTALL_DIR   Custom install directory (default: /usr/local/bin)"
       echo "  GITHUB_TOKEN      Auth token for private repos"
       exit 0
       ;;
@@ -84,7 +110,6 @@ for arg in "$@"; do
 done
 
 # ─── Auth setup ────────────────────────────────────────────
-# Priority: env var > gh CLI > none
 AUTH_HEADER=""
 if [ -n "${GITHUB_TOKEN:-}" ]; then
   AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
@@ -105,23 +130,33 @@ curl_get() {
   fi
 }
 
-# ─── Detect platform ───────────────────────────────────────
-OS="$(uname -s)"
-ARCH="$(uname -m)"
+# ─── Detect existing installations ─────────────────────────
+EXISTING_BIN=""
+EXISTING_VER=""
+for check_dir in "${ASF_HOME}" "${INSTALL_DIR}" "${HOME}/.local/bin"; do
+  if [ -f "${check_dir}/asf" ]; then
+    EXISTING_BIN="${check_dir}/asf"
+    EXISTING_VER=$("${check_dir}/asf" --version 2>/dev/null || echo "unknown")
+    break
+  fi
+done
 
-case "$OS" in
-  Darwin) OS_FINAL="darwin" ;;
-  Linux)  OS_FINAL="linux"  ;;
-  *)
-    err "Unsupported OS: ${OS}. Windows users: run install.ps1 in PowerShell."
-    ;;
-esac
-
-case "$ARCH" in
-  x86_64|amd64) ARCH_FINAL="amd64"   ;;
-  arm64|aarch64) ARCH_FINAL="arm64"   ;;
-  *) err "Unsupported architecture: ${ARCH}" ;;
-esac
+# ─── Backup existing config on upgrade ─────────────────────
+if [ "$UPGRADE" = true ] && [ -n "$EXISTING_BIN" ]; then
+  if [ -f "${ASF_CONFIG_DIR}/config.yaml" ]; then
+    mkdir -p "${BACKUP_DIR}"
+    local stamp
+    stamp=$(date +%Y%m%d-%H%M%S)
+    cp "${ASF_CONFIG_DIR}/config.yaml" "${BACKUP_DIR}/config.yaml.bak.${stamp}"
+    ok "Config backed up to ${BACKUP_DIR}/config.yaml.bak.${stamp}"
+  fi
+  if [ -f "${ASF_CONFIG_DIR}/license.key" ]; then
+    mkdir -p "${BACKUP_DIR}"
+    stamp=$(date +%Y%m%d-%H%M%S)
+    cp "${ASF_CONFIG_DIR}/license.key" "${BACKUP_DIR}/license.key.bak.${stamp}"
+    ok "License backed up to ${BACKUP_DIR}/license.key.bak.${stamp}"
+  fi
+fi
 
 # ─── Determine version ─────────────────────────────────────
 if [ -z "$VERSION" ]; then
@@ -140,17 +175,16 @@ DIRECT_DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${
 DIRECT_CHECKSUMS_URL="https://github.com/${REPO}/releases/download/v${VERSION}/checksums.txt"
 
 # ─── Upgrade check ─────────────────────────────────────────
-if [ -f "${ASF_HOME}/asf" ] && [ "$UPGRADE" = false ]; then
-  INSTALLED_VER=$("${ASF_HOME}/asf" --version 2>/dev/null || echo "unknown")
-  if echo "$INSTALLED_VER" | grep -qi "v${VERSION}"; then
-    ok "ASF v${VERSION} is already installed (${INSTALLED_VER})"
+if [ -n "$EXISTING_BIN" ] && [ "$UPGRADE" = false ]; then
+  if echo "$EXISTING_VER" | grep -qi "v${VERSION}"; then
+    ok "ASF v${VERSION} is already installed (${EXISTING_VER})"
     echo ""
     info "Run: asf"
     echo ""
     info "To force reinstall: curl ... | bash -s -- --upgrade"
     exit 0
   fi
-  info "Existing installation found (${INSTALLED_VER})"
+  info "Existing installation found (${EXISTING_VER})"
   info "Use --upgrade to upgrade to v${VERSION}"
   exit 0
 fi
@@ -181,16 +215,13 @@ echo ""
 
 HTTP_CODE="000"
 if [ -n "$ASSET_ID" ]; then
-  # Download via API (works for private repos)
   API_ASSET_URL="https://api.github.com/repos/${REPO}/releases/assets/${ASSET_ID}"
   info "  (authenticated API download)"
   HTTP_CODE=$(curl_get "$API_ASSET_URL" "${TMP_DIR}/asf")
 elif [ -n "$AUTH_HEADER" ]; then
-  # Try direct download with auth header
   HTTP_CODE=$(curl_get "$DIRECT_DOWNLOAD_URL" "${TMP_DIR}/asf")
   info "  ${DIRECT_DOWNLOAD_URL}"
 else
-  # Public download
   info "  ${DIRECT_DOWNLOAD_URL}"
   if command -v curl &>/dev/null; then
     HTTP_CODE=$(curl -sfL -w "%{http_code}" "${DIRECT_DOWNLOAD_URL}" -o "${TMP_DIR}/asf" 2>/dev/null || echo "000")
@@ -215,7 +246,7 @@ if [ ! -s "${TMP_DIR}/asf" ] || [ "$HTTP_CODE" = "000" ] || [ "$HTTP_CODE" = "40
   echo ""
   info "To install with a private repo, set GITHUB_TOKEN:"
   info "  export GITHUB_TOKEN=ghp_xxx"
-  info "  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | bash"
+  info "  curl ... | bash"
   echo ""
   info "Or build from source:"
   info "  git clone https://github.com/${REPO}.git"
@@ -241,7 +272,6 @@ except: pass
 " 2>/dev/null || echo "")
   if [ -n "$CHECKSUMS_ASSET_ID" ]; then
     CHECKSUMS_API_URL="https://api.github.com/repos/${REPO}/releases/assets/${CHECKSUMS_ASSET_ID}"
-    # Download to temp file (needs Accept: octet-stream to get content, not metadata)
     curl_get "$CHECKSUMS_API_URL" "${TMP_DIR}/checksums.txt" >/dev/null 2>&1 || true
     CHECKSUMS=$(cat "${TMP_DIR}/checksums.txt" 2>/dev/null || echo "")
   fi
@@ -272,12 +302,15 @@ else
   warn "Binary reports ${BIN_VER} (expected v${VERSION})"
 fi
 
-# ─── Install ───────────────────────────────────────────────
+# ─── Create directories ────────────────────────────────────
 mkdir -p "${ASF_HOME}"
 mkdir -p "${ASF_HOME}/models"
 mkdir -p "${ASF_HOME}/reports"
-mkdir -p "$(asf_config_dir)"
+mkdir -p "${ASF_CONFIG_DIR}"
+mkdir -p "${ASF_CACHE_DIR}"
+mkdir -p "${ASF_DATA_DIR}"
 
+# ─── Install binary ───────────────────────────────────────
 cp "${TMP_DIR}/asf" "${ASF_HOME}/asf"
 
 if [ ! -d "${INSTALL_DIR}" ] || [ ! -w "${INSTALL_DIR}" ]; then
@@ -285,13 +318,13 @@ if [ ! -d "${INSTALL_DIR}" ] || [ ! -w "${INSTALL_DIR}" ]; then
   mkdir -p "${INSTALL_DIR}"
 fi
 
+# Remove stale symlinks before creating new one
+rm -f "${INSTALL_DIR}/asf" 2>/dev/null || true
 ln -sf "${ASF_HOME}/asf" "${INSTALL_DIR}/asf" 2>/dev/null || cp "${ASF_HOME}/asf" "${INSTALL_DIR}/asf"
 
 # ─── Default config ────────────────────────────────────────
-CONFIG_DIR=$(asf_config_dir)
-mkdir -p "${CONFIG_DIR}"
-if [ ! -f "${CONFIG_DIR}/config.yaml" ]; then
-  cat > "${CONFIG_DIR}/config.yaml" << 'CONFEOF'
+if [ ! -f "${ASF_CONFIG_DIR}/config.yaml" ]; then
+  cat > "${ASF_CONFIG_DIR}/config.yaml" << 'CONFEOF'
 general:
   theme: Dark
   fox_style: Classic
@@ -326,6 +359,22 @@ case ":$PATH:" in
     ;;
 esac
 
+# ─── Run post-install verification ─────────────────────────
+echo ""
+info "Running post-install verification..."
+VERIFY_OK=true
+
+if ! "${INSTALL_DIR}/asf" --version &>/dev/null; then
+  warn "Binary not working from install location"
+  VERIFY_OK=false
+fi
+
+if "${INSTALL_DIR}/asf" doctor &>/dev/null; then
+  ok "asf doctor: passed"
+else
+  warn "asf doctor had warnings (see above)"
+fi
+
 # ─── Success ──────────────────────────────────────────────
 BINARY_SIZE=$(ls -lh "${ASF_HOME}/asf" | awk '{print $5}')
 echo ""
@@ -333,8 +382,9 @@ ok "ASF v${VERSION} installed  (${BINARY_SIZE})"
 echo ""
 info "Run: asf"
 echo ""
-info "Config: $(asf_config_dir)/config.yaml"
-info "Cache:  $(asf_cache_dir)"
+info "Config: ${ASF_CONFIG_DIR}/config.yaml"
+info "Cache:  ${ASF_CACHE_DIR}"
+info "Data:   ${ASF_DATA_DIR}"
 echo ""
 info "Prerequisites (full functionality):"
 info "  Python ASF engine: cd /path/to/asf && pip install -e ."

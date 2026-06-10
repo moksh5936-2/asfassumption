@@ -33,7 +33,6 @@ type Config struct {
 	} `yaml:"appearance"`
 	Engine struct {
 		PythonPath string `yaml:"python_path"`
-		ProjectDir string `yaml:"project_dir"`
 	} `yaml:"engine"`
 }
 
@@ -53,7 +52,6 @@ func DefaultConfig() Config {
 	c.Appearance.Theme = "Dark"
 	c.Appearance.FoxStyle = "Classic"
 	c.Engine.PythonPath = ""
-	c.Engine.ProjectDir = ""
 	return c
 }
 

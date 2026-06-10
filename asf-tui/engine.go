@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 )
+
+var debugLog = log.New(os.Stderr, "[asf-debug] ", log.Ltime|log.Lshortfile)
 
 const (
 	ModeASFOnly  = "ASF Engine Only"
@@ -100,14 +104,79 @@ type Engine struct {
 }
 
 func NewEngine(cfg *Config) *Engine {
+	if err := ensureRuntimeDirs(); err != nil {
+		debugLog.Printf("runtime dirs: %v", err)
+	}
+	pyPath := discoverPythonPath(cfg)
+	debugLog.Printf("python path: %s", pyPath)
 	return &Engine{
 		config:       cfg,
-		pythonPath:   discoverPythonPath(cfg),
+		pythonPath:   pyPath,
 		strideEngine: NewStrideEngine(),
 	}
 }
 
+func validatePythonCandidate(p string) string {
+	if p == "" {
+		return ""
+	}
+	if info, err := os.Stat(p); err != nil || info.IsDir() {
+		return ""
+	}
+	var out bytes.Buffer
+	cmd := exec.Command(p, "-V")
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		debugLog.Printf("python candidate %s failed: %v", p, err)
+		return ""
+	}
+	ver := strings.TrimSpace(out.String())
+	debugLog.Printf("python candidate %s verified: %s", p, ver)
+	return p
+}
+
+func checkAsfPackage(pyPath string) string {
+	if pyPath == "" {
+		return ""
+	}
+	cmd := exec.Command(pyPath, "-c", "import asf; print(asf.__version__)")
+	out, err := cmd.Output()
+	if err != nil {
+		debugLog.Printf("asf package not importable via %s: %v", pyPath, err)
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func preFlightCheck(pyPath string) error {
+	if err := ensureRuntimeDirs(); err != nil {
+		return fmt.Errorf("runtime directories: %w", err)
+	}
+	if pyPath == "" {
+		return fmt.Errorf("no Python executable found")
+	}
+	valid := validatePythonCandidate(pyPath)
+	if valid == "" {
+		return fmt.Errorf("Python executable %q is not functional", pyPath)
+	}
+	asfVer := checkAsfPackage(pyPath)
+	if asfVer == "" {
+		return fmt.Errorf("ASF Python package not installed. Install with: pip install -e /path/to/asf")
+	}
+	debugLog.Printf("pre-flight OK: python=%s asf=%s", valid, asfVer)
+	return nil
+}
+
 func discoverPythonPath(cfg *Config) string {
+	if cfg != nil && cfg.Engine.PythonPath != "" {
+		if valid := validatePythonCandidate(cfg.Engine.PythonPath); valid != "" {
+			debugLog.Printf("using configured python: %s", valid)
+			return valid
+		}
+		debugLog.Printf("configured python %q invalid, falling back", cfg.Engine.PythonPath)
+	}
+
 	exe, err := os.Executable()
 	binDir := ""
 	if err == nil {
@@ -122,31 +191,43 @@ func discoverPythonPath(cfg *Config) string {
 			filepath.Join(binDir, "asf"),
 		)
 	}
-	venvDir := filepath.Join(asfDataDir(), "venv", "bin", "python3")
-	candidates = append(candidates, venvDir)
-	candidates = append(candidates, filepath.Join(asfDataDir(), "venv", "bin", "python"))
+	candidates = append(candidates,
+		filepath.Join(asfDataDir(), "venv", "bin", "python3"),
+		filepath.Join(asfDataDir(), "venv", "bin", "python"),
+	)
 
 	for _, name := range []string{"asf", "asf.py", "asf-cli"} {
-		if p, err := exec.LookPath(name); err == nil {
+		if p, err2 := exec.LookPath(name); err2 == nil {
 			candidates = append(candidates, p)
 		}
 	}
 	for _, name := range []string{"python3", "python"} {
-		if p, err := exec.LookPath(name); err == nil {
+		if p, err2 := exec.LookPath(name); err2 == nil {
 			candidates = append(candidates, p)
 		}
 	}
+
 	for _, p := range candidates {
 		if p != "" {
-			if info, err := os.Stat(p); err == nil && !info.IsDir() {
-				return p
+			if valid := validatePythonCandidate(p); valid != "" {
+				return valid
 			}
 		}
+	}
+	debugLog.Printf("no valid python found, trying fallback python3")
+	if valid := validatePythonCandidate("python3"); valid != "" {
+		return valid
 	}
 	return "python3"
 }
 
 func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- AnalysisProgress) (*AnalysisResult, error) {
+	progress <- AnalysisProgress{Percent: 2, Stage: "Pre-flight checks..."}
+
+	if err := preFlightCheck(e.pythonPath); err != nil {
+		return nil, fmt.Errorf("pre-flight: %w", err)
+	}
+
 	progress <- AnalysisProgress{Percent: 5, Stage: "Parsing Architecture..."}
 
 	inputPath := archPath
@@ -209,14 +290,23 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 }
 
 func (e *Engine) callPythonCLI(docPath, evPath string) (*asfJSONResult, error) {
+	cacheDir := asfCacheDir()
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return nil, fmt.Errorf("cache dir: %w", err)
+	}
+
 	args := []string{"-m", "asf.cli.main", "analyze", "--json", docPath}
 	if evPath != "" {
 		if _, err := os.Stat(evPath); err == nil {
 			args = append(args, "-e", evPath)
 		}
 	}
+
+	exe, _ := os.Executable()
+	debugLog.Printf("callPythonCLI: exe=%s py=%s cwd=%s args=%v", exe, e.pythonPath, cacheDir, args)
+
 	cmd := exec.Command(e.pythonPath, args...)
-	cmd.Dir = asfCacheDir()
+	cmd.Dir = cacheDir
 
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout
@@ -229,6 +319,8 @@ func (e *Engine) callPythonCLI(docPath, evPath string) (*asfJSONResult, error) {
 		}
 		return nil, err
 	}
+
+	debugLog.Printf("callPythonCLI: OK stdout=%d bytes", len(stdout.String()))
 
 	var result asfJSONResult
 	if err := json.Unmarshal([]byte(stdout.String()), &result); err != nil {

@@ -49,6 +49,15 @@ func asfLicensePath() string {
 	return filepath.Join(asfConfigDir(), "license.key")
 }
 
+func ensureRuntimeDirs() error {
+	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir()} {
+		if err := os.MkdirAll(d, 0755); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func legacyConfigPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {

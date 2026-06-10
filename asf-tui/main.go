@@ -15,6 +15,8 @@ func printUsage() {
 	fmt.Println("  asf --version, -v          Show version")
 	fmt.Println("  asf --license              Show license status")
 	fmt.Println("  asf doctor                 Run system diagnostics")
+	fmt.Println("  asf doctor --verbose       Detailed diagnostics")
+	fmt.Println("  asf doctor --fix           Clean up duplicate binaries")
 	fmt.Println("  asf --help, -h             Show this help")
 	fmt.Println()
 	fmt.Println("Configuration:")
@@ -26,8 +28,10 @@ func printUsage() {
 }
 
 func main() {
-	for _, arg := range os.Args[1:] {
-		switch arg {
+	args := os.Args[1:]
+
+	if len(args) > 0 {
+		switch args[0] {
 		case "--version", "-v":
 			fmt.Printf("ASF v%s\n", ASFVersion)
 			os.Exit(0)
@@ -41,16 +45,33 @@ func main() {
 			fmt.Printf("Place your license key in %s\n", asfLicensePath())
 			os.Exit(1)
 		case "doctor", "--doctor", "diagnose":
-			runDoctor()
+			verbose := false
+			fix := false
+			for _, a := range args[1:] {
+				switch a {
+				case "--verbose", "-v":
+					verbose = true
+				case "--fix":
+					fix = true
+				}
+			}
+			if fix {
+				runDoctorFix()
+			} else {
+				runDoctor(verbose)
+			}
 			os.Exit(0)
 		case "--help", "-h":
 			printUsage()
+			os.Exit(0)
+		case "doctor--verbose":
+			runDoctor(true)
 			os.Exit(0)
 		}
 	}
 
 	helpFlags := map[string]bool{"--help": true, "-h": true}
-	if len(os.Args) > 1 && !helpFlags[os.Args[1]] {
+	if len(args) > 1 && !helpFlags[args[1]] {
 		fmt.Printf("ASF v%s — Architecture Security Framework\n", ASFVersion)
 		fmt.Println()
 		printUsage()
@@ -62,6 +83,8 @@ func main() {
 		def := DefaultConfig()
 		cfg = &def
 	}
+
+	_ = ensureRuntimeDirs()
 
 	m := newMainModel(cfg)
 	p := tea.NewProgram(m, tea.WithAltScreen())
