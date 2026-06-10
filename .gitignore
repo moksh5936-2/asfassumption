@@ -18,7 +18,8 @@ asf-tui/vendor/
 # ─── Build & Release ─────────────────────────────────
 dist/
 build/
-release/asf-*          # Exclude binaries but keep docs
+release/asf-*
+release/asf-*.exe
 release/*.exe
 tmp/
 bin/
