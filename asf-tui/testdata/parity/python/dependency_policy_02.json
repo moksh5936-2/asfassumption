@@ -1,0 +1,63 @@
+{
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 1,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "claims": [
+    {
+      "id": "clm_c89c60a1023b",
+      "source_document": "dependency_policy_02.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/dependency_policy_02.txt",
+      "text": "Monitoring system integrates with PagerDuty for alerting.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:43:00.374510+00:00",
+      "tags": []
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_346146caa9c0",
+      "claim_id": "clm_c89c60a1023b",
+      "text": "System assumes configuration state: Monitoring system integrates with PagerDuty for alerting.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.35,
+      "created_at": "2026-06-10 17:43:00.377228+00:00",
+      "keywords": [
+        "monitoring",
+        "system",
+        "integrates",
+        "pagerduty",
+        "alerting"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_346146caa9c0",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.7,
+      "evidence_used": [
+        "evd_69abe56d135d",
+        "evd_0ebfe92bcac5",
+        "evd_9bf381ccf9dd",
+        "evd_ae604726c502",
+        "evd_83936041275c"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_346146caa9c0",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: Monitoring system integrates with PagerDuty for alerting.",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ]
+}

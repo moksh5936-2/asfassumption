@@ -1,0 +1,5 @@
+SECURITY PROCESSES
+
+Incident response procedures are documented and tested annually.
+Change management requires approval from the security team.
+Vulnerability scanning is performed weekly on all systems.

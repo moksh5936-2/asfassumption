@@ -1,0 +1,5 @@
+OPERATIONAL PROCEDURES
+
+Code reviews are required for all production deployments.
+Security training is mandatory for all employees annually.
+Access requests must be approved by direct manager.

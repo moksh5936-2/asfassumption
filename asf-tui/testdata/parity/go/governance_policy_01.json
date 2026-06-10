@@ -1,0 +1,89 @@
+{
+  "version": "1.1.0",
+  "architecture": "governance_policy_01.txt",
+  "summary": {
+    "claims_found": 3,
+    "assumptions": 2,
+    "verified": 0,
+    "contradicted": 2,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_c3f823bd2502",
+      "text": "System assumes governance compliance: GOVERNANCE\n\nQuarterly security audits are conducted by an external firm.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "4",
+      "confidence": 0.7182999999999999,
+      "keywords": [
+        "governance",
+        "quarterly",
+        "security",
+        "audits",
+        "conducted",
+        "external",
+        "firm"
+      ]
+    },
+    {
+      "id": "asm_20fee7aba1ed",
+      "text": "System assumes governance compliance: Compliance reviews are performed against SOC 2 framework.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "4",
+      "confidence": 0.7182999999999999,
+      "keywords": [
+        "compliance",
+        "reviews",
+        "performed",
+        "against",
+        "soc",
+        "framework"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_c3f823bd2502",
+      "result": "CONTRADICTED",
+      "confidence": 0.7182999999999999,
+      "evidence_used": [
+        "evd_435bee646dfe",
+        "evd_69b9f08f0cc7",
+        "evd_4726f17ba39e",
+        "evd_05a1f0219eea",
+        "evd_44faab919e9e"
+      ],
+      "reasoning": "7 reviews done, 3 pending; No governance reviews completed (1 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_20fee7aba1ed",
+      "result": "CONTRADICTED",
+      "confidence": 0.7182999999999999,
+      "evidence_used": [
+        "evd_435bee646dfe",
+        "evd_69b9f08f0cc7",
+        "evd_4726f17ba39e",
+        "evd_05a1f0219eea",
+        "evd_44faab919e9e"
+      ],
+      "reasoning": "7 reviews done, 3 pending; No governance reviews completed (1 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_c3f823bd2502",
+      "type": "GOVERNANCE_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes governance compliance: GOVERNANCE\n\nQuarterly security audits are conducted by an",
+      "evidence_detail": "7 reviews done, 3 pending; No governance reviews completed (1 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_20fee7aba1ed",
+      "type": "GOVERNANCE_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes governance compliance: Compliance reviews are performed against SOC 2 framework.",
+      "evidence_detail": "7 reviews done, 3 pending; No governance reviews completed (1 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+NETWORK ARCHITECTURE
+
+The application is deployed in a VPC with public and private subnets.
+Database servers are in private subnets with no direct internet access.
+Load balancers terminate TLS in the public subnet.

@@ -1,0 +1,5 @@
+ACCESS CONTROL
+
+Only Finance employees may access the payroll processing system.
+Access is granted based on role assignments in the HR system.
+All access requests must be approved by the Finance Director.

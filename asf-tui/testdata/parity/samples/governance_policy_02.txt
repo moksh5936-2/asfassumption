@@ -1,0 +1,5 @@
+COMPLIANCE
+
+The system must comply with PCI DSS requirements.
+Data retention policies follow GDPR guidelines.
+Breach notification procedures are documented and tested.

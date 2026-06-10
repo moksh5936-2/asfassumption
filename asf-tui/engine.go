@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"asf-tui/asf/analyzer"
 )
 
 var debugLog = log.New(os.Stderr, "[asf-debug] ", log.Ltime|log.Lshortfile)
@@ -96,150 +95,25 @@ type AnalysisProgress struct {
 }
 
 type Engine struct {
-	config        *Config
-	pythonPath    string
-	strideEngine  *StrideEngine
-	explainPipe   *ExplainabilityPipeline
-	archDesc      *ArchDescription
+	config       *Config
+	strideEngine *StrideEngine
+	explainPipe  *ExplainabilityPipeline
+	archDesc     *ArchDescription
 }
 
 func NewEngine(cfg *Config) *Engine {
 	if err := ensureRuntimeDirs(); err != nil {
 		debugLog.Printf("runtime dirs: %v", err)
 	}
-	pyPath := discoverPythonPath(cfg)
-	debugLog.Printf("python path: %s", pyPath)
 	return &Engine{
 		config:       cfg,
-		pythonPath:   pyPath,
 		strideEngine: NewStrideEngine(),
 	}
 }
 
-func validatePythonCandidate(p string) string {
-	if p == "" {
-		return ""
-	}
-	if info, err := os.Stat(p); err != nil || info.IsDir() {
-		return ""
-	}
-	var out bytes.Buffer
-	cmd := exec.Command(p, "-V")
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		debugLog.Printf("python candidate %s failed: %v", p, err)
-		return ""
-	}
-	ver := strings.TrimSpace(out.String())
-	debugLog.Printf("python candidate %s verified: %s", p, ver)
-	return p
-}
 
-func checkAsfPackage(pyPath string) string {
-	if pyPath == "" {
-		return ""
-	}
-	cmd := exec.Command(pyPath, "-c", "import asf; print(asf.__version__)")
-	out, err := cmd.Output()
-	if err != nil {
-		debugLog.Printf("asf package not importable via %s: %v", pyPath, err)
-		return ""
-	}
-	return strings.TrimSpace(string(out))
-}
-
-func bundledEnginePath() string {
-	return filepath.Join(asfEngineDir(), "asf")
-}
-
-func bundledEngineExists() bool {
-	info, err := os.Stat(bundledEnginePath())
-	return err == nil && info.IsDir()
-}
-
-func preFlightCheck(pyPath string) error {
-	if err := ensureRuntimeDirs(); err != nil {
-		return fmt.Errorf("runtime directories: %w", err)
-	}
-	if pyPath == "" {
-		return fmt.Errorf("no Python executable found")
-	}
-	valid := validatePythonCandidate(pyPath)
-	if valid == "" {
-		return fmt.Errorf("Python executable %q is not functional", pyPath)
-	}
-	if !bundledEngineExists() {
-		return fmt.Errorf("ASF Python engine not installed. Run install.sh again or run 'asf doctor --fix'")
-	}
-	asfVer := checkAsfPackage(pyPath)
-	if asfVer == "" {
-		return fmt.Errorf("ASF Python engine not importable. Run install.sh again or run 'asf doctor --fix'")
-	}
-	debugLog.Printf("pre-flight OK: python=%s asf=%s", valid, asfVer)
-	return nil
-}
-
-func discoverPythonPath(cfg *Config) string {
-	if cfg != nil && cfg.Engine.PythonPath != "" {
-		if valid := validatePythonCandidate(cfg.Engine.PythonPath); valid != "" {
-			debugLog.Printf("using configured python: %s", valid)
-			return valid
-		}
-		debugLog.Printf("configured python %q invalid, falling back", cfg.Engine.PythonPath)
-	}
-
-	exe, err := os.Executable()
-	binDir := ""
-	if err == nil {
-		binDir = filepath.Dir(exe)
-	}
-
-	candidates := []string{}
-	if binDir != "" {
-		candidates = append(candidates,
-			filepath.Join(binDir, "engine", "bin", "python3"),
-			filepath.Join(binDir, "engine", "bin", "python"),
-			filepath.Join(binDir, "asf"),
-		)
-	}
-	candidates = append(candidates,
-		filepath.Join(asfDataDir(), "venv", "bin", "python3"),
-		filepath.Join(asfDataDir(), "venv", "bin", "python"),
-	)
-
-	for _, name := range []string{"asf", "asf.py", "asf-cli"} {
-		if p, err2 := exec.LookPath(name); err2 == nil {
-			candidates = append(candidates, p)
-		}
-	}
-	for _, name := range []string{"python3", "python"} {
-		if p, err2 := exec.LookPath(name); err2 == nil {
-			candidates = append(candidates, p)
-		}
-	}
-
-	for _, p := range candidates {
-		if p != "" {
-			if valid := validatePythonCandidate(p); valid != "" {
-				return valid
-			}
-		}
-	}
-	debugLog.Printf("no valid python found, trying fallback python3")
-	if valid := validatePythonCandidate("python3"); valid != "" {
-		return valid
-	}
-	return "python3"
-}
 
 func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- AnalysisProgress) (*AnalysisResult, error) {
-	progress <- AnalysisProgress{Percent: 2, Stage: "Pre-flight checks..."}
-
-	if err := preFlightCheck(e.pythonPath); err != nil {
-		return nil, fmt.Errorf("pre-flight: %w", err)
-	}
-
 	progress <- AnalysisProgress{Percent: 5, Stage: "Parsing Architecture..."}
 
 	inputPath := archPath
@@ -265,7 +139,6 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		inputPath = tmpFile.Name()
 		defer os.Remove(inputPath)
 	} else {
-		// Try to parse for evidence even for text files
 		desc, err := ParseArchitecture(archPath)
 		if err == nil {
 			e.archDesc = desc
@@ -274,14 +147,15 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 
 	progress <- AnalysisProgress{Percent: 20, Stage: "Running ASF Engine..."}
 
-	pythonResult, err := e.callPythonCLI(inputPath, evPath)
+	debugLog.Printf("using native Go engine")
+	asfResult, err := e.runNativeAnalysis(inputPath, evPath)
 	if err != nil {
 		return nil, fmt.Errorf("ASF engine error: %w", err)
 	}
 
 	progress <- AnalysisProgress{Percent: 60, Stage: "Processing Results..."}
 
-	result := e.buildResult(pythonResult, archPath, mode)
+	result := e.buildResult(asfResult, archPath, mode)
 
 	progress <- AnalysisProgress{Percent: 80, Stage: "Generating STRIDE Mapping..."}
 	result.StrideDistribution = e.mapStrideDistribution(result.Assumptions)
@@ -301,47 +175,84 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 	return result, nil
 }
 
-func (e *Engine) callPythonCLI(docPath, evPath string) (*asfJSONResult, error) {
-	cacheDir := asfCacheDir()
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return nil, fmt.Errorf("cache dir: %w", err)
-	}
-
-	args := []string{"-m", "asf.cli.main", "analyze", "--json", docPath}
+func (e *Engine) runNativeAnalysis(docPath, evPath string) (*asfJSONResult, error) {
+	docs := []string{docPath}
+	var evs []string
 	if evPath != "" {
 		if _, err := os.Stat(evPath); err == nil {
-			args = append(args, "-e", evPath)
+			evs = append(evs, evPath)
 		}
 	}
 
-	exe, _ := os.Executable()
-	debugLog.Printf("callPythonCLI: exe=%s py=%s cwd=%s args=%v", exe, e.pythonPath, cacheDir, args)
-
-	cmd := exec.Command(e.pythonPath, args...)
-	cmd.Dir = cacheDir
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "PYTHONPATH="+asfEngineDir())
-
-	var stdout, stderr strings.Builder
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		stderrStr := stderr.String()
-		if stderrStr != "" {
-			return nil, fmt.Errorf("%s (stderr: %s)", err, stderrStr)
-		}
-		return nil, err
+	an := analyzer.New()
+	ar, err := an.Analyze(docs, evs)
+	if err != nil {
+		return nil, fmt.Errorf("native analysis: %w", err)
 	}
 
-	debugLog.Printf("callPythonCLI: OK stdout=%d bytes", len(stdout.String()))
+	result := &asfJSONResult{}
+	s := ar.Result.BuildSummary()
+	result.Summary.ClaimsFound = s.ClaimsFound
+	result.Summary.Assumptions = s.Assumptions
+	result.Summary.Verified = s.Verified
+	result.Summary.Contradicted = s.Contradicted
+	result.Summary.Unknown = s.Unknown
+	result.Summary.CriticalGaps = s.CriticalGaps
 
-	var result asfJSONResult
-	if err := json.Unmarshal([]byte(stdout.String()), &result); err != nil {
-		return nil, fmt.Errorf("parse error: %w\nRaw: %s", err, stdout.String()[:min(len(stdout.String()), 200)])
+	for _, a := range ar.Result.Assumptions {
+		result.Assumptions = append(result.Assumptions, struct {
+			ID                 string   `json:"id"`
+			Text               string   `json:"text"`
+			AssumptionType     string   `json:"assumption_type"`
+			VerificationStatus string   `json:"verification_status"`
+			Confidence         float64  `json:"confidence"`
+			Keywords           []string `json:"keywords"`
+		}{
+			ID:                 a.ID,
+			Text:               a.Text,
+			AssumptionType:     string(a.AssumptionType),
+			VerificationStatus: string(a.VerificationStatus),
+			Confidence:         a.Confidence,
+			Keywords:           a.Keywords,
+		})
 	}
 
-	return &result, nil
+	for _, v := range ar.Result.Verifications {
+		result.Verifications = append(result.Verifications, struct {
+			AssumptionID string      `json:"assumption_id"`
+			Result       string      `json:"result"`
+			Confidence   float64     `json:"confidence"`
+			EvidenceUsed interface{} `json:"evidence_used"`
+			Reasoning    string      `json:"reasoning"`
+		}{
+			AssumptionID: v.AssumptionID,
+			Result:       string(v.Result),
+			Confidence:   v.Confidence,
+			EvidenceUsed: v.EvidenceUsed,
+			Reasoning:    v.Reasoning,
+		})
+	}
+
+	for _, g := range ar.Result.Gaps {
+		result.Gaps = append(result.Gaps, struct {
+			AssumptionID   string `json:"assumption_id"`
+			Type           string `json:"type"`
+			Severity       string `json:"severity"`
+			Description    string `json:"description"`
+			EvidenceDetail string `json:"evidence_detail"`
+		}{
+			AssumptionID:   g.AssumptionID,
+			Type:           string(g.Type),
+			Severity:       string(g.Severity),
+			Description:    g.Description,
+			EvidenceDetail: g.EvidenceDetail,
+		})
+	}
+
+	debugLog.Printf("runNativeAnalysis: %d assumptions, %d verifications, %d gaps",
+		len(result.Assumptions), len(result.Verifications), len(result.Gaps))
+
+	return result, nil
 }
 
 type asfJSONResult struct {

@@ -37,7 +37,7 @@
                 \ | /
                  \|/
 
-               ASF v1.0.0
+               ASF v2.0.0
    Architecture Security Framework
    Security Assumption Discovery Engine
 ```
@@ -172,24 +172,24 @@ Download the binary for your platform from the [latest release](https://github.c
 
 | Platform | Download |
 |----------|----------|
-| macOS Apple Silicon | `ASF-v1.0.0-darwin-arm64` |
-| macOS Intel | `ASF-v1.0.0-darwin-amd64` |
-| Linux AMD64 | `ASF-v1.0.0-linux-amd64` |
-| Linux ARM64 | `ASF-v1.0.0-linux-arm64` |
-| Windows AMD64 | `ASF-v1.0.0-windows-amd64.exe` |
+| macOS Apple Silicon | `ASF-v2.0.0-darwin-arm64` |
+| macOS Intel | `ASF-v2.0.0-darwin-amd64` |
+| Linux AMD64 | `ASF-v2.0.0-linux-amd64` |
+| Linux ARM64 | `ASF-v2.0.0-linux-arm64` |
+| Windows AMD64 | `ASF-v2.0.0-windows-amd64.exe` |
 
 ```bash
 # Example: macOS Apple Silicon
-curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.0/ASF-v1.0.0-darwin-arm64
-chmod +x ASF-v1.0.0-darwin-arm64
-sudo mv ASF-v1.0.0-darwin-arm64 /usr/local/bin/asf
+curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v2.0.0/ASF-v2.0.0-darwin-arm64
+chmod +x ASF-v2.0.0-darwin-arm64
+sudo mv ASF-v2.0.0-darwin-arm64 /usr/local/bin/asf
 ```
 
 ### Verify Installation
 
 ```bash
 asf --version
-# Expected: ASF v1.0.0
+# Expected: ASF v2.0.0
 ```
 
 ### Upgrade
@@ -215,7 +215,7 @@ rm -rf ~/.asf
 
 | Component | Required | Install |
 |-----------|----------|---------|
-| Python 3.8+ | ✅ Core | `pip install -e .` (from repo) |
+| Python 3.8+ | ❌ Removed | No Python required — native Go engine |
 | Ollama | Optional (AI) | `brew install ollama` / https://ollama.ai |
 | Tesseract | Optional (OCR) | `brew install tesseract` |
 

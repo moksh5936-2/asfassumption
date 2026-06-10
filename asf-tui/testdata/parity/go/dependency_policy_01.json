@@ -1,0 +1,52 @@
+{
+  "version": "1.1.0",
+  "architecture": "dependency_policy_01.txt",
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 1,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 1,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_2ce1d7ae7caa",
+      "text": "System assumes dependency relationship: Integration with the HR system is required for employee data.",
+      "assumption_type": "DEPENDENCY",
+      "verification_status": "1",
+      "confidence": 0,
+      "keywords": [
+        "integration",
+        "system",
+        "required",
+        "employee",
+        "data"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_2ce1d7ae7caa",
+      "result": "UNKNOWN",
+      "confidence": 0,
+      "evidence_used": [
+        "evd_16cc5fd8448a",
+        "evd_89c351b173ac",
+        "evd_42f19af33f06",
+        "evd_64e3f7384272",
+        "evd_aaeb46f3cbd7"
+      ],
+      "reasoning": "No evidence processed"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_2ce1d7ae7caa",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes dependency relationship: Integration with the HR system is required for ",
+      "evidence_detail": "No evidence processed"
+    }
+  ]
+}

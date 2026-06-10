@@ -1,0 +1,53 @@
+{
+  "version": "1.1.0",
+  "architecture": "process_policy_01.txt",
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 1,
+    "verified": 0,
+    "contradicted": 1,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_9c8adf3c25a8",
+      "text": "System assumes process compliance: Change management requires approval from the security team.",
+      "assumption_type": "PROCESS",
+      "verification_status": "4",
+      "confidence": 0.7182999999999999,
+      "keywords": [
+        "change",
+        "management",
+        "requires",
+        "approval",
+        "security",
+        "team"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_9c8adf3c25a8",
+      "result": "CONTRADICTED",
+      "confidence": 0.7182999999999999,
+      "evidence_used": [
+        "evd_20cb1cbc59b2",
+        "evd_04fffd3442f0",
+        "evd_591410e77148",
+        "evd_66c83080e0ba",
+        "evd_174254a844da"
+      ],
+      "reasoning": "7 reviews done, 3 pending; No governance reviews completed (1 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_9c8adf3c25a8",
+      "type": "PROCESS_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes process compliance: Change management requires approval from the security team.",
+      "evidence_detail": "7 reviews done, 3 pending; No governance reviews completed (1 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    }
+  ]
+}

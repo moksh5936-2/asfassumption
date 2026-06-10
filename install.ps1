@@ -5,7 +5,7 @@
 #   powershell -c "irm https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.ps1 | iex"
 #
 # Environment:
-#   $env:ASF_VERSION="1.0.0"    — pin a specific version
+#   $env:ASF_VERSION="2.0.0"    — pin a specific version
 
 param(
     [switch]$Upgrade,
@@ -64,14 +64,14 @@ if (-not $Version) {
         $Version = $response.tag_name -replace "^v", ""
         Write-Host "  ✓ Latest: v${Version}" -ForegroundColor Green
     } catch {
-        $Version = "1.0.0"
+        $Version = "2.0.0"
         Write-Host "  ⚠  Could not detect version, defaulting to v${Version}" -ForegroundColor Yellow
         if (-not $Token) { Write-Host "  ⚠  Set GITHUB_TOKEN env var for private repos" -ForegroundColor Yellow }
     }
 }
 
 $BinaryName = "ASF-v${Version}-${OsArch}"
-$DownloadUrl = "https://github.com/${Repo}/releases/download/v${Version}/${BinaryName}"
+$DownloadUrl = "https://github.com/${Repo}/releases/download/v${Version}/${BinaryName}.exe"
 $ChecksumsUrl = "https://github.com/${Repo}/releases/download/v${Version}/checksums.txt"
 
 # ─── Check existing ───────────────────────────────────────
@@ -204,40 +204,10 @@ output:
 appearance:
   theme: Dark
   fox_style: Classic
+engine:
+  use_native_engine: true
 "@ | Out-File -FilePath $ConfigPath -Encoding ascii
     Write-Host "  ✓ Created default config" -ForegroundColor Green
-}
-
-# ─── Download Python Engine ───────────────────────────────
-$EngineUrl = "https://github.com/${Repo}/releases/download/v${Version}/asf-python-engine-v${Version}.tar.gz"
-$EngineTar = "${TmpDir}\asf-python-engine.tar.gz"
-$EngineDir = "$env:LOCALAPPDATA\ASF\engine"
-
-Write-Host ""
-Write-Host "  Downloading ASF Python Engine v${Version}..." -ForegroundColor Cyan
-Write-Host "  ${EngineUrl}" -ForegroundColor Cyan
-
-try {
-    Invoke-WebRequest -Uri $EngineUrl -OutFile $EngineTar -ErrorAction Stop
-    Write-Host "  ✓ Engine download complete" -ForegroundColor Green
-
-    # We need a tar extraction tool. Try tar.exe (Windows 10+), else warn.
-    if (Get-Command tar.exe -ErrorAction SilentlyContinue) {
-        Remove-Item -Recurse -Force $EngineDir -ErrorAction SilentlyContinue
-        New-Item -ItemType Directory -Force -Path $EngineDir | Out-Null
-        tar -xzf $EngineTar -C $EngineDir 2>&1 | Out-Null
-        if (Test-Path "${EngineDir}\asf") {
-            Write-Host "  ✓ Python engine extracted to ${EngineDir}" -ForegroundColor Green
-        } else {
-            Write-Host "  ⚠  Engine extraction may have failed" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "  ⚠  tar.exe not found. Python engine not extracted." -ForegroundColor Yellow
-        Write-Host "      Extract ${EngineTar} to ${EngineDir} manually." -ForegroundColor Yellow
-    }
-} catch {
-    Write-Host "  ⚠  Python engine download failed: $_" -ForegroundColor Yellow
-    Write-Host "      The Go TUI will work, but run 'asf doctor --fix' for analysis." -ForegroundColor Yellow
 }
 
 # ─── Cleanup ──────────────────────────────────────────────

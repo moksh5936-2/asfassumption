@@ -14,9 +14,12 @@ func printUsage() {
 	fmt.Println("  asf                        Launch the TUI")
 	fmt.Println("  asf --version, -v          Show version")
 	fmt.Println("  asf --license              Show license status")
+	fmt.Println("  asf analyze <file>         Run native analysis (JSON output)")
+	fmt.Println("  asf analyze <file> -e <ev> ...   With evidence files/dirs")
+	fmt.Println("  asf analyze <file> --graph Include graph in JSON output")
 	fmt.Println("  asf doctor                 Run system diagnostics")
 	fmt.Println("  asf doctor --verbose       Detailed diagnostics")
-	fmt.Println("  asf doctor --fix           Clean duplicates + install Python engine")
+	fmt.Println("  asf doctor --fix           Clean stale binaries")
 	fmt.Println("  asf --help, -h             Show this help")
 	fmt.Println()
 	fmt.Println("Configuration:")
@@ -60,6 +63,9 @@ func main() {
 			} else {
 				runDoctor(verbose)
 			}
+			os.Exit(0)
+		case "analyze":
+			runAnalyzeCLI(args[1:])
 			os.Exit(0)
 		case "--help", "-h":
 			printUsage()

@@ -1,0 +1,6 @@
+IDENTITY & AUTHENTICATION
+
+All users must have MFA enabled for production access.
+Password policy requires 12+ characters with complexity.
+SSO is used for all internal applications.
+Service accounts use certificate-based authentication.

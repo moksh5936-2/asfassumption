@@ -1,0 +1,815 @@
+{
+  "summary": {
+    "claims_found": 17,
+    "assumptions": 17,
+    "verified": 0,
+    "contradicted": 7,
+    "unknown": 10,
+    "critical_gaps": 3
+  },
+  "claims": [
+    {
+      "id": "clm_0f532b5c5414",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "ACCESS CONTROL\nOnly Finance employees may access the payroll processing system.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818203+00:00",
+      "tags": [
+        "access",
+        "process"
+      ]
+    },
+    {
+      "id": "clm_8bb2d1123736",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "All payroll data is encrypted at rest and in transit.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818242+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_dd499c23c3e1",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Only the VP of Finance can approve payroll runs.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818329+00:00",
+      "tags": [
+        "governance"
+      ]
+    },
+    {
+      "id": "clm_6e6c66b4b57d",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "SYSTEM ACCESS\nProduction databases are not internet accessible.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:48:24.818361+00:00",
+      "tags": [
+        "access",
+        "network"
+      ]
+    },
+    {
+      "id": "clm_388db8e9fc47",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "All administrative access requires multi-factor authentication.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818401+00:00",
+      "tags": [
+        "access",
+        "identity"
+      ]
+    },
+    {
+      "id": "clm_0886cc025a93",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Database access is restricted to database administrators only.",
+      "extraction_confidence": 0.7,
+      "created_at": "2026-06-10 17:48:24.818462+00:00",
+      "tags": [
+        "access"
+      ]
+    },
+    {
+      "id": "clm_e93e04494f9f",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "SSH access to production servers is restricted to the infrastructure team.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818528+00:00",
+      "tags": [
+        "access"
+      ]
+    },
+    {
+      "id": "clm_7df7b14cb9d4",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "AUDIT AND COMPLIANCE\nAll access to financial systems is logged and monitored.",
+      "extraction_confidence": 0.7,
+      "created_at": "2026-06-10 17:48:24.818551+00:00",
+      "tags": [
+        "access",
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_5c4a0a9a8380",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Security reviews are conducted quarterly.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818591+00:00",
+      "tags": [
+        "governance"
+      ]
+    },
+    {
+      "id": "clm_b4ebd56752da",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "All configuration changes must be approved by the security team.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818652+00:00",
+      "tags": [
+        "governance"
+      ]
+    },
+    {
+      "id": "clm_d4bdaababec6",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "BACKUP AND RECOVERY\nAll financial data is backed up daily.",
+      "extraction_confidence": 0.7,
+      "created_at": "2026-06-10 17:48:24.818672+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_e1edd9a9aeb2",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Backup data is encrypted using AES-256.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818706+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_ab2cde1625b8",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Backups are tested monthly to ensure recoverability.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818740+00:00",
+      "tags": [
+        "configuration",
+        "process"
+      ]
+    },
+    {
+      "id": "clm_150df6e6ae9a",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Offsite backup storage is maintained at a separate geographic location.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818785+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_4b274dcdacd4",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "NETWORK SECURITY\nThe finance network segment is isolated from other network segments.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818851+00:00",
+      "tags": [
+        "network"
+      ]
+    },
+    {
+      "id": "clm_29d31065b7a1",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "All network traffic is inspected by the intrusion detection system.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818915+00:00",
+      "tags": [
+        "network"
+      ]
+    },
+    {
+      "id": "clm_82910a583b20",
+      "source_document": "finance_policy.pdf",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/finance_policy.pdf",
+      "text": "Security groups restrict access to only required ports and protocols.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:48:24.818951+00:00",
+      "tags": [
+        "access"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_00657a3ad998",
+      "claim_id": "clm_0f532b5c5414",
+      "text": "System assumes access control: ACCESS CONTROL\nOnly Finance employees may access the payroll processing system.",
+      "assumption_type": "ACCESS",
+      "verification_status": "4",
+      "confidence": 0.0968,
+      "created_at": "2026-06-10 17:48:24.821410+00:00",
+      "keywords": [
+        "access",
+        "control",
+        "only",
+        "finance",
+        "employees",
+        "access",
+        "payroll",
+        "processing",
+        "system"
+      ]
+    },
+    {
+      "id": "asm_17826c5dbd74",
+      "claim_id": "clm_8bb2d1123736",
+      "text": "System assumes configuration state: All payroll data is encrypted at rest and in transit.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.821488+00:00",
+      "keywords": [
+        "payroll",
+        "data",
+        "encrypted",
+        "rest",
+        "transit"
+      ]
+    },
+    {
+      "id": "asm_e54cf690790d",
+      "claim_id": "clm_dd499c23c3e1",
+      "text": "System assumes process compliance: Only the VP of Finance can approve payroll runs.",
+      "assumption_type": "PROCESS",
+      "verification_status": "4",
+      "confidence": 0.0952,
+      "created_at": "2026-06-10 17:48:24.821554+00:00",
+      "keywords": [
+        "only",
+        "finance",
+        "approve",
+        "payroll",
+        "runs"
+      ]
+    },
+    {
+      "id": "asm_dade02280f1c",
+      "claim_id": "clm_6e6c66b4b57d",
+      "text": "System assumes access control: SYSTEM ACCESS\nProduction databases are not internet accessible.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.821618+00:00",
+      "keywords": [
+        "system",
+        "access",
+        "production",
+        "databases",
+        "internet",
+        "accessible"
+      ]
+    },
+    {
+      "id": "asm_28bc4655dd99",
+      "claim_id": "clm_388db8e9fc47",
+      "text": "System assumes identity posture: All administrative access requires multi-factor authentication.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "4",
+      "confidence": 0.098,
+      "created_at": "2026-06-10 17:48:24.821678+00:00",
+      "keywords": [
+        "administrative",
+        "access",
+        "requires",
+        "multi",
+        "factor",
+        "authentication"
+      ]
+    },
+    {
+      "id": "asm_a8fb8546254b",
+      "claim_id": "clm_0886cc025a93",
+      "text": "System assumes access control: Database access is restricted to database administrators only.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.821740+00:00",
+      "keywords": [
+        "database",
+        "access",
+        "restricted",
+        "database",
+        "administrators",
+        "only"
+      ]
+    },
+    {
+      "id": "asm_8b145428ebc0",
+      "claim_id": "clm_e93e04494f9f",
+      "text": "System assumes access control: SSH access to production servers is restricted to the infrastructure team.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.821810+00:00",
+      "keywords": [
+        "ssh",
+        "access",
+        "production",
+        "servers",
+        "restricted",
+        "infrastructure",
+        "team"
+      ]
+    },
+    {
+      "id": "asm_483123c6a9c1",
+      "claim_id": "clm_7df7b14cb9d4",
+      "text": "System assumes configuration state: AUDIT AND COMPLIANCE\nAll access to financial systems is logged and monitored.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.821889+00:00",
+      "keywords": [
+        "audit",
+        "compliance",
+        "access",
+        "financial",
+        "systems",
+        "logged",
+        "monitored"
+      ]
+    },
+    {
+      "id": "asm_fdc82113c8b9",
+      "claim_id": "clm_5c4a0a9a8380",
+      "text": "System assumes governance compliance: Security reviews are conducted quarterly.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "4",
+      "confidence": 0.0952,
+      "created_at": "2026-06-10 17:48:24.821939+00:00",
+      "keywords": [
+        "security",
+        "reviews",
+        "conducted",
+        "quarterly"
+      ]
+    },
+    {
+      "id": "asm_f4fa40835c8f",
+      "claim_id": "clm_b4ebd56752da",
+      "text": "System assumes process compliance: All configuration changes must be approved by the security team.",
+      "assumption_type": "PROCESS",
+      "verification_status": "4",
+      "confidence": 0.0952,
+      "created_at": "2026-06-10 17:48:24.822008+00:00",
+      "keywords": [
+        "configuration",
+        "changes",
+        "approved",
+        "security",
+        "team"
+      ]
+    },
+    {
+      "id": "asm_b4908db32ec4",
+      "claim_id": "clm_d4bdaababec6",
+      "text": "System assumes configuration state: BACKUP AND RECOVERY\nAll financial data is backed up daily.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.822074+00:00",
+      "keywords": [
+        "backup",
+        "recovery",
+        "financial",
+        "data",
+        "backed",
+        "daily"
+      ]
+    },
+    {
+      "id": "asm_02ef7e9ee353",
+      "claim_id": "clm_e1edd9a9aeb2",
+      "text": "System assumes configuration state: Backup data is encrypted using AES-256.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.822128+00:00",
+      "keywords": [
+        "backup",
+        "data",
+        "encrypted",
+        "using",
+        "aes"
+      ]
+    },
+    {
+      "id": "asm_66fcd958c53b",
+      "claim_id": "clm_ab2cde1625b8",
+      "text": "System assumes governance compliance: Backups are tested monthly to ensure recoverability.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "4",
+      "confidence": 0.0952,
+      "created_at": "2026-06-10 17:48:24.822185+00:00",
+      "keywords": [
+        "backups",
+        "tested",
+        "monthly",
+        "ensure",
+        "recoverability"
+      ]
+    },
+    {
+      "id": "asm_03a3d34371bc",
+      "claim_id": "clm_150df6e6ae9a",
+      "text": "System assumes configuration state: Offsite backup storage is maintained at a separate geographic location.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.822253+00:00",
+      "keywords": [
+        "offsite",
+        "backup",
+        "storage",
+        "maintained",
+        "separate",
+        "geographic",
+        "location"
+      ]
+    },
+    {
+      "id": "asm_4125751160b0",
+      "claim_id": "clm_4b274dcdacd4",
+      "text": "System assumes network posture: NETWORK SECURITY\nThe finance network segment is isolated from other network segments.",
+      "assumption_type": "NETWORK",
+      "verification_status": "4",
+      "confidence": 0.096,
+      "created_at": "2026-06-10 17:48:24.822329+00:00",
+      "keywords": [
+        "network",
+        "security",
+        "finance",
+        "network",
+        "segment",
+        "isolated",
+        "other",
+        "network",
+        "segments"
+      ]
+    },
+    {
+      "id": "asm_aa398bdcce64",
+      "claim_id": "clm_29d31065b7a1",
+      "text": "System assumes network posture: All network traffic is inspected by the intrusion detection system.",
+      "assumption_type": "NETWORK",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.822396+00:00",
+      "keywords": [
+        "network",
+        "traffic",
+        "inspected",
+        "intrusion",
+        "detection",
+        "system"
+      ]
+    },
+    {
+      "id": "asm_afa26c2d3e53",
+      "claim_id": "clm_82910a583b20",
+      "text": "System assumes access control: Security groups restrict access to only required ports and protocols.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:48:24.822467+00:00",
+      "keywords": [
+        "security",
+        "groups",
+        "restrict",
+        "access",
+        "only",
+        "required",
+        "ports",
+        "protocols"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_00657a3ad998",
+      "result": "CONTRADICTED",
+      "confidence": 0.968,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Found 4 user(s) outside 'finance employees' with access: henry.taylor, eve.brown, dave.wilson, jack.thompson; Found 4 user(s) outside 'finance employees' with access: henry.taylor, eve.brown, dave.wilson, jack.thompson; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_17826c5dbd74",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_d2d4d85258af",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_e54cf690790d",
+      "result": "CONTRADICTED",
+      "confidence": 0.952,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_dade02280f1c",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_28bc4655dd99",
+      "result": "CONTRADICTED",
+      "confidence": 0.98,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_d2d4d85258af",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "MFA not enabled for 10 user(s); MFA enabled for 7 user(s) but missing for 3; MFA not enabled for 1 user(s); No identity evidence matched assumption"
+    },
+    {
+      "assumption_id": "asm_a8fb8546254b",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_8b145428ebc0",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_483123c6a9c1",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_d2d4d85258af",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_fdc82113c8b9",
+      "result": "CONTRADICTED",
+      "confidence": 0.952,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_f4fa40835c8f",
+      "result": "CONTRADICTED",
+      "confidence": 0.952,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_b4908db32ec4",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_d2d4d85258af",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_02ef7e9ee353",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_d2d4d85258af",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_66fcd958c53b",
+      "result": "CONTRADICTED",
+      "confidence": 0.952,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_03a3d34371bc",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_d2d4d85258af",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_4125751160b0",
+      "result": "CONTRADICTED",
+      "confidence": 0.96,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "All 10 asset(s) appear isolated; All 0 asset(s) appear isolated; Claimed isolated but found 4 exposed asset(s): customer-portal, api-gateway, dev-server, admin-panel"
+    },
+    {
+      "assumption_id": "asm_aa398bdcce64",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not verify network posture; Could not verify network posture; Could not verify network posture"
+    },
+    {
+      "assumption_id": "asm_afa26c2d3e53",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_9351a8dcc5ff",
+        "evd_d82e6356d70b",
+        "evd_6c480fe0f783"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_00657a3ad998",
+      "type": "ACCESS_GAP",
+      "severity": "CRITICAL",
+      "description": "Assumption contradicted: System assumes access control: ACCESS CONTROL\nOnly Finance employees may access the payroll processing system.",
+      "evidence_detail": "Found 4 user(s) outside 'finance employees' with access: henry.taylor, eve.brown, dave.wilson, jack.thompson; Found 4 user(s) outside 'finance employees' with access: henry.taylor, eve.brown, dave.wilson, jack.thompson; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_17826c5dbd74",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes configuration state: All payroll data is encrypted at rest and in transit.",
+      "evidence_detail": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_e54cf690790d",
+      "type": "PROCESS_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes process compliance: Only the VP of Finance can approve payroll runs.",
+      "evidence_detail": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_dade02280f1c",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: SYSTEM ACCESS\nProduction databases are not internet accessible.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_28bc4655dd99",
+      "type": "IDENTITY_GAP",
+      "severity": "CRITICAL",
+      "description": "Assumption contradicted: System assumes identity posture: All administrative access requires multi-factor authentication.",
+      "evidence_detail": "MFA not enabled for 10 user(s); MFA enabled for 7 user(s) but missing for 3; MFA not enabled for 1 user(s); No identity evidence matched assumption"
+    },
+    {
+      "assumption_id": "asm_a8fb8546254b",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: Database access is restricted to database administrators only.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_8b145428ebc0",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: SSH access to production servers is restricted to the infrastructure team.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_483123c6a9c1",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes configuration state: AUDIT AND COMPLIANCE\nAll access to financial systems is logged and monitored.",
+      "evidence_detail": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_fdc82113c8b9",
+      "type": "GOVERNANCE_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes governance compliance: Security reviews are conducted quarterly.",
+      "evidence_detail": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_f4fa40835c8f",
+      "type": "PROCESS_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes process compliance: All configuration changes must be approved by the security team.",
+      "evidence_detail": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_b4908db32ec4",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes configuration state: BACKUP AND RECOVERY\nAll financial data is backed up daily.",
+      "evidence_detail": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_02ef7e9ee353",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes configuration state: Backup data is encrypted using AES-256.",
+      "evidence_detail": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_66fcd958c53b",
+      "type": "GOVERNANCE_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes governance compliance: Backups are tested monthly to ensure recoverability.",
+      "evidence_detail": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    },
+    {
+      "assumption_id": "asm_03a3d34371bc",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes configuration state: Offsite backup storage is maintained at a separate geographic location.",
+      "evidence_detail": "Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_4125751160b0",
+      "type": "NETWORK_GAP",
+      "severity": "CRITICAL",
+      "description": "Assumption contradicted: System assumes network posture: NETWORK SECURITY\nThe finance network segment is isolated from other network segments.",
+      "evidence_detail": "All 10 asset(s) appear isolated; All 0 asset(s) appear isolated; Claimed isolated but found 4 exposed asset(s): customer-portal, api-gateway, dev-server, admin-panel"
+    },
+    {
+      "assumption_id": "asm_aa398bdcce64",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes network posture: All network traffic is inspected by the intrusion detection system.",
+      "evidence_detail": "Could not verify network posture; Could not verify network posture; Could not verify network posture"
+    },
+    {
+      "assumption_id": "asm_afa26c2d3e53",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: Security groups restrict access to only required ports and protocols.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ]
+}

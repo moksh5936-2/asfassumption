@@ -1,0 +1,9 @@
+SYSTEM SECURITY ARCHITECTURE
+
+Access to the production environment is restricted to authorized personnel only.
+All users must authenticate using MFA before accessing any production systems.
+The application is deployed on AWS with network ACLs restricting traffic.
+All data stored in the database is encrypted at rest using AES-256.
+Security audits are conducted quarterly by an independent third party.
+The system depends on the corporate SSO infrastructure for authentication.
+Backups are performed daily and retained for 90 days.

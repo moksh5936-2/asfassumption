@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-ASF_VERSION="1.0.0"
+ASF_VERSION="2.0.0"
 ASF_REPO="moksh5936-2/asfassumption"
 
 echo "  /\   /\ "
@@ -17,15 +17,15 @@ ARCH="$(uname -m)"
 case "$OS" in
     Darwin)
         case "$ARCH" in
-            arm64) BINARY="asf-darwin-arm64" ;;
-            x86_64) BINARY="asf-darwin-amd64" ;;
+            arm64) BINARY="ASF-v${ASF_VERSION}-darwin-arm64" ;;
+            x86_64) BINARY="ASF-v${ASF_VERSION}-darwin-amd64" ;;
             *) echo "Unsupported arch: $ARCH"; exit 1 ;;
         esac
         ;;
     Linux)
         case "$ARCH" in
-            aarch64|arm64) BINARY="asf-linux-arm64" ;;
-            x86_64) BINARY="asf-linux-amd64" ;;
+            aarch64|arm64) BINARY="ASF-v${ASF_VERSION}-linux-arm64" ;;
+            x86_64) BINARY="ASF-v${ASF_VERSION}-linux-amd64" ;;
             *) echo "Unsupported arch: $ARCH"; exit 1 ;;
         esac
         ;;
@@ -116,6 +116,8 @@ output:
 appearance:
   theme: Dark
   fox_style: Classic
+engine:
+  use_native_engine: true
 CONFEOF
     echo "  ✓ Created default config"
 fi
@@ -148,8 +150,7 @@ echo " ✓ ASF v${ASF_VERSION} installed  (${BINARY_SIZE})"
 echo ""
 echo "   Run: asf"
 echo ""
-echo "   Prerequisites (full functionality):"
-echo "     - Python ASF engine: cd /path/to/asf && pip install -e ."
+echo "   Prerequisites (optional):"
 echo "     - Ollama (AI): brew install ollama"
 echo "     - Tesseract (OCR): brew install tesseract"
 echo ""

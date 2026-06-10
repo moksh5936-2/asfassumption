@@ -32,7 +32,7 @@ type Config struct {
 		FoxStyle string `yaml:"fox_style"`
 	} `yaml:"appearance"`
 	Engine struct {
-		PythonPath string `yaml:"python_path"`
+		UseNativeEngine bool `yaml:"use_native_engine"`
 	} `yaml:"engine"`
 }
 
@@ -51,7 +51,7 @@ func DefaultConfig() Config {
 	c.Output.Directory = "./reports"
 	c.Appearance.Theme = "Dark"
 	c.Appearance.FoxStyle = "Classic"
-	c.Engine.PythonPath = ""
+	c.Engine.UseNativeEngine = true
 	return c
 }
 

@@ -1,0 +1,5 @@
+ACCESS CONTROL
+
+Database access is restricted to DBA team members only.
+SSH access requires VPN connection and MFA authentication.
+Root access is logged and reviewed weekly.

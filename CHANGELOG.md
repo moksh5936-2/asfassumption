@@ -5,6 +5,37 @@ All notable changes to ASF are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] — 2026-06-11
+
+### Changed
+
+- Removed Python ASF engine bridge entirely — ASF is now a true Go-native single-binary
+- All analysis now uses native Go engine (no `python3`, `pip`, `venv`, or `PYTHONPATH` required)
+- Replaced Python-based install with pure Go binary downloads
+- Cleaned up docter output to remove Python engine references
+- Increased binary size to ~9MB (up from ~8MB) due to native engine inclusion
+- Version bumped from 1.1.0 to 2.0.0 (breaking change: Python dependency removed)
+
+### Removed
+
+- `callPythonCLI`, `discoverPythonPath`, `preFlightCheck` from engine.go
+- Python engine section from doctor.go (findPython, downloadEngineBundle, etc.)
+- `PythonPath` field from config.go
+- `asf-python-engine-*.tar.gz` release artifacts
+- `scripts/package-python-engine.sh`
+- `package-python-engine` job from CI/CD
+
+### Fixed
+
+- Directory input crash: `asf analyze <directory>` now expands supported files
+- Help text: `asf doctor --fix` no longer mentions "install Python engine"
+- 5 certification blockers resolved for Go-native single-binary certification
+
+### Added
+
+- `claims[]` array in native Go JSON output matching Python schema
+- Cross-platform release assets at ~33% smaller due to stripped debug symbols
+
 ## [1.0.0] — 2026-06-10
 
 ### Added

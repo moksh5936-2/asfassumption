@@ -1,0 +1,64 @@
+{
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 1,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 1,
+    "critical_gaps": 0
+  },
+  "claims": [
+    {
+      "id": "clm_79944cef5d9a",
+      "source_document": "identity_policy_03.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/identity_policy_03.txt",
+      "text": "Access reviews are conducted quarterly.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:43:03.513595+00:00",
+      "tags": [
+        "access",
+        "governance"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_f761f178f4ff",
+      "claim_id": "clm_79944cef5d9a",
+      "text": "System assumes access control: Access reviews are conducted quarterly.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:43:03.515983+00:00",
+      "keywords": [
+        "access",
+        "reviews",
+        "conducted",
+        "quarterly"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_f761f178f4ff",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_e6c701103734",
+        "evd_8eef02658a7a",
+        "evd_215b2e9bf666",
+        "evd_6fb61f13738c"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_f761f178f4ff",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: Access reviews are conducted quarterly.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ]
+}

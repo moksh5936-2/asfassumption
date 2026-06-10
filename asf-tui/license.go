@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ASFVersion    = "1.1.0"
+	ASFVersion    = "2.0.0"
 	LicensePrefix = "ASF"
 )
 

@@ -2,20 +2,20 @@
 
 ## Version
 
-**v1.0.0** — June 2026
+**v2.0.0** — June 2026
 
-> ⚠️ **Honesty Notice:** Only `darwin/arm64` (macOS Apple Silicon) binary has been built. Other platform binaries listed below are planned but not yet available. See [BUILD_SYSTEM.md](../docs/BUILD_SYSTEM.md) for cross-compilation instructions.
+> Go-native single binary — no Python runtime required.
 
 ## Downloads
 
-| File | Platform | Architecture | Status |
-|------|----------|-------------|--------|
-| `asf-linux-amd64` | Linux | AMD64 | ❌ Not yet built |
-| `asf-linux-arm64` | Linux | ARM64 | ❌ Not yet built |
-| `asf-darwin-amd64` | macOS | Intel | ❌ Not yet built |
-| `asf-darwin-arm64` | macOS | Apple Silicon | ✅ 11.9MB |
-| `asf-windows-amd64.exe` | Windows | AMD64 | ❌ Not yet built |
-| `install.sh` | All | All | ✅ Installer script |
+| File | Platform | Architecture | Size |
+|------|----------|-------------|------|
+| `ASF-v2.0.0-linux-amd64` | Linux | AMD64 | 8.9MB |
+| `ASF-v2.0.0-linux-arm64` | Linux | ARM64 | 8.3MB |
+| `ASF-v2.0.0-darwin-amd64` | macOS | Intel | 9.1MB |
+| `ASF-v2.0.0-darwin-arm64` | macOS | Apple Silicon | 8.6MB |
+| `ASF-v2.0.0-windows-amd64.exe` | Windows | AMD64 | 9.2MB |
+| `checksums.txt` | All | All | SHA-256 checksums |
 
 ## Verification
 
@@ -27,15 +27,18 @@ shasum -a 256 -c checksums.txt
 
 Expected output:
 ```
-asf-darwin-arm64: OK
-install.sh: OK
+ASF-v2.0.0-darwin-amd64: OK
+ASF-v2.0.0-darwin-arm64: OK
+ASF-v2.0.0-linux-amd64: OK
+ASF-v2.0.0-linux-arm64: OK
+ASF-v2.0.0-windows-amd64.exe: OK
 ```
 
 ### Verify binary
 
 ```bash
-./asf-darwin-arm64 --version
-# Expected: ASF v1.0.0
+./ASF-v2.0.0-darwin-arm64 --version
+# Expected: ASF v2.0.0
 ```
 
 ## Installation

@@ -1,0 +1,91 @@
+{
+  "version": "1.1.0",
+  "architecture": "network_policy_02.txt",
+  "summary": {
+    "claims_found": 2,
+    "assumptions": 2,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 2,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_686dc3b50d67",
+      "text": "System assumes network posture: NETWORK SECURITY\n\nFirewall rules restrict inbound traffic to ports 443 and 8443 only.",
+      "assumption_type": "NETWORK",
+      "verification_status": "1",
+      "confidence": 0,
+      "keywords": [
+        "network",
+        "security",
+        "firewall",
+        "rules",
+        "restrict",
+        "inbound",
+        "traffic",
+        "ports",
+        "only"
+      ]
+    },
+    {
+      "id": "asm_706547f9ff42",
+      "text": "System assumes access control: Outbound traffic is restricted to approved external services.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0,
+      "keywords": [
+        "outbound",
+        "traffic",
+        "restricted",
+        "approved",
+        "external",
+        "services"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_686dc3b50d67",
+      "result": "UNKNOWN",
+      "confidence": 0,
+      "evidence_used": [
+        "evd_ebe3a3e2d76e",
+        "evd_465ddfacaf61",
+        "evd_fe113694f384",
+        "evd_b2ace34ad226",
+        "evd_55a808a6e1c5"
+      ],
+      "reasoning": "Could not verify network posture; Could not verify network posture; Could not verify network posture; Could not verify network posture; Could not verify network posture"
+    },
+    {
+      "assumption_id": "asm_706547f9ff42",
+      "result": "UNKNOWN",
+      "confidence": 0,
+      "evidence_used": [
+        "evd_ebe3a3e2d76e",
+        "evd_465ddfacaf61",
+        "evd_fe113694f384",
+        "evd_b2ace34ad226",
+        "evd_55a808a6e1c5"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_686dc3b50d67",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes network posture: NETWORK SECURITY\n\nFirewall rules restrict inbound traff",
+      "evidence_detail": "Could not verify network posture; Could not verify network posture; Could not verify network posture; Could not verify network posture; Could not verify network posture"
+    },
+    {
+      "assumption_id": "asm_706547f9ff42",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: Outbound traffic is restricted to approved external serv",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+DOCUMENTATION
+
+Security policies are documented in the corporate wiki.
+Runbooks are maintained for all operational procedures.
+Architecture diagrams are stored in the shared repository.

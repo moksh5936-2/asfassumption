@@ -57,6 +57,7 @@ check "version flag" "$BINARY" -v
 check "help flag" "$BINARY" --help
 check "doctor runs" "$BINARY" doctor
 check "doctor verbose" "$BINARY" doctor --verbose
+check "native analyze" "$BINARY" analyze --help
 
 echo ""
 

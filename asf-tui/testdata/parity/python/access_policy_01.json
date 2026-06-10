@@ -1,0 +1,116 @@
+{
+  "summary": {
+    "claims_found": 2,
+    "assumptions": 2,
+    "verified": 0,
+    "contradicted": 1,
+    "unknown": 1,
+    "critical_gaps": 1
+  },
+  "claims": [
+    {
+      "id": "clm_5b2e22612436",
+      "source_document": "access_policy_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/access_policy_01.txt",
+      "text": "ACCESS CONTROL\n\nOnly Finance employees may access the payroll processing system.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:42:58.454552+00:00",
+      "tags": [
+        "access",
+        "process"
+      ]
+    },
+    {
+      "id": "clm_b40aa31f948f",
+      "source_document": "access_policy_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/access_policy_01.txt",
+      "text": "All access requests must be approved by the Finance Director.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:42:58.456954+00:00",
+      "tags": [
+        "access",
+        "governance"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_528fc91d92f7",
+      "claim_id": "clm_5b2e22612436",
+      "text": "System assumes access control: ACCESS CONTROL\n\nOnly Finance employees may access the payroll processing system.",
+      "assumption_type": "ACCESS",
+      "verification_status": "4",
+      "confidence": 0.0968,
+      "created_at": "2026-06-10 17:42:58.459718+00:00",
+      "keywords": [
+        "access",
+        "control",
+        "only",
+        "finance",
+        "employees",
+        "access",
+        "payroll",
+        "processing",
+        "system"
+      ]
+    },
+    {
+      "id": "asm_1bede062ee30",
+      "claim_id": "clm_b40aa31f948f",
+      "text": "System assumes access control: All access requests must be approved by the Finance Director.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:42:58.459823+00:00",
+      "keywords": [
+        "access",
+        "requests",
+        "approved",
+        "finance",
+        "director"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_528fc91d92f7",
+      "result": "CONTRADICTED",
+      "confidence": 0.968,
+      "evidence_used": [
+        "evd_aefcadd420cc",
+        "evd_6ed828709a7d",
+        "evd_73e1ed2f6598",
+        "evd_514f14a4bed4"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Found 4 user(s) outside 'finance employees' with access: dave.wilson, henry.taylor, eve.brown, jack.thompson; Could not determine access patterns from evidence; Found 4 user(s) outside 'finance employees' with access: dave.wilson, henry.taylor, eve.brown, jack.thompson"
+    },
+    {
+      "assumption_id": "asm_1bede062ee30",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_aefcadd420cc",
+        "evd_6ed828709a7d",
+        "evd_73e1ed2f6598",
+        "evd_514f14a4bed4"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_528fc91d92f7",
+      "type": "ACCESS_GAP",
+      "severity": "CRITICAL",
+      "description": "Assumption contradicted: System assumes access control: ACCESS CONTROL\n\nOnly Finance employees may access the payroll processing system.",
+      "evidence_detail": "Could not determine access patterns from evidence; Found 4 user(s) outside 'finance employees' with access: dave.wilson, henry.taylor, eve.brown, jack.thompson; Could not determine access patterns from evidence; Found 4 user(s) outside 'finance employees' with access: dave.wilson, henry.taylor, eve.brown, jack.thompson"
+    },
+    {
+      "assumption_id": "asm_1bede062ee30",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: All access requests must be approved by the Finance Director.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ]
+}

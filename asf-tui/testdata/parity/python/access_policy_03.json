@@ -1,0 +1,166 @@
+{
+  "summary": {
+    "claims_found": 3,
+    "assumptions": 3,
+    "verified": 0,
+    "contradicted": 1,
+    "unknown": 2,
+    "critical_gaps": 1
+  },
+  "claims": [
+    {
+      "id": "clm_db7d6de7de28",
+      "source_document": "access_policy_03.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/access_policy_03.txt",
+      "text": "ACCESS CONTROL\n\nDatabase access is restricted to DBA team members only.",
+      "extraction_confidence": 0.7,
+      "created_at": "2026-06-10 17:42:59.092424+00:00",
+      "tags": [
+        "access"
+      ]
+    },
+    {
+      "id": "clm_aeecfdf69ce3",
+      "source_document": "access_policy_03.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/access_policy_03.txt",
+      "text": "SSH access requires VPN connection and MFA authentication.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:42:59.092474+00:00",
+      "tags": [
+        "access",
+        "identity"
+      ]
+    },
+    {
+      "id": "clm_d59618be878b",
+      "source_document": "access_policy_03.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/access_policy_03.txt",
+      "text": "Root access is logged and reviewed weekly.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:42:59.092517+00:00",
+      "tags": [
+        "access",
+        "configuration",
+        "governance"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_fe61073ce826",
+      "claim_id": "clm_db7d6de7de28",
+      "text": "System assumes access control: ACCESS CONTROL\n\nDatabase access is restricted to DBA team members only.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:42:59.095517+00:00",
+      "keywords": [
+        "access",
+        "control",
+        "database",
+        "access",
+        "restricted",
+        "dba",
+        "team",
+        "members",
+        "only"
+      ]
+    },
+    {
+      "id": "asm_5afd93aab324",
+      "claim_id": "clm_aeecfdf69ce3",
+      "text": "System assumes identity posture: SSH access requires VPN connection and MFA authentication.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "4",
+      "confidence": 0.098,
+      "created_at": "2026-06-10 17:42:59.095603+00:00",
+      "keywords": [
+        "ssh",
+        "access",
+        "requires",
+        "vpn",
+        "connection",
+        "mfa",
+        "authentication"
+      ]
+    },
+    {
+      "id": "asm_23fb7d7adc98",
+      "claim_id": "clm_d59618be878b",
+      "text": "System assumes access control: Root access is logged and reviewed weekly.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:42:59.095664+00:00",
+      "keywords": [
+        "root",
+        "access",
+        "logged",
+        "reviewed",
+        "weekly"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_fe61073ce826",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_d9cc749c8290",
+        "evd_1010aa7b1606",
+        "evd_67fe5a8e6a6c",
+        "evd_5108c603ffba"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_5afd93aab324",
+      "result": "CONTRADICTED",
+      "confidence": 0.98,
+      "evidence_used": [
+        "evd_d9cc749c8290",
+        "evd_1010aa7b1606",
+        "evd_67fe5a8e6a6c",
+        "evd_5108c603ffba",
+        "evd_f2ce5cb092a7"
+      ],
+      "reasoning": "No identity evidence matched assumption; MFA enabled for 7 user(s) but missing for 3; No identity evidence matched assumption; MFA not enabled for 10 user(s); MFA not enabled for 1 user(s)"
+    },
+    {
+      "assumption_id": "asm_23fb7d7adc98",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_d9cc749c8290",
+        "evd_1010aa7b1606",
+        "evd_67fe5a8e6a6c",
+        "evd_5108c603ffba"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_fe61073ce826",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: ACCESS CONTROL\n\nDatabase access is restricted to DBA team members only.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_5afd93aab324",
+      "type": "IDENTITY_GAP",
+      "severity": "CRITICAL",
+      "description": "Assumption contradicted: System assumes identity posture: SSH access requires VPN connection and MFA authentication.",
+      "evidence_detail": "No identity evidence matched assumption; MFA enabled for 7 user(s) but missing for 3; No identity evidence matched assumption; MFA not enabled for 10 user(s); MFA not enabled for 1 user(s)"
+    },
+    {
+      "assumption_id": "asm_23fb7d7adc98",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: Root access is logged and reviewed weekly.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ]
+}

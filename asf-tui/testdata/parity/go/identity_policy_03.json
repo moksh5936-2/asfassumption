@@ -1,0 +1,51 @@
+{
+  "version": "1.1.0",
+  "architecture": "identity_policy_03.txt",
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 1,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 1,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_3c65c6f1217c",
+      "text": "System assumes access control: Access reviews are conducted quarterly.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0,
+      "keywords": [
+        "access",
+        "reviews",
+        "conducted",
+        "quarterly"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_3c65c6f1217c",
+      "result": "UNKNOWN",
+      "confidence": 0,
+      "evidence_used": [
+        "evd_4852930ed6b0",
+        "evd_a66a63f883b4",
+        "evd_307beb35be44",
+        "evd_10870fcade7d",
+        "evd_5e973505aeb1"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_3c65c6f1217c",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: Access reviews are conducted quarterly.",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    }
+  ]
+}

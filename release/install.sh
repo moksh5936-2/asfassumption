@@ -6,7 +6,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash
 #
 # Environment:
-#   ASF_VERSION=1.0.0       — pin a specific version
+#   ASF_VERSION=2.0.0       — pin a specific version
 #   GITHUB_TOKEN=ghp_xxx    — for private repos (set via gh auth token)
 #   ASF_INSTALL_DIR=        — custom install directory (default: /usr/local/bin)
 
@@ -164,7 +164,7 @@ if [ -z "$VERSION" ]; then
   API_URL="https://api.github.com/repos/${REPO}/releases/latest"
   VERSION=$(curl_get "$API_URL" | grep '"tag_name":' | sed 's/.*"tag_name": "v\(.*\)",.*/\1/' || echo "")
   if [ -z "$VERSION" ]; then
-    VERSION="1.0.0"
+    VERSION="2.0.0"
     warn "Could not detect latest version; defaulting to ${VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi
@@ -342,6 +342,8 @@ output:
 appearance:
   theme: Dark
   fox_style: Classic
+engine:
+  use_native_engine: true
 CONFEOF
   ok "Created default config"
 fi
@@ -391,8 +393,8 @@ if [ -s "${ENGINE_TAR}" ]; then
   fi
 else
   warn "Python engine download failed (HTTP ${ENGINE_HTTP_CODE})"
-  info "  The Go TUI will still work, but analysis requires the Python engine."
-  info "  Run 'asf doctor --fix' after installation to download it."
+  info "  The Go native engine handles analysis — Python is optional."
+  info "  Run 'asf doctor --fix' after installation if you still need Python."
 fi
 
 # ─── Run post-install verification ─────────────────────────

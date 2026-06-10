@@ -1,0 +1,86 @@
+{
+  "version": "1.1.0",
+  "architecture": "encryption_policy_02.txt",
+  "summary": {
+    "claims_found": 3,
+    "assumptions": 2,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_0ddbc45014f0",
+      "text": "System assumes configuration state: System logging is configured for all production services.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.42124999999999996,
+      "keywords": [
+        "system",
+        "logging",
+        "configured",
+        "production",
+        "services"
+      ]
+    },
+    {
+      "id": "asm_1cc636523704",
+      "text": "System assumes configuration state: Monitoring alerts are configured for security events.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.42124999999999996,
+      "keywords": [
+        "monitoring",
+        "alerts",
+        "configured",
+        "security",
+        "events"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_0ddbc45014f0",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.42124999999999996,
+      "evidence_used": [
+        "evd_6377365d6ad2",
+        "evd_f176c7465417",
+        "evd_0c61166182d0",
+        "evd_e8fc67688f8e",
+        "evd_ce67394dfb34"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_1cc636523704",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.42124999999999996,
+      "evidence_used": [
+        "evd_6377365d6ad2",
+        "evd_f176c7465417",
+        "evd_0c61166182d0",
+        "evd_e8fc67688f8e",
+        "evd_ce67394dfb34"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_0ddbc45014f0",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: System logging is configured for all production ",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_1cc636523704",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: Monitoring alerts are configured for security ev",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ]
+}

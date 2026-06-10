@@ -1,0 +1,94 @@
+{
+  "version": "1.1.0",
+  "architecture": "comprehensive_02.txt",
+  "summary": {
+    "claims_found": 3,
+    "assumptions": 2,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 1,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_2c8132eecc82",
+      "text": "System assumes access control: CLOUD SECURITY POSTURE\n\nOnly DevOps engineers have direct SSH access to production servers.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0,
+      "keywords": [
+        "cloud",
+        "security",
+        "posture",
+        "only",
+        "devops",
+        "engineers",
+        "direct",
+        "ssh",
+        "access",
+        "production",
+        "servers"
+      ]
+    },
+    {
+      "id": "asm_54a236f4d772",
+      "text": "System assumes configuration state: Compliance monitoring is configured using AWS Config rules.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.42124999999999996,
+      "keywords": [
+        "compliance",
+        "monitoring",
+        "configured",
+        "using",
+        "aws",
+        "config",
+        "rules"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_2c8132eecc82",
+      "result": "UNKNOWN",
+      "confidence": 0,
+      "evidence_used": [
+        "evd_618169f5ec80",
+        "evd_2d3ff952e9fb",
+        "evd_1f4b15e48ba1",
+        "evd_5e461c8bb0c7",
+        "evd_d843600871b8"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_54a236f4d772",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.42124999999999996,
+      "evidence_used": [
+        "evd_618169f5ec80",
+        "evd_2d3ff952e9fb",
+        "evd_1f4b15e48ba1",
+        "evd_5e461c8bb0c7",
+        "evd_d843600871b8"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_2c8132eecc82",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: CLOUD SECURITY POSTURE\n\nOnly DevOps engineers have direc",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_54a236f4d772",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: Compliance monitoring is configured using AWS Co",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ]
+}

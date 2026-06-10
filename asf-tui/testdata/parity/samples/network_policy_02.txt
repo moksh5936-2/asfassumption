@@ -1,0 +1,5 @@
+NETWORK SECURITY
+
+Firewall rules restrict inbound traffic to ports 443 and 8443 only.
+Outbound traffic is restricted to approved external services.
+DMZ separates public-facing services from internal networks.

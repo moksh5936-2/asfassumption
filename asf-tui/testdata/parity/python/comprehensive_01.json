@@ -1,0 +1,230 @@
+{
+  "summary": {
+    "claims_found": 5,
+    "assumptions": 4,
+    "verified": 0,
+    "contradicted": 2,
+    "unknown": 1,
+    "critical_gaps": 1
+  },
+  "claims": [
+    {
+      "id": "clm_c160543bed93",
+      "source_document": "comprehensive_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/comprehensive_01.txt",
+      "text": "SYSTEM SECURITY ARCHITECTURE\n\nAccess to the production environment is restricted to authorized personnel only.",
+      "extraction_confidence": 0.7,
+      "created_at": "2026-06-10 17:42:59.434039+00:00",
+      "tags": [
+        "access"
+      ]
+    },
+    {
+      "id": "clm_59403c7f8b53",
+      "source_document": "comprehensive_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/comprehensive_01.txt",
+      "text": "All users must authenticate using MFA before accessing any production systems.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:42:59.434081+00:00",
+      "tags": [
+        "access",
+        "identity"
+      ]
+    },
+    {
+      "id": "clm_cc945b7a15b2",
+      "source_document": "comprehensive_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/comprehensive_01.txt",
+      "text": "All data stored in the database is encrypted at rest using AES-256.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:42:59.434579+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_92d34feda664",
+      "source_document": "comprehensive_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/comprehensive_01.txt",
+      "text": "Security audits are conducted quarterly by an independent third party.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:42:59.434631+00:00",
+      "tags": [
+        "configuration",
+        "dependency"
+      ]
+    },
+    {
+      "id": "clm_ccd578775894",
+      "source_document": "comprehensive_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/comprehensive_01.txt",
+      "text": "Backups are performed daily and retained for 90 days.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:42:59.434727+00:00",
+      "tags": [
+        "configuration"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_1e4165759ff9",
+      "claim_id": "clm_c160543bed93",
+      "text": "System assumes access control: SYSTEM SECURITY ARCHITECTURE\n\nAccess to the production environment is restricted to authorized personnel only.",
+      "assumption_type": "ACCESS",
+      "verification_status": "1",
+      "confidence": 0.0,
+      "created_at": "2026-06-10 17:42:59.437242+00:00",
+      "keywords": [
+        "system",
+        "security",
+        "architecture",
+        "access",
+        "production",
+        "environment",
+        "restricted",
+        "authorized",
+        "personnel",
+        "only"
+      ]
+    },
+    {
+      "id": "asm_a5063fd2d3bf",
+      "claim_id": "clm_59403c7f8b53",
+      "text": "System assumes identity posture: All users must authenticate using MFA before accessing any production systems.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "4",
+      "confidence": 0.098,
+      "created_at": "2026-06-10 17:42:59.437329+00:00",
+      "keywords": [
+        "users",
+        "authenticate",
+        "using",
+        "mfa",
+        "before",
+        "accessing",
+        "any",
+        "production",
+        "systems"
+      ]
+    },
+    {
+      "id": "asm_aa1256633731",
+      "claim_id": "clm_cc945b7a15b2",
+      "text": "System assumes configuration state: All data stored in the database is encrypted at rest using AES-256.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.35,
+      "created_at": "2026-06-10 17:42:59.437409+00:00",
+      "keywords": [
+        "data",
+        "stored",
+        "database",
+        "encrypted",
+        "rest",
+        "using",
+        "aes"
+      ]
+    },
+    {
+      "id": "asm_e4f119322291",
+      "claim_id": "clm_92d34feda664",
+      "text": "System assumes governance compliance: Security audits are conducted quarterly by an independent third party.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "4",
+      "confidence": 0.0952,
+      "created_at": "2026-06-10 17:42:59.437478+00:00",
+      "keywords": [
+        "security",
+        "audits",
+        "conducted",
+        "quarterly",
+        "independent",
+        "third",
+        "party"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_1e4165759ff9",
+      "result": "UNKNOWN",
+      "confidence": 0.4,
+      "evidence_used": [
+        "evd_d6d304442372",
+        "evd_ab54b513a648",
+        "evd_a2c7270e6c6c",
+        "evd_1c937eeb9a8d"
+      ],
+      "reasoning": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_a5063fd2d3bf",
+      "result": "CONTRADICTED",
+      "confidence": 0.98,
+      "evidence_used": [
+        "evd_d6d304442372",
+        "evd_ab54b513a648",
+        "evd_a2c7270e6c6c",
+        "evd_1c937eeb9a8d",
+        "evd_13445289b9a8"
+      ],
+      "reasoning": "No identity evidence matched assumption; MFA enabled for 7 user(s) but missing for 3; No identity evidence matched assumption; MFA not enabled for 10 user(s); MFA not enabled for 1 user(s)"
+    },
+    {
+      "assumption_id": "asm_aa1256633731",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.7,
+      "evidence_used": [
+        "evd_d6d304442372",
+        "evd_ab54b513a648",
+        "evd_a2c7270e6c6c",
+        "evd_1c937eeb9a8d",
+        "evd_13445289b9a8"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_e4f119322291",
+      "result": "CONTRADICTED",
+      "confidence": 0.952,
+      "evidence_used": [
+        "evd_d6d304442372",
+        "evd_ab54b513a648",
+        "evd_a2c7270e6c6c",
+        "evd_1c937eeb9a8d"
+      ],
+      "reasoning": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_1e4165759ff9",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Insufficient evidence to verify: System assumes access control: SYSTEM SECURITY ARCHITECTURE\n\nAccess to the production environment is restricted to autho",
+      "evidence_detail": "Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence; Could not determine access patterns from evidence"
+    },
+    {
+      "assumption_id": "asm_a5063fd2d3bf",
+      "type": "IDENTITY_GAP",
+      "severity": "CRITICAL",
+      "description": "Assumption contradicted: System assumes identity posture: All users must authenticate using MFA before accessing any production systems.",
+      "evidence_detail": "No identity evidence matched assumption; MFA enabled for 7 user(s) but missing for 3; No identity evidence matched assumption; MFA not enabled for 10 user(s); MFA not enabled for 1 user(s)"
+    },
+    {
+      "assumption_id": "asm_aa1256633731",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: All data stored in the database is encrypted at rest using AES-256.",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_e4f119322291",
+      "type": "GOVERNANCE_GAP",
+      "severity": "HIGH",
+      "description": "Assumption contradicted: System assumes governance compliance: Security audits are conducted quarterly by an independent third party.",
+      "evidence_detail": "No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending); No governance reviews completed (10 pending)"
+    }
+  ]
+}

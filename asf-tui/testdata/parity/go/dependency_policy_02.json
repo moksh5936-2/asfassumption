@@ -1,0 +1,52 @@
+{
+  "version": "1.1.0",
+  "architecture": "dependency_policy_02.txt",
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 1,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "assumptions": [
+    {
+      "id": "asm_6b0d3619ef97",
+      "text": "System assumes configuration state: Monitoring system integrates with PagerDuty for alerting.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.42124999999999996,
+      "keywords": [
+        "monitoring",
+        "system",
+        "integrates",
+        "pagerduty",
+        "alerting"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_6b0d3619ef97",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.42124999999999996,
+      "evidence_used": [
+        "evd_56b32aa8618c",
+        "evd_dc8cf901dca0",
+        "evd_a6641fbb5430",
+        "evd_e28faa7e2092",
+        "evd_62b91c4a3596"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_6b0d3619ef97",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: Monitoring system integrates with PagerDuty for ",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ]
+}

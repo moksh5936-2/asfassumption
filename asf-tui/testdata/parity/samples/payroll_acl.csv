@@ -1,0 +1,11 @@
+user,group,resource,permission,department
+alice.jones,Finance,payroll-system,read,Finance
+bob.smith,Finance,payroll-system,write,Finance
+carol.davis,Finance,payroll-system,admin,Finance
+dave.wilson,Engineering,payroll-system,read,Engineering
+eve.brown,Engineering,payroll-system,read,Engineering
+frank.miller,Finance,payroll-system,read,Finance
+grace.lee,Finance,payroll-system,write,Finance
+henry.taylor,Engineering,payroll-system,write,Engineering
+iris.anderson,Finance,payroll-system,read,Finance
+jack.thompson,HR,payroll-system,read,HR

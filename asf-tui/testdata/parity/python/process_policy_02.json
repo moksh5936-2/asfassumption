@@ -1,0 +1,27 @@
+{
+  "summary": {
+    "claims_found": 1,
+    "assumptions": 0,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "claims": [
+    {
+      "id": "clm_3bb0602564c6",
+      "source_document": "process_policy_02.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/process_policy_02.txt",
+      "text": "OPERATIONAL PROCEDURES\n\nCode reviews are required for all production deployments.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:43:05.078899+00:00",
+      "tags": [
+        "governance",
+        "process"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "verifications": [],
+  "gaps": []
+}

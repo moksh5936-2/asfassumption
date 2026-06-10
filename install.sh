@@ -6,7 +6,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash
 #
 # Environment:
-#   ASF_VERSION=1.0.0       — pin a specific version
+#   ASF_VERSION=2.0.0       — pin a specific version
 #   GITHUB_TOKEN=ghp_xxx    — for private repos (set via gh auth token)
 #   ASF_INSTALL_DIR=        — custom install directory (default: /usr/local/bin)
 
@@ -164,7 +164,7 @@ if [ -z "$VERSION" ]; then
   API_URL="https://api.github.com/repos/${REPO}/releases/latest"
   VERSION=$(curl_get "$API_URL" | grep '"tag_name":' | sed 's/.*"tag_name": "v\(.*\)",.*/\1/' || echo "")
   if [ -z "$VERSION" ]; then
-    VERSION="1.0.0"
+    VERSION="2.0.0"
     warn "Could not detect latest version; defaulting to ${VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi
@@ -190,21 +190,6 @@ if [ -n "$EXISTING_BIN" ] && [ "$UPGRADE" = false ]; then
 fi
 
 # ─── Get asset ID for API download (if auth available) ─────
-ASSET_ID=""
-RELEASE_API_URL="https://api.github.com/repos/${REPO}/releases/tags/v${VERSION}"
-if [ -n "$AUTH_HEADER" ]; then
-  ASSET_ID=$(curl_get "$RELEASE_API_URL" \
-    | python3 -c "
-import json,sys
-try:
-    data = json.load(sys.stdin)
-    for a in data.get('assets', []):
-        if a['name'] == '${BINARY_NAME}':
-            print(a['id'])
-except: pass
-" 2>/dev/null || echo "")
-fi
-
 # ─── Download ──────────────────────────────────────────────
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "${TMP_DIR}"' EXIT
@@ -214,15 +199,10 @@ info "Downloading ASF v${VERSION} for ${OS_FINAL}/${ARCH_FINAL}..."
 echo ""
 
 HTTP_CODE="000"
-if [ -n "$ASSET_ID" ]; then
-  API_ASSET_URL="https://api.github.com/repos/${REPO}/releases/assets/${ASSET_ID}"
-  info "  (authenticated API download)"
-  HTTP_CODE=$(curl_get "$API_ASSET_URL" "${TMP_DIR}/asf")
-elif [ -n "$AUTH_HEADER" ]; then
+if [ -n "$AUTH_HEADER" ]; then
   HTTP_CODE=$(curl_get "$DIRECT_DOWNLOAD_URL" "${TMP_DIR}/asf")
-  info "  ${DIRECT_DOWNLOAD_URL}"
+  info "  (authenticated)"
 else
-  info "  ${DIRECT_DOWNLOAD_URL}"
   if command -v curl &>/dev/null; then
     HTTP_CODE=$(curl -sfL -w "%{http_code}" "${DIRECT_DOWNLOAD_URL}" -o "${TMP_DIR}/asf" 2>/dev/null || echo "000")
   elif command -v wget &>/dev/null; then
@@ -233,6 +213,7 @@ else
     err "Need curl or wget to download"
   fi
 fi
+info "  ${DIRECT_DOWNLOAD_URL}"
 
 if [ ! -s "${TMP_DIR}/asf" ] || [ "$HTTP_CODE" = "000" ] || [ "$HTTP_CODE" = "404" ]; then
   rm -f "${TMP_DIR}/asf"
@@ -258,26 +239,7 @@ chmod +x "${TMP_DIR}/asf"
 ok "Download complete ($(ls -lh "${TMP_DIR}/asf" | awk '{print $5}'))"
 
 # ─── Checksum verification ─────────────────────────────────
-CHECKSUMS=""
-if [ -n "$AUTH_HEADER" ]; then
-  CHECKSUMS_ASSET_ID=$(curl_get "$RELEASE_API_URL" \
-    | python3 -c "
-import json,sys
-try:
-    data = json.load(sys.stdin)
-    for a in data.get('assets', []):
-        if a['name'] == 'checksums.txt':
-            print(a['id'])
-except: pass
-" 2>/dev/null || echo "")
-  if [ -n "$CHECKSUMS_ASSET_ID" ]; then
-    CHECKSUMS_API_URL="https://api.github.com/repos/${REPO}/releases/assets/${CHECKSUMS_ASSET_ID}"
-    curl_get "$CHECKSUMS_API_URL" "${TMP_DIR}/checksums.txt" >/dev/null 2>&1 || true
-    CHECKSUMS=$(cat "${TMP_DIR}/checksums.txt" 2>/dev/null || echo "")
-  fi
-else
-  CHECKSUMS=$(curl -sfL "${DIRECT_CHECKSUMS_URL}" 2>/dev/null || echo "")
-fi
+CHECKSUMS=$(curl -sfL "${DIRECT_CHECKSUMS_URL}" 2>/dev/null || echo "")
 
 if [ -n "$CHECKSUMS" ]; then
   EXPECTED_HASH=$(echo "${CHECKSUMS}" | grep "${BINARY_NAME}" | awk '{print $1}' || true)
@@ -342,6 +304,8 @@ output:
 appearance:
   theme: Dark
   fox_style: Classic
+engine:
+  use_native_engine: true
 CONFEOF
   ok "Created default config"
 fi
@@ -358,42 +322,6 @@ case ":$PATH:" in
     echo "      echo 'export PATH=\"\$PATH:${INSTALL_DIR}\"' >> ~/.zshrc"
     ;;
 esac
-
-# ─── Download Python Engine ───────────────────────────────
-ENGINE_URL="https://github.com/${REPO}/releases/download/v${VERSION}/asf-python-engine-v${VERSION}.tar.gz"
-ENGINE_TAR="${TMP_DIR}/asf-python-engine.tar.gz"
-
-echo ""
-info "Downloading ASF Python Engine v${VERSION}..."
-info "  ${ENGINE_URL}"
-
-ENGINE_HTTP_CODE="000"
-if command -v curl &>/dev/null; then
-  ENGINE_HTTP_CODE=$(curl -sfL -w "%{http_code}" "${ENGINE_URL}" -o "${ENGINE_TAR}" 2>/dev/null || echo "000")
-elif command -v wget &>/dev/null; then
-  ENGINE_HTTP_CODE=$(wget --server-response -q "${ENGINE_URL}" -O "${ENGINE_TAR}" 2>&1 \
-    | grep "HTTP/" | tail -1 | awk '{print $2}' || echo "000")
-fi
-
-if [ -s "${ENGINE_TAR}" ]; then
-  ok "Engine download complete ($(ls -lh "${ENGINE_TAR}" | awk '{print $5}'))"
-
-  # Extract engine to data dir
-  mkdir -p "${ASF_DATA_DIR}"
-  rm -rf "${ASF_DATA_DIR}/engine" 2>/dev/null || true
-  tar -xzf "${ENGINE_TAR}" -C "${ASF_DATA_DIR}" 2>/dev/null || {
-    warn "Failed to extract Python engine"
-  }
-  if [ -d "${ASF_DATA_DIR}/asf" ]; then
-    ok "Python engine extracted to ${ASF_DATA_DIR}"
-  else
-    warn "Python engine extraction may have failed — asf/ directory not found"
-  fi
-else
-  warn "Python engine download failed (HTTP ${ENGINE_HTTP_CODE})"
-  info "  The Go TUI will still work, but analysis requires the Python engine."
-  info "  Run 'asf doctor --fix' after installation to download it."
-fi
 
 # ─── Run post-install verification ─────────────────────────
 echo ""
@@ -420,7 +348,7 @@ info "Config: ${ASF_CONFIG_DIR}/config.yaml"
 info "Cache:  ${ASF_CACHE_DIR}"
 info "Data:   ${ASF_DATA_DIR}"
 echo ""
-info "Prerequisites (full functionality):"
+info "Prerequisites (optional):"
 info "  Tesseract (OCR):   apt install tesseract-ocr / brew install tesseract"
 info "  Ollama (AI):       brew install ollama / curl -fsSL https://ollama.com/install.sh | sh"
 echo ""

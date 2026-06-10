@@ -1,0 +1,163 @@
+{
+  "summary": {
+    "claims_found": 3,
+    "assumptions": 3,
+    "verified": 0,
+    "contradicted": 0,
+    "unknown": 0,
+    "critical_gaps": 0
+  },
+  "claims": [
+    {
+      "id": "clm_23db8d1ca450",
+      "source_document": "encryption_policy_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/encryption_policy_01.txt",
+      "text": "ENCRYPTION & CONFIGURATION\n\nAll data is encrypted at rest using AES-256.",
+      "extraction_confidence": 0.6,
+      "created_at": "2026-06-10 17:43:00.999058+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_78dff349ebe6",
+      "source_document": "encryption_policy_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/encryption_policy_01.txt",
+      "text": "Data in transit is encrypted using TLS 1.2 or higher.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:43:01.000373+00:00",
+      "tags": [
+        "configuration"
+      ]
+    },
+    {
+      "id": "clm_060d7b27e8ae",
+      "source_document": "encryption_policy_01.txt",
+      "source_location": "/Users/moksh/Project/cybersec/asf-tui/testdata/parity/samples/encryption_policy_01.txt",
+      "text": "Encryption keys are managed by AWS KMS.",
+      "extraction_confidence": 0.5,
+      "created_at": "2026-06-10 17:43:01.000417+00:00",
+      "tags": [
+        "configuration",
+        "access"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_910cb41cb6be",
+      "claim_id": "clm_23db8d1ca450",
+      "text": "System assumes configuration state: ENCRYPTION & CONFIGURATION\n\nAll data is encrypted at rest using AES-256.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.35,
+      "created_at": "2026-06-10 17:43:01.002963+00:00",
+      "keywords": [
+        "encryption",
+        "configuration",
+        "data",
+        "encrypted",
+        "rest",
+        "using",
+        "aes"
+      ]
+    },
+    {
+      "id": "asm_5db04e67d3ec",
+      "claim_id": "clm_78dff349ebe6",
+      "text": "System assumes configuration state: Data in transit is encrypted using TLS 1.2 or higher.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.35,
+      "created_at": "2026-06-10 17:43:01.003041+00:00",
+      "keywords": [
+        "data",
+        "transit",
+        "encrypted",
+        "using",
+        "tls",
+        "higher"
+      ]
+    },
+    {
+      "id": "asm_7a27f4094967",
+      "claim_id": "clm_060d7b27e8ae",
+      "text": "System assumes configuration state: Encryption keys are managed by AWS KMS.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "2",
+      "confidence": 0.35,
+      "created_at": "2026-06-10 17:43:01.003096+00:00",
+      "keywords": [
+        "encryption",
+        "keys",
+        "managed",
+        "aws",
+        "kms"
+      ]
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_910cb41cb6be",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.7,
+      "evidence_used": [
+        "evd_1dce897ff0ba",
+        "evd_4cb59d2e2ac7",
+        "evd_ae75ac7c5c53",
+        "evd_62043e96cf11",
+        "evd_24f75b8cb5a9"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_5db04e67d3ec",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.7,
+      "evidence_used": [
+        "evd_1dce897ff0ba",
+        "evd_4cb59d2e2ac7",
+        "evd_ae75ac7c5c53",
+        "evd_62043e96cf11",
+        "evd_24f75b8cb5a9"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_7a27f4094967",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.7,
+      "evidence_used": [
+        "evd_1dce897ff0ba",
+        "evd_4cb59d2e2ac7",
+        "evd_ae75ac7c5c53",
+        "evd_62043e96cf11",
+        "evd_24f75b8cb5a9"
+      ],
+      "reasoning": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_910cb41cb6be",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: ENCRYPTION & CONFIGURATION\n\nAll data is encrypted at rest using AES-256.",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_5db04e67d3ec",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: Data in transit is encrypted using TLS 1.2 or higher.",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    },
+    {
+      "assumption_id": "asm_7a27f4094967",
+      "type": "CONFIGURATION_GAP",
+      "severity": "MEDIUM",
+      "description": "Assumption only partially verified: System assumes configuration state: Encryption keys are managed by AWS KMS.",
+      "evidence_detail": "Partially compliant: 7 OK, 3 non-compliant; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence; Could not verify configuration from evidence"
+    }
+  ]
+}
