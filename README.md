@@ -145,34 +145,89 @@
 
 ## Installation
 
-### Quick Install (macOS/Linux)
+### macOS / Linux — Quick Install
 
 ```bash
-curl -sfL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/asf-tui/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash
+```
+
+No repository clone required. The script detects your OS and architecture, downloads the correct binary from the latest GitHub release, verifies the SHA-256 checksum, and installs to `/usr/local/bin/asf`.
+
+> **Private repository:** If the repository is private, set `GITHUB_TOKEN` before running the installer:
+> ```bash
+> export GITHUB_TOKEN=ghp_xxxxx
+> curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash
+> ```
+> The script also auto-detects tokens from `gh auth token` if the GitHub CLI is installed.
+
+### Windows — PowerShell
+
+```powershell
+powershell -c "irm https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.ps1 | iex"
 ```
 
 ### Manual Install
 
+Download the binary for your platform from the [latest release](https://github.com/moksh5936-2/asfassumption/releases/latest):
+
+| Platform | Download |
+|----------|----------|
+| macOS Apple Silicon | `ASF-v1.0.0-darwin-arm64` |
+| macOS Intel | `ASF-v1.0.0-darwin-amd64` |
+| Linux AMD64 | `ASF-v1.0.0-linux-amd64` |
+| Linux ARM64 | `ASF-v1.0.0-linux-arm64` |
+| Windows AMD64 | `ASF-v1.0.0-windows-amd64.exe` |
+
 ```bash
-# Download for your platform
-curl -sfL https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.0/asf-darwin-arm64 -o /usr/local/bin/asf
-chmod +x /usr/local/bin/asf
+# Example: macOS Apple Silicon
+curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.0/ASF-v1.0.0-darwin-arm64
+chmod +x ASF-v1.0.0-darwin-arm64
+sudo mv ASF-v1.0.0-darwin-arm64 /usr/local/bin/asf
+```
 
-# Install Python ASF engine (required)
-cd /path/to/asf
-pip install -e .
+### Verify Installation
 
-# Run
-asf
+```bash
+asf --version
+# Expected: ASF v1.0.0
+```
+
+### Upgrade
+
+```bash
+# Re-run the installer with --upgrade
+curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash -s -- --upgrade
+```
+
+Or manually download and replace the binary at `/usr/local/bin/asf`.
+
+### Uninstall
+
+```bash
+# Remove the binary
+sudo rm /usr/local/bin/asf
+
+# Remove configuration and data (optional)
+rm -rf ~/.asf
 ```
 
 ### Prerequisites
 
 | Component | Required | Install |
 |-----------|----------|---------|
-| Python 3.8+ | ✅ Core | `pip install -e .` |
-| Ollama | Optional (AI) | https://ollama.ai |
+| Python 3.8+ | ✅ Core | `pip install -e .` (from repo) |
+| Ollama | Optional (AI) | `brew install ollama` / https://ollama.ai |
 | Tesseract | Optional (OCR) | `brew install tesseract` |
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `asf: command not found` | Ensure `/usr/local/bin` is in your PATH, or run `~/.asf/asf` directly |
+| `Permission denied` | Run `chmod +x ~/.asf/asf` |
+| Download fails with 404 | The version may not have a release for your platform, or the repo is private. Try setting `GITHUB_TOKEN`: `export GITHUB_TOKEN=ghp_xxx && curl ... \| bash` |
+| Checksum mismatch | The download may be corrupted. Re-run the installer or download manually from the GitHub release page |
+| Python engine not found | Run `pip install -e .` in the repository root to install the Python ASF engine |
 
 ---
 

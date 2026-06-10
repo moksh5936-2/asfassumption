@@ -19,7 +19,7 @@ asf-tui/vendor/
 dist/
 build/
 release/asf-*
-release/asf-*.exe
+release/ASF-*
 release/*.exe
 tmp/
 bin/
