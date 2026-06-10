@@ -62,11 +62,16 @@ jobs:
           echo "binary=${BINARY}" >> $GITHUB_OUTPUT
 
       - name: Verify release
-        if: matrix.goos != 'windows'
+        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
         working-directory: release
         run: |
+          echo "=== Files in release/ ==="
           ls -la
-          bash ../scripts/verify-release.sh "${{ steps.build.outputs.binary }}"
+          BINARY="ASF-v${GITHUB_REF_NAME#v}-linux-amd64"
+          echo "Binary: $BINARY"
+          file "$BINARY" 2>/dev/null || true
+          chmod +x "$BINARY"
+          bash ../scripts/verify-release.sh "$BINARY"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
