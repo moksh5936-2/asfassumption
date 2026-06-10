@@ -1,31 +1,98 @@
-# Python
+# ─── Python ──────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*.pyo
 *.egg-info/
 .venv/
 venv/
 env/
+
+# ─── Go ──────────────────────────────────────────────
+asf-tui/asf-tui
+asf-tui/*.exe
+*.exe
+*.test
+*.out
+asf-tui/vendor/
+
+# ─── Build & Release ─────────────────────────────────
 dist/
 build/
+release/asf-*          # Exclude binaries but keep docs
+release/*.exe
+tmp/
+bin/
+*.tar.gz
+*.zip
 
-# Database
+# ─── Coverage ────────────────────────────────────────
+coverage/
+*.cover.out
+*.coverprofile
+
+# ─── Logs ────────────────────────────────────────────
+*.log
+
+# ─── Generated Reports ───────────────────────────────
+reports/
+asf-tui/reports/
+*.generated.json
+
+# ─── Database ────────────────────────────────────────
 *.db
 *.db-shm
 *.db-wal
 
-# OS
+# ─── OS Artifacts ────────────────────────────────────
 .DS_Store
 Thumbs.db
-
-# IDE
-.vscode/
-.idea/
+.directory
 *.swp
 *.swo
+*~
+~$*
 
-# Environment
+# ─── IDE Artifacts ───────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# ─── Environment ─────────────────────────────────────
 .env
 .env.local
+.env.*.local
 
-# Generated
-*.generated.json
+# ─── Ollama / AI ─────────────────────────────────────
+asf-tui/models/
+asf-tui/*.gguf
+*.gguf
+
+# ─── License Files (private) ─────────────────────────
+license.key
+*.license.key
+
+# ─── User Config (private) ───────────────────────────
+asf.config.yaml
+asf-tui/asf.config.yaml
+
+# ─── Cache ───────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+node_modules/
+
+# ─── Python Virtual Environments ─────────────────────
+.venv/
+venv/
+env/
+
+# ─── Generated Exports ──────────────────────────────
+*.asf_export.json
+*.asf_export.md
+*.asf_export.csv
+*.asf_export.pdf
+*.asf_export.html

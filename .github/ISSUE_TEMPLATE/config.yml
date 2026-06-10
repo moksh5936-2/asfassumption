@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ASF Security Contact
+    url: mailto:security@asfsecurity.com
+    about: Report security vulnerabilities
