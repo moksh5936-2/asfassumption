@@ -7,9 +7,9 @@
 #
 # Environment:
 #   ASF_VERSION=1.0.0       — pin a specific version
-#   GITHUB_TOKEN=ghp_xxx    — for private repos (or set via gh auth token)
+#   GITHUB_TOKEN=ghp_xxx    — for private repos (set via gh auth token)
 #
-# The script works with both public and private repositories.
+# The script works with public repos by default and private repos with GITHUB_TOKEN.
 
 set -euo pipefail
 
