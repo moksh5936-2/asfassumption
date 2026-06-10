@@ -51,23 +51,16 @@ chmod +x install.sh
 ./install.sh
 
 # Manual installation
-chmod +x asf-darwin-arm64
-sudo mv asf-darwin-arm64 /usr/local/bin/asf
+chmod +x ASF-v2.0.0-darwin-arm64
+mkdir -p ~/.local/bin ~/.asf
+cp ASF-v2.0.0-darwin-arm64 ~/.asf/asf
+ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
 ### Windows
 
 ```powershell
-# Not yet available — see BUILD_SYSTEM.md for cross-compilation
-```
-
-### Prerequisites
-
-After installing ASF, you also need the Python ASF engine (REQUIRED):
-
-```bash
-cd /path/to/asf
-pip install -e .
+# See install.ps1 or download ASF-v2.0.0-windows-amd64.exe directly
 ```
 
 ### Optional Dependencies
@@ -75,7 +68,6 @@ pip install -e .
 ```bash
 # Ollama (OPTIONAL — for AI features)
 brew install ollama
-ollama serve
 
 # Tesseract (OPTIONAL — for image OCR)
 brew install tesseract
@@ -112,11 +104,8 @@ go build -o asf-tui .
 
 ## Known Limitations
 
-1. **Single platform binary** — Only macOS Apple Silicon is currently available
-2. **Python dependency** — ASF engine requires separate `pip install`
-3. **No code signing** — Binary is not notarized for macOS
-4. **No CI/CD** — Release builds are manual
-5. **No validation study** — Precision/recall metrics not yet established
+1. **No code signing** — Binary is not notarized for macOS
+2. **No validation study** — Precision/recall metrics not yet established
 
 ## Support
 

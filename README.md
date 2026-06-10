@@ -59,21 +59,21 @@
 - **🎨 4 themes** — Dark, Midnight, Cyber, Minimal
 - **🤖 Optional local AI** — Ollama integration for enhanced analysis (fully offline)
 - **🔑 Enterprise licensing** — HMAC-signed license keys
-- **📦 11.85MB binary** — Single-file distribution, no runtime dependencies (except Python)
+- **📦 ~9MB binary** — Single-file distribution, no runtime dependencies
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│  User Input  │──▶│  ASF Engine  │──▶│  Python CLI  │
-│  (diagram/   │   │  (Go TUI)    │   │  (asf.cli)   │
-│   document)  │   │              │   │              │
-└──────────────┘   └──────┬───────┘   └──────────────┘
-                          │
-                          ▼
-                   ┌──────────────┐
+┌──────────────┐   ┌───────────────────┐
+│  User Input  │──▶│  ASF Engine (Go)  │
+│  (diagram/   │   │  Native single    │
+│   document)  │   │  binary, no deps  │
+└──────────────┘   └────────┬──────────┘
+                           │
+                           ▼
+                    ┌───────────────┐
                    │  Explainability Pipeline          │
                    │  ┌────────────────────────────┐  │
                    │  │ 1. Evidence Engine          │  │
@@ -151,7 +151,23 @@
 curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash
 ```
 
-No repository clone required. The script detects your OS and architecture, downloads the correct binary from the latest GitHub release, verifies the SHA-256 checksum, and installs to `/usr/local/bin/asf`.
+No repository clone required. The script detects your OS and architecture, downloads the correct binary from the latest GitHub release, verifies the SHA-256 checksum, and installs to `~/.local/bin/asf` with a symlink at `~/.asf/asf`.
+
+Flags:
+- **`--upgrade`, `-u`** — Upgrade existing installation (backs up config)
+- **`--repair`** — Fix broken symlink/install without re-downloading
+- **`--clean`** — Force clean reinstall (removes binary, keeps config)
+
+```bash
+# Upgrade to latest
+curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash -s -- --upgrade
+
+# Repair a broken installation
+curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash -s -- --repair
+
+# Clean reinstall
+curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash -s -- --clean
+```
 
 > **Private repository:** If the repository is private, set `GITHUB_TOKEN` before running the installer:
 > ```bash
@@ -172,6 +188,8 @@ Download the binary for your platform from the [latest release](https://github.c
 
 | Platform | Download |
 |----------|----------|
+| Platform | Download |
+|----------|----------|
 | macOS Apple Silicon | `ASF-v2.0.0-darwin-arm64` |
 | macOS Intel | `ASF-v2.0.0-darwin-amd64` |
 | Linux AMD64 | `ASF-v2.0.0-linux-amd64` |
@@ -182,7 +200,9 @@ Download the binary for your platform from the [latest release](https://github.c
 # Example: macOS Apple Silicon
 curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v2.0.0/ASF-v2.0.0-darwin-arm64
 chmod +x ASF-v2.0.0-darwin-arm64
-sudo mv ASF-v2.0.0-darwin-arm64 /usr/local/bin/asf
+mkdir -p ~/.local/bin ~/.asf
+cp ASF-v2.0.0-darwin-arm64 ~/.asf/asf
+ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
 ### Verify Installation
@@ -192,20 +212,11 @@ asf --version
 # Expected: ASF v2.0.0
 ```
 
-### Upgrade
-
-```bash
-# Re-run the installer with --upgrade
-curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash -s -- --upgrade
-```
-
-Or manually download and replace the binary at `/usr/local/bin/asf`.
-
 ### Uninstall
 
 ```bash
-# Remove the binary
-sudo rm /usr/local/bin/asf
+# Remove the binary and symlink
+rm -f ~/.asf/asf ~/.local/bin/asf
 
 # Remove configuration and data (optional)
 rm -rf ~/.asf
@@ -223,11 +234,10 @@ rm -rf ~/.asf
 
 | Problem | Solution |
 |---------|----------|
-| `asf: command not found` | Ensure `/usr/local/bin` is in your PATH, or run `~/.asf/asf` directly |
+| `asf: command not found` | Ensure `~/.local/bin` is in your PATH: `export PATH="$PATH:$HOME/.local/bin"`. Or run `~/.asf/asf` directly |
 | `Permission denied` | Run `chmod +x ~/.asf/asf` |
 | Download fails with 404 | The version may not have a release for your platform, or the repo is private. Try setting `GITHUB_TOKEN`: `export GITHUB_TOKEN=ghp_xxx && curl ... \| bash` |
 | Checksum mismatch | The download may be corrupted. Re-run the installer or download manually from the GitHub release page |
-| Python engine not found | Run `pip install -e .` in the repository root to install the Python ASF engine |
 
 ---
 
@@ -346,7 +356,6 @@ License format: `ASF-XXXX-XXXX-XXXX-XXXX` (16 hex characters + 8-char HMAC signa
 
 ### Long-term
 
-- Native Go assumption extraction (remove Python dependency)
 - Cloud AI provider integration (optional)
 - REST API server mode
 - VS Code extension
@@ -376,7 +385,7 @@ See [docs/VALIDATION_STATUS.md](docs/VALIDATION_STATUS.md) for a complete, hones
 asf-tui/                   # Go TUI application
   main.go                  # CLI entry point
   app.go                   # TUI controller
-  engine.go                # Python bridge, result builder
+  engine.go                # Analysis engine
   parser.go                # All input format parsers
   stride.go                # STRIDE rule engine
   justify.go               # Explainability pipeline (7 engines)
@@ -457,7 +466,7 @@ A: Draw.io (.drawio), Mermaid (.mmd), YAML (.yaml/.yml), JSON (.json), SVG (.svg
 A: ASF finds implicit security assumptions, not known vulnerabilities. It answers "what did my team assume about the system?" not "what CVEs exist?"
 
 **Q: Can I use ASF without Python?**  
-A: Currently no — the assumption extraction is done by the Python ASF CLI. A future version may replace this with native Go code.
+A: Yes. ASF v2.0.0+ is a self-contained Go binary with no Python dependency. The analysis engine is fully native.
 
 **Q: How accurate is ASF?**  
 A: We don't know yet. Precision, recall, and false positive rate have not been measured. See [VALIDATION_STATUS.md](docs/VALIDATION_STATUS.md).
@@ -472,7 +481,6 @@ License validation uses HMAC and is performed locally. No phone-home mechanism e
 
 ## Limitations
 
-- Python ASF CLI must be installed separately
 - Image OCR requires Tesseract
 - AI features require Ollama
 - No human validation study yet
