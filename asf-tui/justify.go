@@ -39,6 +39,8 @@ type EvidenceResult struct {
 	MatchedRelationships   []string
 	MatchedTrustBoundaries []string
 	MatchedSecurityConcepts []string
+	PrimarySourceNode      string
+	SourceLine             int
 	EvidenceCount          int
 }
 
@@ -52,7 +54,8 @@ func (ee *EvidenceEngine) TraceEvidence(category string, keywords []string, text
 
 	searchText := strings.ToLower(category + " " + text + " " + strings.Join(keywords, " "))
 
-	// Match components
+	// Match components — also identify the primary source node
+	var primaryNode string
 	for _, comp := range ee.arch.Components {
 		label := strings.ToLower(comp.Label)
 		if label == "" {
@@ -60,6 +63,9 @@ func (ee *EvidenceEngine) TraceEvidence(category string, keywords []string, text
 		}
 		if strings.Contains(searchText, label) {
 			result.MatchedComponents = append(result.MatchedComponents, comp.Label)
+			if primaryNode == "" {
+				primaryNode = comp.Label
+			}
 		}
 	}
 
@@ -76,6 +82,18 @@ func (ee *EvidenceEngine) TraceEvidence(category string, keywords []string, text
 
 		_ = relLabel
 	}
+
+	// Set source node from best match
+	if primaryNode == "" {
+		// Fall back to first keyword as implied source
+		for _, kw := range keywords {
+			if kw != "" {
+				primaryNode = kw
+				break
+			}
+		}
+	}
+	result.PrimarySourceNode = primaryNode
 
 	// Match trust boundaries (inferred from relationships between different zones)
 	trustZones := map[string]bool{
@@ -121,10 +139,48 @@ func (ee *EvidenceEngine) TraceEvidence(category string, keywords []string, text
 	return result
 }
 
+// FindSourceLine searches the raw architecture text for the line containing
+// the best matching evidence for this assumption.
+func (ee *EvidenceEngine) FindSourceLine(searchText string, evidence *EvidenceResult) int {
+	if ee.arch == nil || ee.arch.RawText == "" {
+		return 0
+	}
+	// Try to find the primary matched component or a keyword in the raw text
+	searchFor := strings.ToLower(strings.TrimSpace(searchText))
+	lines := strings.Split(ee.arch.RawText, "\n")
+	for i, line := range lines {
+		ll := strings.ToLower(strings.TrimSpace(line))
+		if ll == "" {
+			continue
+		}
+		if strings.Contains(searchFor, ll) || strings.Contains(ll, searchFor[:min(len(searchFor), 40)]) {
+			return i + 1
+		}
+	}
+	// Fallback: find first line containing any matched component
+	if evidence != nil {
+		for _, comp := range evidence.MatchedComponents {
+			cl := strings.ToLower(comp)
+			for i, line := range lines {
+				if strings.Contains(strings.ToLower(line), cl) {
+					return i + 1
+				}
+			}
+		}
+	}
+	return 0
+}
+
 // BuildEvidenceSources builds the evidence source strings for an assumption.
 func (ee *EvidenceEngine) BuildEvidenceSources(evidence *EvidenceResult) []string {
 	var sources []string
 	sources = append(sources, fmt.Sprintf("source: %s (%s)", ee.sourcePath, ee.sourceType))
+	if evidence.PrimarySourceNode != "" {
+		sources = append(sources, fmt.Sprintf("source node: %s", evidence.PrimarySourceNode))
+	}
+	if evidence.SourceLine > 0 {
+		sources = append(sources, fmt.Sprintf("source line: %d", evidence.SourceLine))
+	}
 	for _, c := range evidence.MatchedComponents {
 		sources = append(sources, fmt.Sprintf("component: %s", c))
 	}
@@ -646,6 +702,12 @@ func (ep *ExplainabilityPipeline) Explain(a *Assumption) {
 
 	// Phase 1: Trace evidence
 	evidence := ep.evidenceEngine.TraceEvidence(a.Category, a.Keywords, a.Description)
+
+	// Phase 1b: Populate source traceability
+	searchText := a.Category + " " + a.Description + " " + strings.Join(a.Keywords, " ")
+	evidence.SourceLine = ep.evidenceEngine.FindSourceLine(searchText, evidence)
+	a.SourceNode = evidence.PrimarySourceNode
+	a.SourceLine = evidence.SourceLine
 
 	// Phase 2: Build evidence sources
 	a.EvidenceSources = ep.evidenceEngine.BuildEvidenceSources(evidence)

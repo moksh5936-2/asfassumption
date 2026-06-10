@@ -47,6 +47,10 @@ type Assumption struct {
 	Confidence   float64
 	Keywords     []string
 
+	// Evidence Traceability
+	SourceNode string `json:"source_node"`
+	SourceLine int    `json:"source_line"`
+
 	// Explainability fields (added by the explainability engine)
 	EvidenceSources      []string              `json:"evidence_sources"`
 	SourceComponents     []string              `json:"source_components"`

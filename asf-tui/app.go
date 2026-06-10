@@ -24,6 +24,7 @@ const (
 	aboutView
 	exportView
 	reviewView
+	validationView
 )
 
 type viewHistory struct {
@@ -62,6 +63,7 @@ type mainModel struct {
 	about    aboutModel
 	exportV  exportModel
 	review   reviewModel
+	validate validationModel
 
 	quitting bool
 	err      error
@@ -88,6 +90,7 @@ func newMainModel(cfg *Config) *mainModel {
 		about:       newAboutModel(),
 		exportV:     newExportModel(),
 		review:      newReviewModel(),
+		validate:    newValidationModel(),
 	}
 }
 
@@ -118,6 +121,21 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.review.mode = "browse"
 				m.history.push(m.currentView)
 				m.currentView = reviewView
+				return m, nil
+			}
+		case "v":
+			if m.currentView == resultsView && len(m.results.result.Assumptions) > 0 {
+				m.validate.assumptions = m.results.result.Assumptions
+				m.validate.currentIdx = 0
+				m.history.push(m.currentView)
+				m.currentView = validationView
+				return m, nil
+			}
+			if m.currentView == reviewView && len(m.review.assumptions) > 0 {
+				m.validate.assumptions = m.review.assumptions
+				m.validate.currentIdx = 0
+				m.history.push(m.currentView)
+				m.currentView = validationView
 				return m, nil
 			}
 		case "ctrl+c":
@@ -168,6 +186,8 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateExport(msg)
 	case reviewView:
 		return m.updateReview(msg)
+	case validationView:
+		return m.updateValidation(msg)
 	}
 
 	return m, nil
@@ -184,7 +204,7 @@ func (m mainModel) handleBack() (tea.Model, tea.Cmd) {
 		m.currentView = dashboardView
 	case resultsView:
 		m.currentView = dashboardView
-	case localaiView, settingsView, aboutView, exportView, reviewView:
+	case localaiView, settingsView, aboutView, exportView, reviewView, validationView:
 		m.currentView = dashboardView
 	}
 	return m, nil
@@ -219,6 +239,8 @@ func (m mainModel) View() string {
 		content = m.viewExport()
 	case reviewView:
 		content = m.viewReview()
+	case validationView:
+		content = m.viewValidation()
 	}
 
 	help := m.renderHelp()
@@ -238,8 +260,9 @@ func (m mainModel) renderHelp() string {
 		startupView: {"↑↓: Navigate", "Enter: Select", "q: Quit"},
 		dashboardView: {"↑↓: Navigate", "Enter: Select", "Esc: Back", "q: Quit"},
 		analyzeView:   {"↑↓: Navigate", "Enter: Edit/Select", "Esc: Back"},
-		resultsView:   {"↑↓: Scroll", "Enter: Toggle section", "e: Export", "r: Review", "Esc: Back"},
-		reviewView:    {"↑↓: Navigate", "Enter: Toggle detail", "s: Accept", "r: Reject", "m: Modified", "n: Note", "Esc: Back"},
+		resultsView:   {"↑↓: Scroll", "Enter: Toggle section", "e: Export", "r: Review", "v: Validate", "Esc: Back"},
+		reviewView:    {"↑↓: Navigate", "Enter: Toggle detail", "s: Accept", "r: Reject", "m: Modified", "n: Note", "v: Validate", "Esc: Back"},
+		validationView: {"↑↓: Navigate", "Enter: Detail", "Esc: Back"},
 		localaiView:   {"↑↓: Navigate", "Enter: Select action", "Esc: Back"},
 		settingsView:  {"↑↓: Navigate", "Enter: Change value", "Esc: Back"},
 		aboutView:     {"Esc: Back"},
