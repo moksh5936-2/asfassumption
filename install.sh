@@ -27,6 +27,14 @@ asf_config_dir() {
   esac
 }
 
+asf_cache_dir() {
+  case "$OS_FINAL" in
+    darwin) echo "${HOME}/Library/Caches/asf" ;;
+    linux)  echo "${XDG_CACHE_HOME:-${HOME}/.cache}/asf" ;;
+    *)      echo "${HOME}/.cache/asf" ;;
+  esac
+}
+
 # ─── Colors ────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -326,7 +334,7 @@ echo ""
 info "Run: asf"
 echo ""
 info "Config: $(asf_config_dir)/config.yaml"
-info "Cache:  ${ASF_HOME}/cache"
+info "Cache:  $(asf_cache_dir)"
 echo ""
 info "Prerequisites (full functionality):"
 info "  Python ASF engine: cd /path/to/asf && pip install -e ."
