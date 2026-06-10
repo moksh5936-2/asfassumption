@@ -19,6 +19,8 @@ esac
 
 if [ ! -f "$BINARY" ]; then
   echo "✗ Binary not found: $BINARY"
+  echo "  Checked from: $(pwd)"
+  ls -la . 2>/dev/null | head -5
   exit 1
 fi
 
@@ -37,12 +39,17 @@ check() {
   local name="$1"
   shift
   echo -n "  ✓ $name ... "
-  if "$@" &>/dev/null; then
+  local tmpout tmpdir
+  tmpdir=$(mktemp -d)
+  tmpout="${tmpdir}/output"
+  if "$@" >"$tmpout" 2>&1; then
     echo "PASS"
   else
     echo "FAIL"
+    cat "$tmpout"
     FAILED=1
   fi
+  rm -rf "$tmpdir"
 }
 
 check "binary launches" "$BINARY" --version

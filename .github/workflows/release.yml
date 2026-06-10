@@ -44,6 +44,7 @@ jobs:
         run: go test ./...
 
       - name: Build
+        id: build
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -58,13 +59,14 @@ jobs:
           fi
           go build -ldflags="-s -w" -o "../release/${BINARY}" .
           echo "binary=${BINARY}" >> $GITHUB_ENV
+          echo "binary=${BINARY}" >> $GITHUB_OUTPUT
 
       - name: Verify release
         if: matrix.goos != 'windows'
         working-directory: release
         run: |
-          chmod +x "${{ env.binary }}"
-          ../scripts/verify-release.sh "${{ env.binary }}"
+          chmod +x "$BINARY"
+          bash ../scripts/verify-release.sh "$BINARY"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -173,4 +175,4 @@ jobs:
 
       - name: Verify build
         working-directory: asf-tui
-        run: ../scripts/verify-release.sh asf-tui
+        run: bash ../scripts/verify-release.sh asf-tui
