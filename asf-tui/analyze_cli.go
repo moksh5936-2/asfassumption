@@ -73,11 +73,25 @@ func runAnalyzeCLI(args []string) {
 	var evPaths []string
 	filePath := ""
 
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			fmt.Println("Usage: asf analyze <file> [-e evidence ...] [--graph]")
+			fmt.Println()
+			fmt.Println("Analyze a policy document or architecture diagram for security assumptions.")
+			fmt.Println()
+			fmt.Println("Arguments:")
+			fmt.Println("  <file>                    Policy file, architecture doc, or directory")
+			fmt.Println("  -e, --evidence <path>     Evidence files/directories (CSV, JSON, YAML)")
+			fmt.Println("  --graph                   Include dependency graph in JSON output")
+			fmt.Println("  --help, -h                Show this help")
+			os.Exit(0)
+		}
+	}
+
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--graph":
 			graphFlag = true
-		case "--json":
 		case "-e", "--evidence":
 			i++
 			if i < len(args) {
@@ -91,6 +105,7 @@ func runAnalyzeCLI(args []string) {
 	}
 
 	if filePath == "" {
+		fmt.Fprintf(os.Stderr, "Error: no input file specified\n")
 		fmt.Fprintf(os.Stderr, "Usage: asf analyze <file> [-e evidence ...] [--graph]\n")
 		os.Exit(1)
 	}
