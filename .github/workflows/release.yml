@@ -65,8 +65,8 @@ jobs:
         if: matrix.goos != 'windows'
         working-directory: release
         run: |
-          chmod +x "$binary"
-          bash ../scripts/verify-release.sh "$binary"
+          ls -la
+          bash ../scripts/verify-release.sh "${{ steps.build.outputs.binary }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
