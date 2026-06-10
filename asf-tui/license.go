@@ -23,13 +23,19 @@ type LicenseInfo struct {
 }
 
 func LoadLicense() *LicenseInfo {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return &LicenseInfo{Valid: false, Message: "Cannot determine home directory"}
-	}
-
-	path := filepath.Join(home, ".asf", "license.key")
+	path := asfLicensePath()
 	data, err := os.ReadFile(path)
+	if err != nil {
+		oldPath := oldLicensePath()
+		if oldPath != "" {
+			data, err = os.ReadFile(oldPath)
+			if err == nil {
+				os.MkdirAll(filepath.Dir(path), 0700)
+				os.WriteFile(path, data, 0600)
+				os.Remove(oldPath)
+			}
+		}
+	}
 	if err != nil {
 		return &LicenseInfo{Valid: false, Message: "No license key found. See https://github.com/moksh5936-2/asfassumption/issues"}
 	}
@@ -70,15 +76,11 @@ func ValidateLicense(key string) *LicenseInfo {
 }
 
 func SaveLicense(key string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
+	path := asfLicensePath()
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
-	dir := filepath.Join(home, ".asf")
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(dir, "license.key"), []byte(strings.TrimSpace(key)), 0600)
+	return os.WriteFile(path, []byte(strings.TrimSpace(key)), 0600)
 }
 
 func GenerateLicenseKey(data string) string {

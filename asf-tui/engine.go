@@ -94,7 +94,6 @@ type AnalysisProgress struct {
 type Engine struct {
 	config        *Config
 	pythonPath    string
-	projectDir    string
 	strideEngine  *StrideEngine
 	explainPipe   *ExplainabilityPipeline
 	archDesc      *ArchDescription
@@ -103,10 +102,48 @@ type Engine struct {
 func NewEngine(cfg *Config) *Engine {
 	return &Engine{
 		config:       cfg,
-		pythonPath:   "/Users/moksh/Project/cybersec/.venv/bin/python",
-		projectDir:   "/Users/moksh/Project/cybersec",
+		pythonPath:   discoverPythonPath(cfg),
 		strideEngine: NewStrideEngine(),
 	}
+}
+
+func discoverPythonPath(cfg *Config) string {
+	exe, err := os.Executable()
+	binDir := ""
+	if err == nil {
+		binDir = filepath.Dir(exe)
+	}
+
+	candidates := []string{}
+	if binDir != "" {
+		candidates = append(candidates,
+			filepath.Join(binDir, "engine", "bin", "python3"),
+			filepath.Join(binDir, "engine", "bin", "python"),
+			filepath.Join(binDir, "asf"),
+		)
+	}
+	venvDir := filepath.Join(asfDataDir(), "venv", "bin", "python3")
+	candidates = append(candidates, venvDir)
+	candidates = append(candidates, filepath.Join(asfDataDir(), "venv", "bin", "python"))
+
+	for _, name := range []string{"asf", "asf.py", "asf-cli"} {
+		if p, err := exec.LookPath(name); err == nil {
+			candidates = append(candidates, p)
+		}
+	}
+	for _, name := range []string{"python3", "python"} {
+		if p, err := exec.LookPath(name); err == nil {
+			candidates = append(candidates, p)
+		}
+	}
+	for _, p := range candidates {
+		if p != "" {
+			if info, err := os.Stat(p); err == nil && !info.IsDir() {
+				return p
+			}
+		}
+	}
+	return "python3"
 }
 
 func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- AnalysisProgress) (*AnalysisResult, error) {
@@ -179,7 +216,7 @@ func (e *Engine) callPythonCLI(docPath, evPath string) (*asfJSONResult, error) {
 		}
 	}
 	cmd := exec.Command(e.pythonPath, args...)
-	cmd.Dir = e.projectDir
+	cmd.Dir = asfCacheDir()
 
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout

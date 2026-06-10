@@ -19,6 +19,14 @@ VERSION="${ASF_VERSION:-}"
 INSTALL_DIR="/usr/local/bin"
 ASF_HOME="${HOME}/.asf"
 
+asf_config_dir() {
+  case "$OS_FINAL" in
+    darwin) echo "${HOME}/Library/Application Support/asf" ;;
+    linux)  echo "${XDG_CONFIG_HOME:-${HOME}/.config}/asf" ;;
+    *)      echo "${HOME}/.asf" ;;
+  esac
+}
+
 # ─── Colors ────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -260,6 +268,7 @@ fi
 mkdir -p "${ASF_HOME}"
 mkdir -p "${ASF_HOME}/models"
 mkdir -p "${ASF_HOME}/reports"
+mkdir -p "$(asf_config_dir)"
 
 cp "${TMP_DIR}/asf" "${ASF_HOME}/asf"
 
@@ -271,8 +280,10 @@ fi
 ln -sf "${ASF_HOME}/asf" "${INSTALL_DIR}/asf" 2>/dev/null || cp "${ASF_HOME}/asf" "${INSTALL_DIR}/asf"
 
 # ─── Default config ────────────────────────────────────────
-if [ ! -f "${ASF_HOME}/config.yaml" ]; then
-  cat > "${ASF_HOME}/config.yaml" << 'CONFEOF'
+CONFIG_DIR=$(asf_config_dir)
+mkdir -p "${CONFIG_DIR}"
+if [ ! -f "${CONFIG_DIR}/config.yaml" ]; then
+  cat > "${CONFIG_DIR}/config.yaml" << 'CONFEOF'
 general:
   theme: Dark
   fox_style: Classic
@@ -313,6 +324,9 @@ echo ""
 ok "ASF v${VERSION} installed  (${BINARY_SIZE})"
 echo ""
 info "Run: asf"
+echo ""
+info "Config: $(asf_config_dir)/config.yaml"
+info "Cache:  ${ASF_HOME}/cache"
 echo ""
 info "Prerequisites (full functionality):"
 info "  Python ASF engine: cd /path/to/asf && pip install -e ."

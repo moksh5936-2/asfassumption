@@ -3,10 +3,27 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func printUsage() {
+	fmt.Printf("ASF v%s — Architecture Security Framework\n", ASFVersion)
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("  asf                        Launch the TUI")
+	fmt.Println("  asf --version, -v          Show version")
+	fmt.Println("  asf --license              Show license status")
+	fmt.Println("  asf doctor                 Run system diagnostics")
+	fmt.Println("  asf --help, -h             Show this help")
+	fmt.Println()
+	fmt.Println("Configuration:")
+	fmt.Printf("  Config:  %s\n", asfConfigPath())
+	fmt.Printf("  Cache:   %s\n", asfCacheDir())
+	fmt.Printf("  License: %s\n", asfLicensePath())
+	fmt.Println()
+	fmt.Println("Documentation: https://github.com/moksh5936-2/asfassumption")
+}
 
 func main() {
 	for _, arg := range os.Args[1:] {
@@ -21,24 +38,26 @@ func main() {
 				os.Exit(0)
 			}
 			fmt.Println("No valid license found.")
-			fmt.Println("Place your license key in ~/.asf/license.key")
+			fmt.Printf("Place your license key in %s\n", asfLicensePath())
 			os.Exit(1)
+		case "doctor", "--doctor", "diagnose":
+			runDoctor()
+			os.Exit(0)
+		case "--help", "-h":
+			printUsage()
+			os.Exit(0)
 		}
 	}
 
-	if strings.HasPrefix(os.Args[0], "go") || len(os.Args) > 1 {
+	helpFlags := map[string]bool{"--help": true, "-h": true}
+	if len(os.Args) > 1 && !helpFlags[os.Args[1]] {
 		fmt.Printf("ASF v%s — Architecture Security Framework\n", ASFVersion)
-		fmt.Println("Run without arguments to open the TUI.")
-		if len(os.Args) > 1 {
-			fmt.Println()
-			fmt.Println("Flags:")
-			fmt.Println("  --version, -v    Show version")
-			fmt.Println("  --license        Show license status")
-		}
+		fmt.Println()
+		printUsage()
 		os.Exit(0)
 	}
 
-	cfg, err := LoadConfig(ConfigPath())
+	cfg, err := LoadConfig(asfConfigPath())
 	if err != nil {
 		def := DefaultConfig()
 		cfg = &def
@@ -52,6 +71,6 @@ func main() {
 	}
 
 	if cfg != nil {
-		cfg.Save(ConfigPath())
+		cfg.Save(asfConfigPath())
 	}
 }

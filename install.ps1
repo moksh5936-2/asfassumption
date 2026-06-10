@@ -25,6 +25,7 @@ $Repo = "moksh5936-2/asfassumption"
 $Version = [Environment]::GetEnvironmentVariable("ASF_VERSION", "User")
 $InstallDir = "$env:LOCALAPPDATA\ASF"
 $BinDir = "$env:LOCALAPPDATA\ASF\bin"
+$ConfigDir = "$env:APPDATA\ASF"
 
 # ─── Help ──────────────────────────────────────────────────
 if ($Help) {
@@ -182,7 +183,8 @@ if ($userPath -notlike "*${BinDir}*") {
 }
 
 # ─── Config ────────────────────────────────────────────────
-$ConfigPath = "${InstallDir}\config.yaml"
+New-Item -ItemType Directory -Force -Path $ConfigDir | Out-Null
+$ConfigPath = "${ConfigDir}\config.yaml"
 if (-not (Test-Path $ConfigPath)) {
     @"
 general:

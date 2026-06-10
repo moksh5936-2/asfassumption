@@ -48,7 +48,8 @@ func (m resultsModel) Update(msg tea.Msg) (resultsModel, tea.Cmd) {
 			m.expanded[m.selected] = !m.expanded[m.selected]
 		case "e":
 			if m.result != nil {
-				path, err := ExportResult(m.result, m.exportFormat, "./reports")
+				exportDir := "./reports"
+				path, err := ExportResult(m.result, m.exportFormat, exportDir)
 				if err == nil {
 					m.exportComplete = true
 					m.exportPath = path

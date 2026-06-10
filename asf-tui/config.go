@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	General struct {
-		Theme string `yaml:"theme"`
+		Theme    string `yaml:"theme"`
 		FoxStyle string `yaml:"fox_style"`
 	} `yaml:"general"`
 	Analysis struct {
@@ -28,9 +28,13 @@ type Config struct {
 		Directory string `yaml:"directory"`
 	} `yaml:"output"`
 	Appearance struct {
-		Theme     string `yaml:"theme"`
-		FoxStyle  string `yaml:"fox_style"`
+		Theme    string `yaml:"theme"`
+		FoxStyle string `yaml:"fox_style"`
 	} `yaml:"appearance"`
+	Engine struct {
+		PythonPath string `yaml:"python_path"`
+		ProjectDir string `yaml:"project_dir"`
+	} `yaml:"engine"`
 }
 
 func DefaultConfig() Config {
@@ -48,16 +52,17 @@ func DefaultConfig() Config {
 	c.Output.Directory = "./reports"
 	c.Appearance.Theme = "Dark"
 	c.Appearance.FoxStyle = "Classic"
+	c.Engine.PythonPath = ""
+	c.Engine.ProjectDir = ""
 	return c
 }
 
 func ConfigPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "./asf.config.yaml"
+	newPath := asfConfigPath()
+	oldPath := legacyConfigPath()
+	if oldPath == "" {
+		return newPath
 	}
-	newPath := filepath.Join(home, ".asf", "config.yaml")
-	oldPath := filepath.Join(home, ".config", "asf", "config.yaml")
 	if _, err := os.Stat(oldPath); err == nil {
 		if _, err := os.Stat(newPath); os.IsNotExist(err) {
 			if err := os.MkdirAll(filepath.Dir(newPath), 0755); err == nil {
