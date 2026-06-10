@@ -31,7 +31,7 @@ func LoadLicense() *LicenseInfo {
 	path := filepath.Join(home, ".asf", "license.key")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return &LicenseInfo{Valid: false, Message: "No license key found. Contact support@asfsecurity.com"}
+		return &LicenseInfo{Valid: false, Message: "No license key found. See https://github.com/moksh5936-2/asfassumption/issues"}
 	}
 
 	key := strings.TrimSpace(string(data))

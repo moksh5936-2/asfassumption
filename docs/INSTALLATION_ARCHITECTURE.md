@@ -30,7 +30,7 @@ ASF distributes as a single statically-linked Go binary that acts as the TUI fro
 ### Method 1: Quick Install (curl pipe)
 
 ```bash
-curl -sfL https://raw.githubusercontent.com/asfsecurity/asf/main/asf-tui/install.sh | bash
+curl -sfL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/asf-tui/install.sh | bash
 ```
 
 **Process:**
@@ -48,7 +48,7 @@ curl -sfL https://raw.githubusercontent.com/asfsecurity/asf/main/asf-tui/install
 
 ```bash
 # 1. Download binary
-curl -sfL https://github.com/asfsecurity/asf/releases/download/v1.0.0/asf-darwin-arm64 -o /usr/local/bin/asf
+curl -sfL https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.0/asf-darwin-arm64 -o /usr/local/bin/asf
 chmod +x /usr/local/bin/asf
 
 # 2. Install Python engine
@@ -62,7 +62,7 @@ asf --version
 ### Method 3: Build from Source
 
 ```bash
-git clone https://github.com/asfsecurity/asf.git
+git clone https://github.com/moksh5936-2/asfassumption.git
 cd asf/asf-tui
 go build -o asf-tui .
 ```
@@ -150,10 +150,10 @@ The only features requiring network are optional: Ollama model downloads and API
 
 ```bash
 # Re-run installer
-curl -sfL https://raw.githubusercontent.com/asfsecurity/asf/main/asf-tui/install.sh | bash
+curl -sfL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/asf-tui/install.sh | bash
 
 # Or manual download
-curl -sfL https://github.com/asfsecurity/asf/releases/download/v1.0.1/asf-darwin-arm64 -o /usr/local/bin/asf
+curl -sfL https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.1/asf-darwin-arm64 -o /usr/local/bin/asf
 chmod +x /usr/local/bin/asf
 ```
 

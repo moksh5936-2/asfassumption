@@ -82,7 +82,7 @@ brew install tesseract
 
 ```bash
 # Requires Go 1.24+
-git clone https://github.com/asfsecurity/asf.git
+git clone https://github.com/moksh5936-2/asfassumption.git
 cd asf/asf-tui
 go build -o asf-tui .
 ```
@@ -117,4 +117,4 @@ go build -o asf-tui .
 
 ## Support
 
-- GitHub Issues: https://github.com/asfsecurity/asf/issues
+- GitHub Issues: https://github.com/moksh5936-2/asfassumption/issues

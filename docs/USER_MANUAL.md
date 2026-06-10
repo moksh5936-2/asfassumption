@@ -26,7 +26,7 @@
 
 ```bash
 # Download the binary
-curl -sfL https://github.com/asfsecurity/asf/releases/download/v1.0.0/asf-darwin-arm64 -o /usr/local/bin/asf
+curl -sfL https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.0/asf-darwin-arm64 -o /usr/local/bin/asf
 
 # Make executable
 chmod +x /usr/local/bin/asf
@@ -38,13 +38,13 @@ asf
 Or use the install script:
 
 ```bash
-curl -sfL https://raw.githubusercontent.com/asfsecurity/asf/main/asf-tui/install.sh | bash
+curl -sfL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/asf-tui/install.sh | bash
 ```
 
 ### Linux
 
 ```bash
-curl -sfL https://github.com/asfsecurity/asf/releases/download/v1.0.0/asf-linux-amd64 -o /usr/local/bin/asf
+curl -sfL https://github.com/moksh5936-2/asfassumption/releases/download/v1.0.0/asf-linux-amd64 -o /usr/local/bin/asf
 chmod +x /usr/local/bin/asf
 asf
 ```

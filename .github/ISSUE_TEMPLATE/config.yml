@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: ASF Security Contact
-    url: mailto:security@asfsecurity.com
+    url: https://github.com/moksh5936-2/asfassumption/issues
     about: Report security vulnerabilities

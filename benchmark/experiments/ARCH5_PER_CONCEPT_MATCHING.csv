@@ -1,0 +1,68 @@
+Architecture_ID,Architecture_Name,Concept_ID,Concept_Description,Claude,GPT,Gemini,Gemma
+20,ERP → SOX → Financial Reporting,AUTH-MFA.MFA Provider availability,MFA Provider MUST be available for Finance Team to enforce step-up authentication.,B,B,N,N
+20,ERP → SOX → Financial Reporting,AUTH-MFA.MFA Enrollment enforced,MFA Enrollment MUST be enforced for all users accessing Finance Team without exception.,Y,B,N,N
+20,ERP → SOX → Financial Reporting,AUTH-MFA.MFA Token Distribution,Trusts that MFA tokens are provisioned before users need access to Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AUTH-MFA.Phishing Resistance,Assumes that MFA factor is not interceptable via phishing for Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AUTH-SSO.SSO Provider enforcement,SSO MUST be enforced for all application access through Finance Team without exception.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AUTH-SSO.SSO Provider Availability,SSO Provider MUST be available to authenticate users at Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AUTH-SSO.Session Management,Assumes that SSO sessions are properly scoped and timed at Finance Team.,Y,B,N,N
+20,ERP → SOX → Financial Reporting,AUTH-SSO.Federation Trust,Trusts that SSO identity provider assertions are cryptographically verified at Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AVAIL-RESIL.Auto-scaling for ERP Web App,Auto-scaling MUST be available for ERP Web App to handle peak load without degradation.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AVAIL-RESIL.Financial DB replication/failover,Architecturally requires replica failover for Financial DB to maintain availability.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AVAIL-RESIL.Finance Team multi-AZ redundancy,Assumes that Finance Team is deployed across multiple availability zones.,N,N,N,N
+20,ERP → SOX → Financial Reporting,AVAIL-RESIL.SOX Enclave network path redundancy,Network path redundancy MUST be tested for failover scenarios involving SOX Enclave.,N,N,N,N
+20,ERP → SOX → Financial Reporting,BACKUP-RECOV.Backup Schedule/quarterly restore testing,Backup schedule MUST be tested via restore drill for Financial DB at least quarterly.,B,B,N,N
+20,ERP → SOX → Financial Reporting,BACKUP-RECOV.Backup Storage in separate region,Backup storage MUST be available for Financial DB in a separate geographic region.,N,N,N,N
+20,ERP → SOX → Financial Reporting,BACKUP-RECOV.Finance Team backup data integrity,Assumes that Finance Team backup data is not silently corrupted.,N,B,N,N
+20,ERP → SOX → Financial Reporting,CHG-MGMT.Change Approval documentation,Change approval MUST be documented and approved before deployment to ERP Web App.,N,B,N,N
+20,ERP → SOX → Financial Reporting,CHG-MGMT.Change Testing in staging,Changes MUST be tested in a staging environment before promoting to Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,CHG-MGMT.Network Change Review/drift detection,Assumes that changes to SOX Enclave do not bypass security controls.,N,N,N,N
+20,ERP → SOX → Financial Reporting,CLOUD-IAM.IAM Role least-privilege enforcement,IAM roles MUST be enforced with least-privilege for ERP Web App.,N,B,N,N
+20,ERP → SOX → Financial Reporting,CLOUD-IAM.IAM Policy Review for Finance Team,Assumes that IAM policies attached to Finance Team do not grant unintended access.,N,N,N,N
+20,ERP → SOX → Financial Reporting,CLOUD-IAM.IAM Federation trust policy scoping,Trusts that IAM roles assumed by Finance Team are scoped to trusted entities.,N,N,N,N
+20,ERP → SOX → Financial Reporting,CLOUD-IAM.Service Control Policies for region restriction,SCPs MUST be available to prevent actions on ERP Web App outside approved regions.,N,N,N,N
+20,ERP → SOX → Financial Reporting,DATAFLOW.Data Classification for Financial DB,Assumes that data flowing to Financial DB is properly classified by sensitivity.,N,N,N,N
+20,ERP → SOX → Financial Reporting,DATAFLOW.Data Flow Mapping for SOX Enclave,Data flow MUST be documented for all data paths through SOX Enclave.,N,N,N,N
+20,ERP → SOX → Financial Reporting,DATAFLOW.Data Leak Prevention for ERP Web App,DLP MUST be enforced to prevent unauthorized data exfiltration from ERP Web App.,N,N,N,N
+20,ERP → SOX → Financial Reporting,DATAFLOW.Protocol Validation at Finance Team,Assumes that Finance Team validates all data schemas before processing.,N,N,N,N
+20,ERP → SOX → Financial Reporting,ENCR-REST.Encryption Key AES-256 at rest for Financial DB,AES-256 encryption MUST be enforced for all data stored in Financial DB.,Y,B,N,N
+20,ERP → SOX → Financial Reporting,ENCR-REST.Key rotation schedule,Assumes that encryption keys for Financial DB are rotated on schedule.,B,B,N,N
+20,ERP → SOX → Financial Reporting,ENCR-REST.KMS Key Access Control availability,Key access control MUST be available via KMS with strict access controls for Finance Team.,N,B,N,N
+20,ERP → SOX → Financial Reporting,ENCR-TLS.TLS 1.2+ enforcement,TLS 1.2+ MUST be enforced for all connections to Finance Team.,Y,N,N,N
+20,ERP → SOX → Financial Reporting,ENCR-TLS.TLS certificate renewal before expiry,Assumes that TLS certificates for Finance Team are renewed before expiry.,N,N,N,N
+20,ERP → SOX → Financial Reporting,ENCR-TLS.CA chain trust/Certificate Pinning,Trusts that the CA chain for SOX Enclave has not been compromised.,N,N,N,N
+20,ERP → SOX → Financial Reporting,ENCR-TLS.mTLS Configuration testing,mTLS MUST be tested to verify correct configuration for ERP Web App.,N,N,N,N
+20,ERP → SOX → Financial Reporting,HUMAN-FACT.Security awareness training,Assumes that personnel accessing Finance Team have completed security awareness training.,N,N,N,N
+20,ERP → SOX → Financial Reporting,HUMAN-FACT.Incident Response procedure documentation,IR procedures MUST be documented for incidents involving ERP Web App.,N,N,N,N
+20,ERP → SOX → Financial Reporting,HUMAN-FACT.User Behavior Monitoring (no credential sharing),Assumes that users of Finance Team do not share credentials or bypass security controls.,N,N,N,N
+20,ERP → SOX → Financial Reporting,ID-LIFECYCLE.User Provisioning within 24 hours,Users MUST be provisioned in Finance Team within 24 hours of hire.,N,B,N,N
+20,ERP → SOX → Financial Reporting,ID-LIFECYCLE.User Deprovisioning within 1 hour,Access to Finance Team MUST be deactivated within 1 hour of termination.,N,B,N,N
+20,ERP → SOX → Financial Reporting,ID-LIFECYCLE.Access Recertification/quarterly review,Quarterly access review MUST be documented for Finance Team.,Y,B,N,N
+20,ERP → SOX → Financial Reporting,ID-LIFECYCLE.HR system as identity source of truth,Trusts that the HR system feeds accurate identity data to Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,INC-RESP.Security Monitoring for compromise detection,Security monitoring MUST be tested to detect compromise of Finance Team within SLA.,B,B,N,N
+20,ERP → SOX → Financial Reporting,INC-RESP.Log Retention for forensic investigation,Assumes that logs are retained for forensic investigation.,N,N,N,N
+20,ERP → SOX → Financial Reporting,INC-RESP.Containment Plan for ERP Web App,Containment plan MUST be documented with steps for compromised ERP Web App.,N,N,N,N
+20,ERP → SOX → Financial Reporting,INC-RESP.Audit Trail Integrity (tamper-proof logs),Assumes that Finance Team logs cannot be tampered with by attackers.,Y,Y,B,N
+20,ERP → SOX → Financial Reporting,LEAST-PRIV.Permission Boundaries for service accounts,Permission boundaries MUST be enforced for all service accounts accessing ERP Web App.,N,B,N,N
+20,ERP → SOX → Financial Reporting,LEAST-PRIV.Financial DB access control (table-scoped),Assumes that DB accounts for Financial DB are scoped to specific tables.,B,B,N,B
+20,ERP → SOX → Financial Reporting,LEAST-PRIV.Just-in-Time Access,JIT access MUST be validated via privilege escalation review for Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,LEAST-PRIV.API Key Scope,Assumes that API keys for Finance Team are scoped to minimum operations required.,N,N,N,N
+20,ERP → SOX → Financial Reporting,MONITOR.Alert Configuration for attack patterns,Assumes that security alerts are configured to detect attack patterns.,Y,B,N,N
+20,ERP → SOX → Financial Reporting,MONITOR.Alert Response with escalation paths,Alert response MUST be documented with escalation paths.,N,N,N,N
+20,ERP → SOX → Financial Reporting,MONITOR.Anomaly Detection for Financial DB,Anomaly detection MUST be tested to validate baseline deviations for Financial DB.,Y,N,N,N
+20,ERP → SOX → Financial Reporting,MONITOR.Log Ingestion for event capture,Log ingestion MUST be available to capture all events.,N,N,N,N
+20,ERP → SOX → Financial Reporting,NET-SEG.Firewall Rules for SOX Enclave isolation,Firewall rules MUST be enforced to isolate SOX Enclave from untrusted networks.,Y,N,N,N
+20,ERP → SOX → Financial Reporting,NET-SEG.Micro-segmentation/workload isolation,"Assumes that SOX Enclave is isolated at the workload level, not just perimeter.",N,N,N,N
+20,ERP → SOX → Financial Reporting,NET-SEG.Traffic Filtering documentation,Traffic filtering MUST be documented showing all allowed flows through Finance Team.,N,N,N,N
+20,ERP → SOX → Financial Reporting,NET-SEG.Network Isolation Testing,Network isolation MUST be tested for tenant isolation at SOX Enclave.,N,N,N,N
+20,ERP → SOX → Financial Reporting,PHYS-SEC.Physical security/data center access,Assumes that physical access to Financial DB is restricted to authorized personnel.,N,N,N,N
+20,ERP → SOX → Financial Reporting,PHYS-SEC.Workstation security/screen lock,Workstation security MUST be enforced to prevent unauthorized physical access.,N,N,N,N
+20,ERP → SOX → Financial Reporting,PHYS-SEC.Physical port security,Assumes that physical network ports for SOX Enclave are not publicly accessible.,N,N,N,N
+20,ERP → SOX → Financial Reporting,SUPPLY-CHAIN.Dependency Scanning/SBOM,Assumes that software dependencies used by Finance Team have no known vulnerabilities.,N,N,N,N
+20,ERP → SOX → Financial Reporting,SUPPLY-CHAIN.Image Signing/artifact verification,Image signing MUST be enforced to verify artifact signatures before deployment.,N,N,N,N
+20,ERP → SOX → Financial Reporting,SUPPLY-CHAIN.CI/CD Integrity/provenance tracking,CI/CD integrity MUST be documented with traceable provenance for all artifacts.,N,N,N,N
+20,ERP → SOX → Financial Reporting,SUPPLY-CHAIN.Vendor Risk Assessment,Trusts that third-party components used by SOX Enclave are not malicious.,N,N,N,N
+20,ERP → SOX → Financial Reporting,THIRD-PARTY.Third-party SLA availability,Third-party SLA MUST be available for ERP Web App to function as specified.,N,N,N,N
+20,ERP → SOX → Financial Reporting,THIRD-PARTY.Third-party Security Posture/certifications,Trusts that third-party providers maintain security certifications.,N,N,N,N
+20,ERP → SOX → Financial Reporting,THIRD-PARTY.Data Residency for SOX Enclave,Assumes that third-party SOX Enclave processes data in approved geographic regions.,N,N,N,N
+20,ERP → SOX → Financial Reporting,THIRD-PARTY.Third-party Access documentation,Third-party access MUST be documented with data processing agreements.,N,N,N,N

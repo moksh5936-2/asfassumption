@@ -3,7 +3,7 @@
 To report a security vulnerability in ASF:
 
 1. **Do not open a public GitHub issue**
-2. Email: security@asfsecurity.com
+2. Report via GitHub Issues: https://github.com/moksh5936-2/asfassumption/issues
 3. Include:
    - Affected version(s)
    - Description of the vulnerability

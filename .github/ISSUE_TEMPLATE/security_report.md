@@ -9,6 +9,6 @@ assignees: ''
 
 **Please do not disclose vulnerability details publicly.**
 
-Email details to: security@asfsecurity.com
+Report via GitHub Issues: https://github.com/moksh5936-2/asfassumption/issues
 
 This template is for tracking after initial disclosure.

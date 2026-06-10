@@ -13,7 +13,7 @@ ASF is a security tool, and we take vulnerabilities seriously.
 
 **Do not open public issues for security vulnerabilities.**
 
-Instead, report them to: security@asfsecurity.com
+Instead, report them via GitHub Issues: https://github.com/moksh5936-2/asfassumption/issues
 
 We will:
 1. Acknowledge receipt within 48 hours

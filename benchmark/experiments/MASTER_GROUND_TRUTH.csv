@@ -1,0 +1,315 @@
+Arch_ID,Arch_Name,Pattern,Component,ASF_Concept,Ontology,Claude,GPT,Gemini,Gemma,Match_Count,Notes
+A1,VPN -> Payroll DB,Authentication (MFA),VPN Gateway,MUST be available for VPN Gateway to enforce step-up authentication.,Dependency,B,N,N,N,1,
+A1,VPN -> Payroll DB,Authentication (MFA),VPN Gateway,MUST be enforced for all users accessing VPN Gateway without exception.,Explicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Authentication (MFA),VPN Gateway,trusts that MFA tokens are provisioned before users need access to VPN Gateway.,Trust,N,N,N,N,0,
+A1,VPN -> Payroll DB,Authentication (MFA),User Laptop,assumes that MFA factor is not interceptable via phishing for User Laptop.,Implicit,B,N,N,N,1,
+A1,VPN -> Payroll DB,Authentication (SSO),AD Directory,MUST be enforced for all application access through AD Directory without excepti,Explicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Authentication (SSO),VPN Gateway,MUST be available to authenticate users at VPN Gateway.,Dependency,N,N,N,N,0,
+A1,VPN -> Payroll DB,Authentication (SSO),AD Directory,assumes that SSO sessions are properly scoped and timed at AD Directory.,Implicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Authentication (SSO),VPN Gateway,trusts that the SSO identity provider assertions are cryptographically verified ,Trust,N,B,N,N,1,
+A1,VPN -> Payroll DB,Availability & Resilience,Internal Web App,MUST be available for Internal Web App to handle peak load without degradation.,Dependency,N,N,N,N,0,
+A1,VPN -> Payroll DB,Availability & Resilience,Payroll Database (RDS),architecturally requires replica failover for Payroll Database (RDS) to maintain,Architectural,N,N,N,N,0,
+A1,VPN -> Payroll DB,Availability & Resilience,VPN Gateway,assumes that VPN Gateway is deployed across multiple availability zones.,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Availability & Resilience,VPN Tunnel,MUST be tested for failover scenarios involving VPN Tunnel.,Derived,N,N,N,N,0,
+A1,VPN -> Payroll DB,Backup & Recovery,Payroll Database (RDS),MUST be tested via restore drill for Payroll Database (RDS) at least quarterly.,Derived,N,N,N,N,0,
+A1,VPN -> Payroll DB,Backup & Recovery,Payroll Database (RDS),MUST be available for Payroll Database (RDS) in a separate geographic region.,Dependency,B,N,N,N,1,
+A1,VPN -> Payroll DB,Backup & Recovery,User Laptop,assumes that User Laptop backup data is not silently corrupted.,Implicit,N,B,B,N,2,
+A1,VPN -> Payroll DB,Cloud Security (IAM),Internal Web App,MUST be enforced with least-privilege IAM roles for Internal Web App.,Explicit,B,B,Y,N,3,
+A1,VPN -> Payroll DB,Cloud Security (IAM),AD Directory,assumes that IAM policies attached to AD Directory do not grant unintended acces,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Cloud Security (IAM),VPN Gateway,trusts that IAM roles assumed by VPN Gateway are scoped to trusted entities.,Trust,N,N,N,N,0,
+A1,VPN -> Payroll DB,Cloud Security (IAM),Internal Web App,MUST be available to prevent actions on Internal Web App outside of approved reg,Dependency,N,N,N,N,0,
+A1,VPN -> Payroll DB,Data Flow & Classification,Payroll Database (RDS),assumes that data flowing to Payroll Database (RDS) is properly classified by se,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Data Flow & Classification,VPN Tunnel,MUST be documented for all data paths through VPN Tunnel.,Operational,N,N,N,N,0,
+A1,VPN -> Payroll DB,Data Flow & Classification,Internal Web App,MUST be enforced to prevent unauthorized data exfiltration from Internal Web App,Explicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Data Flow & Classification,VPN Gateway,assumes that VPN Gateway validates all data schemas before processing.,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Encryption at Rest,Payroll Database (RDS),MUST be enforced for all data stored in Payroll Database (RDS) using AES-256.,Explicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Encryption at Rest,Payroll Database (RDS),assumes that encryption keys for Payroll Database (RDS) are rotated on schedule.,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Encryption at Rest,User Laptop,MUST be available via KMS with strict access controls for User Laptop.,Dependency,N,B,N,N,1,
+A1,VPN -> Payroll DB,Encryption in Transit (TLS),VPN Gateway,MUST be enforced with TLS 1.2+ for all connections to VPN Gateway.,Explicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Encryption in Transit (TLS),VPN Gateway,assumes that TLS certificates for VPN Gateway are renewed before expiry.,Implicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Encryption in Transit (TLS),VPN Tunnel,trusts that the CA chain for VPN Tunnel has not been compromised.,Trust,A,N,Y,Y,2,
+A1,VPN -> Payroll DB,Encryption in Transit (TLS),Internal Web App,MUST be tested to verify mutual TLS is correctly configured for Internal Web App,Derived,A,N,N,N,0,
+A1,VPN -> Payroll DB,Endpoint Security,User Laptop,assumes that User Laptop has up-to-date endpoint detection and response installe,Implicit,A,B,Y,N,2,
+A1,VPN -> Payroll DB,Endpoint Security,User Laptop,MUST be enforced for OS and browser patches on User Laptop.,Explicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Human Factors & Process,User Laptop,assumes that personnel accessing User Laptop have completed security awareness t,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Human Factors & Process,Internal Web App,MUST be documented for incident response procedures involving Internal Web App.,Operational,N,N,N,Y,1,
+A1,VPN -> Payroll DB,Human Factors & Process,User Laptop,assumes that users of User Laptop do not share credentials or bypass security co,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Identity Lifecycle,AD Directory,MUST be enforced to provision users in AD Directory within 24 hours of hire.,Explicit,N,Y,N,N,1,
+A1,VPN -> Payroll DB,Identity Lifecycle,AD Directory,MUST be enforced to deactivate access to AD Directory within 1 hour of terminati,Explicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Identity Lifecycle,VPN Gateway,MUST be documented for quarterly access review of VPN Gateway.,Operational,N,N,N,N,0,
+A1,VPN -> Payroll DB,Identity Lifecycle,AD Directory,trusts that the HR system feeds accurate identity data to AD Directory.,Trust,N,B,N,N,1,
+A1,VPN -> Payroll DB,Incident Response,User Laptop,MUST be tested to detect compromise of User Laptop within SLA.,Derived,N,N,N,N,0,
+A1,VPN -> Payroll DB,Incident Response,User Laptop,assumes that logs from User Laptop are retained for forensic investigation.,Implicit,A,N,N,N,0,
+A1,VPN -> Payroll DB,Incident Response,Internal Web App,MUST be documented with containment steps for compromised Internal Web App.,Operational,N,Y,N,N,1,
+A1,VPN -> Payroll DB,Incident Response,User Laptop,assumes that User Laptop logs cannot be tampered with by attackers.,Implicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Least Privilege,Internal Web App,MUST be enforced for all service accounts accessing Internal Web App.,Explicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Least Privilege,Payroll Database (RDS),assumes that database accounts for Payroll Database (RDS) are scoped to specific,Implicit,B,N,N,N,1,
+A1,VPN -> Payroll DB,Least Privilege,User Laptop,MUST be validated via privilege escalation review for User Laptop.,Derived,N,N,N,N,0,
+A1,VPN -> Payroll DB,Least Privilege,VPN Gateway,assumes that API keys for VPN Gateway are scoped to the minimum operations requi,Implicit,N,B,N,N,1,
+A1,VPN -> Payroll DB,Monitoring & Alerting,User Laptop,assumes that security alerts from User Laptop are configured to detect attack pa,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Monitoring & Alerting,User Laptop,MUST be documented with escalation paths for alerts from User Laptop.,Operational,A,N,N,N,0,
+A1,VPN -> Payroll DB,Monitoring & Alerting,Payroll Database (RDS),MUST be tested to validate baseline deviations for Payroll Database (RDS).,Derived,N,N,N,N,0,
+A1,VPN -> Payroll DB,Monitoring & Alerting,User Laptop,MUST be available to capture all events from User Laptop.,Dependency,N,B,N,N,1,
+A1,VPN -> Payroll DB,Network Segmentation,VPN Tunnel,MUST be enforced to isolate VPN Tunnel from untrusted networks.,Explicit,N,B,Y,Y,3,
+A1,VPN -> Payroll DB,Network Segmentation,VPN Tunnel,"assumes that VPN Tunnel is isolated at the workload level, not just perimeter.",Implicit,A,N,N,N,0,
+A1,VPN -> Payroll DB,Network Segmentation,VPN Gateway,MUST be documented showing all allowed traffic flows through VPN Gateway.,Operational,B,N,N,N,1,
+A1,VPN -> Payroll DB,Network Segmentation,VPN Tunnel,MUST be tested for tenant isolation at VPN Tunnel.,Derived,N,N,N,N,0,
+A1,VPN -> Payroll DB,Third-party Dependency,Internal Web App,MUST be available for Internal Web App to function as specified in the SLA.,Dependency,B,B,N,N,2,
+A1,VPN -> Payroll DB,Third-party Dependency,VPN Gateway,trusts that the third-party provider for VPN Gateway maintains security certific,Trust,N,N,N,N,0,
+A1,VPN -> Payroll DB,Third-party Dependency,VPN Tunnel,assumes that third-party VPN Tunnel processes data in approved geographic region,Implicit,N,N,N,N,0,
+A1,VPN -> Payroll DB,Third-party Dependency,Payroll Database (RDS),MUST be documented and have data processing agreements for Payroll Database (RDS,Operational,N,N,N,N,0,
+A2,SSO -> IdP -> SAML Federation,Authentication (MFA),Okta IdP,MUST be available for Okta IdP to enforce step-up authentication.,Dependency,B,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (MFA),Okta IdP,MUST be enforced for all users accessing Okta IdP without exception.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (MFA),Okta IdP,trusts that MFA tokens are provisioned before users need access to Okta IdP.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (MFA),User Browser,assumes that MFA factor is not interceptable via phishing for User Browser.,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (SSO),Okta IdP,MUST be enforced for all application access through Okta IdP without exception.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (SSO),Okta IdP,MUST be available to authenticate users at Okta IdP.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (SSO),Okta IdP,assumes that SSO sessions are properly scoped and timed at Okta IdP.,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Authentication (SSO),Okta IdP,trusts that the SSO identity provider assertions are cryptographically verified ,Trust,Y,Y,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Availability & Resilience,Service Provider Apps,MUST be available for Service Provider Apps to handle peak load without degradat,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Availability & Resilience,AD Directory,architecturally requires replica failover for AD Directory to maintain availabil,Architectural,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Availability & Resilience,Okta IdP,assumes that Okta IdP is deployed across multiple availability zones.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Availability & Resilience,SAML Federation,MUST be tested for failover scenarios involving SAML Federation.,Derived,B,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Cloud Security (IAM),Service Provider Apps,MUST be enforced with least-privilege IAM roles for Service Provider Apps.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Cloud Security (IAM),Okta IdP,assumes that IAM policies attached to Okta IdP do not grant unintended access.,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Cloud Security (IAM),Okta IdP,trusts that IAM roles assumed by Okta IdP are scoped to trusted entities.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Cloud Security (IAM),Service Provider Apps,MUST be available to prevent actions on Service Provider Apps outside of approve,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Data Flow & Classification,AD Directory,assumes that data flowing to AD Directory is properly classified by sensitivity.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Data Flow & Classification,SAML Federation,MUST be documented for all data paths through SAML Federation.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Data Flow & Classification,Service Provider Apps,MUST be enforced to prevent unauthorized data exfiltration from Service Provider,Explicit,B,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Data Flow & Classification,Okta IdP,assumes that Okta IdP validates all data schemas before processing.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption at Rest,AD Directory,MUST be enforced for all data stored in AD Directory using AES-256.,Explicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption at Rest,AD Directory,assumes that encryption keys for AD Directory are rotated on schedule.,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption at Rest,User Browser,MUST be available via KMS with strict access controls for User Browser.,Dependency,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption in Transit (TLS),Okta IdP,MUST be enforced with TLS 1.2+ for all connections to Okta IdP.,Explicit,B,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption in Transit (TLS),Okta IdP,assumes that TLS certificates for Okta IdP are renewed before expiry.,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption in Transit (TLS),SAML Federation,trusts that the CA chain for SAML Federation has not been compromised.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Encryption in Transit (TLS),Service Provider Apps,MUST be tested to verify mutual TLS is correctly configured for Service Provider,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Human Factors & Process,User Browser,assumes that personnel accessing User Browser have completed security awareness ,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Human Factors & Process,Service Provider Apps,MUST be documented for incident response procedures involving Service Provider A,Operational,B,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Human Factors & Process,User Browser,assumes that users of User Browser do not share credentials or bypass security c,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Identity Lifecycle,Okta IdP,MUST be enforced to provision users in Okta IdP within 24 hours of hire.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Identity Lifecycle,Okta IdP,MUST be enforced to deactivate access to Okta IdP within 1 hour of termination.,Explicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Identity Lifecycle,Okta IdP,MUST be documented for quarterly access review of Okta IdP.,Operational,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Identity Lifecycle,Okta IdP,trusts that the HR system feeds accurate identity data to Okta IdP.,Trust,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Incident Response,User Browser,MUST be tested to detect compromise of User Browser within SLA.,Derived,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Incident Response,User Browser,assumes that logs from User Browser are retained for forensic investigation.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Incident Response,Service Provider Apps,MUST be documented with containment steps for compromised Service Provider Apps.,Operational,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Incident Response,User Browser,assumes that User Browser logs cannot be tampered with by attackers.,Implicit,B,Y,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Least Privilege,Service Provider Apps,MUST be enforced for all service accounts accessing Service Provider Apps.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Least Privilege,AD Directory,assumes that database accounts for AD Directory are scoped to specific tables.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Least Privilege,User Browser,MUST be validated via privilege escalation review for User Browser.,Derived,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Least Privilege,Okta IdP,assumes that API keys for Okta IdP are scoped to the minimum operations required,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Monitoring & Alerting,User Browser,assumes that security alerts from User Browser are configured to detect attack p,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Monitoring & Alerting,User Browser,MUST be documented with escalation paths for alerts from User Browser.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Monitoring & Alerting,AD Directory,MUST be tested to validate baseline deviations for AD Directory.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Monitoring & Alerting,User Browser,MUST be available to capture all events from User Browser.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Network Segmentation,SAML Federation,MUST be enforced to isolate SAML Federation from untrusted networks.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Network Segmentation,SAML Federation,"assumes that SAML Federation is isolated at the workload level, not just perimet",Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Network Segmentation,Okta IdP,MUST be documented showing all allowed traffic flows through Okta IdP.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Network Segmentation,SAML Federation,MUST be tested for tenant isolation at SAML Federation.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Third-party Dependency,Service Provider Apps,MUST be available for Service Provider Apps to function as specified in the SLA.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Third-party Dependency,Okta IdP,trusts that the third-party provider for Okta IdP maintains security certificati,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Third-party Dependency,SAML Federation,assumes that third-party SAML Federation processes data in approved geographic r,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A2,SSO -> IdP -> SAML Federation,Third-party Dependency,AD Directory,MUST be documented and have data processing agreements for AD Directory.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (MFA),Ingress Gateway,MUST be available for Ingress Gateway to enforce step-up authentication.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (MFA),Ingress Gateway,MUST be enforced for all users accessing Ingress Gateway without exception.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (MFA),Ingress Gateway,trusts that MFA tokens are provisioned before users need access to Ingress Gatew,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (MFA),External Client,assumes that MFA factor is not interceptable via phishing for External Client.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (SSO),Citadel CA,MUST be enforced for all application access through Citadel CA without exception,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (SSO),Ingress Gateway,MUST be available to authenticate users at Ingress Gateway.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (SSO),Citadel CA,assumes that SSO sessions are properly scoped and timed at Citadel CA.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Authentication (SSO),Ingress Gateway,trusts that the SSO identity provider assertions are cryptographically verified ,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Availability & Resilience,Service A/B/C,MUST be available for Service A/B/C to handle peak load without degradation.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Availability & Resilience,StatefulSet DB,architecturally requires replica failover for StatefulSet DB to maintain availab,Architectural,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Availability & Resilience,Ingress Gateway,assumes that Ingress Gateway is deployed across multiple availability zones.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Availability & Resilience,Istio Service Mesh,MUST be tested for failover scenarios involving Istio Service Mesh.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Backup & Recovery,StatefulSet DB,MUST be tested via restore drill for StatefulSet DB at least quarterly.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Backup & Recovery,StatefulSet DB,MUST be available for StatefulSet DB in a separate geographic region.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Backup & Recovery,Persistent Volume,assumes that Persistent Volume backup data is not silently corrupted.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Change Management,Service A/B/C,MUST be documented and approved before deployment to Service A/B/C.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Change Management,Ingress Gateway,MUST be tested in a staging environment before promoting to Ingress Gateway.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Change Management,Istio Service Mesh,assumes that changes to Istio Service Mesh do not bypass security controls.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Cloud Security (IAM),Service A/B/C,MUST be enforced with least-privilege IAM roles for Service A/B/C.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Cloud Security (IAM),Citadel CA,assumes that IAM policies attached to Citadel CA do not grant unintended access.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Cloud Security (IAM),Ingress Gateway,trusts that IAM roles assumed by Ingress Gateway are scoped to trusted entities.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Cloud Security (IAM),Service A/B/C,MUST be available to prevent actions on Service A/B/C outside of approved region,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Container Security,Service A/B/C,assumes that container images deployed to Service A/B/C have no known vulnerabil,Implicit,,Y,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Container Security,Service A/B/C,MUST be enforced to prevent privileged containers in Service A/B/C.,Explicit,,Y,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Container Security,Service A/B/C,MUST be validated for runtime behavior anomalies in Service A/B/C.,Derived,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Data Flow & Classification,StatefulSet DB,assumes that data flowing to StatefulSet DB is properly classified by sensitivit,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Data Flow & Classification,Istio Service Mesh,MUST be documented for all data paths through Istio Service Mesh.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Data Flow & Classification,Service A/B/C,MUST be enforced to prevent unauthorized data exfiltration from Service A/B/C.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Data Flow & Classification,Ingress Gateway,assumes that Ingress Gateway validates all data schemas before processing.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption at Rest,StatefulSet DB,MUST be enforced for all data stored in StatefulSet DB using AES-256.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption at Rest,StatefulSet DB,assumes that encryption keys for StatefulSet DB are rotated on schedule.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption at Rest,Persistent Volume,MUST be available via KMS with strict access controls for Persistent Volume.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption in Transit (TLS),Ingress Gateway,MUST be enforced with TLS 1.2+ for all connections to Ingress Gateway.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption in Transit (TLS),Ingress Gateway,assumes that TLS certificates for Ingress Gateway are renewed before expiry.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption in Transit (TLS),Istio Service Mesh,trusts that the CA chain for Istio Service Mesh has not been compromised.,Trust,,Y,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Encryption in Transit (TLS),Service A/B/C,MUST be tested to verify mutual TLS is correctly configured for Service A/B/C.,Derived,,Y,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Human Factors & Process,External Client,assumes that personnel accessing External Client have completed security awarene,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Human Factors & Process,Service A/B/C,MUST be documented for incident response procedures involving Service A/B/C.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Human Factors & Process,External Client,assumes that users of External Client do not share credentials or bypass securit,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Identity Lifecycle,Citadel CA,MUST be enforced to provision users in Citadel CA within 24 hours of hire.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Identity Lifecycle,Citadel CA,MUST be enforced to deactivate access to Citadel CA within 1 hour of termination,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Identity Lifecycle,Ingress Gateway,MUST be documented for quarterly access review of Ingress Gateway.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Identity Lifecycle,Citadel CA,trusts that the HR system feeds accurate identity data to Citadel CA.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Incident Response,External Client,MUST be tested to detect compromise of External Client within SLA.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Incident Response,External Client,assumes that logs from External Client are retained for forensic investigation.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Incident Response,Service A/B/C,MUST be documented with containment steps for compromised Service A/B/C.,Operational,,Y,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Incident Response,External Client,assumes that External Client logs cannot be tampered with by attackers.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Least Privilege,Service A/B/C,MUST be enforced for all service accounts accessing Service A/B/C.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Least Privilege,StatefulSet DB,assumes that database accounts for StatefulSet DB are scoped to specific tables.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Least Privilege,External Client,MUST be validated via privilege escalation review for External Client.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Least Privilege,Ingress Gateway,assumes that API keys for Ingress Gateway are scoped to the minimum operations r,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Monitoring & Alerting,External Client,assumes that security alerts from External Client are configured to detect attac,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Monitoring & Alerting,External Client,MUST be documented with escalation paths for alerts from External Client.,Operational,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Monitoring & Alerting,StatefulSet DB,MUST be tested to validate baseline deviations for StatefulSet DB.,Derived,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Monitoring & Alerting,External Client,MUST be available to capture all events from External Client.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Network Segmentation,Istio Service Mesh,MUST be enforced to isolate Istio Service Mesh from untrusted networks.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Network Segmentation,Istio Service Mesh,"assumes that Istio Service Mesh is isolated at the workload level, not just peri",Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Network Segmentation,Ingress Gateway,MUST be documented showing all allowed traffic flows through Ingress Gateway.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Network Segmentation,Istio Service Mesh,MUST be tested for tenant isolation at Istio Service Mesh.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Supply Chain Security,Ingress Gateway,assumes that software dependencies used by Ingress Gateway have no known vulnera,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Supply Chain Security,Service A/B/C,MUST be enforced to verify artifact signatures before deploying to Service A/B/C,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Supply Chain Security,External Client,MUST be documented with traceable provenance for all artifacts deployed to Exter,Operational,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Supply Chain Security,Istio Service Mesh,trusts that third-party components used by Istio Service Mesh are not malicious.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Third-party Dependency,Service A/B/C,MUST be available for Service A/B/C to function as specified in the SLA.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Third-party Dependency,Ingress Gateway,trusts that the third-party provider for Ingress Gateway maintains security cert,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Third-party Dependency,Istio Service Mesh,assumes that third-party Istio Service Mesh processes data in approved geographi,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A3,K8s/Istio Service Mesh,Third-party Dependency,StatefulSet DB,MUST be documented and have data processing agreements for StatefulSet DB.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (MFA),Patient Portal,MUST be available for Patient Portal to enforce step-up authentication.,Dependency,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (MFA),Patient Portal,MUST be enforced for all users accessing Patient Portal without exception.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (MFA),Patient Portal,trusts that MFA tokens are provisioned before users need access to Patient Porta,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (MFA),Patient Portal,assumes that MFA factor is not interceptable via phishing for Patient Portal.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (SSO),Auth0,MUST be enforced for all application access through Auth0 without exception.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (SSO),Patient Portal,MUST be available to authenticate users at Patient Portal.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (SSO),Auth0,assumes that SSO sessions are properly scoped and timed at Auth0.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Authentication (SSO),Patient Portal,trusts that the SSO identity provider assertions are cryptographically verified ,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Availability & Resilience,App Server,MUST be available for App Server to handle peak load without degradation.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Availability & Resilience,PHI Database,architecturally requires replica failover for PHI Database to maintain availabil,Architectural,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Availability & Resilience,Patient Portal,assumes that Patient Portal is deployed across multiple availability zones.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Availability & Resilience,HIPAA Enclave,MUST be tested for failover scenarios involving HIPAA Enclave.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Backup & Recovery,PHI Database,MUST be tested via restore drill for PHI Database at least quarterly.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Backup & Recovery,PHI Database,MUST be available for PHI Database in a separate geographic region.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Backup & Recovery,Patient Portal,assumes that Patient Portal backup data is not silently corrupted.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Change Management,App Server,MUST be documented and approved before deployment to App Server.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Change Management,Patient Portal,MUST be tested in a staging environment before promoting to Patient Portal.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Change Management,HIPAA Enclave,assumes that changes to HIPAA Enclave do not bypass security controls.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Cloud Security (IAM),App Server,MUST be enforced with least-privilege IAM roles for App Server.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Cloud Security (IAM),Auth0,assumes that IAM policies attached to Auth0 do not grant unintended access.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Cloud Security (IAM),Patient Portal,trusts that IAM roles assumed by Patient Portal are scoped to trusted entities.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Cloud Security (IAM),App Server,MUST be available to prevent actions on App Server outside of approved regions.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Data Flow & Classification,PHI Database,assumes that data flowing to PHI Database is properly classified by sensitivity.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Data Flow & Classification,HIPAA Enclave,MUST be documented for all data paths through HIPAA Enclave.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Data Flow & Classification,App Server,MUST be enforced to prevent unauthorized data exfiltration from App Server.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Data Flow & Classification,Patient Portal,assumes that Patient Portal validates all data schemas before processing.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption at Rest,PHI Database,MUST be enforced for all data stored in PHI Database using AES-256.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption at Rest,PHI Database,assumes that encryption keys for PHI Database are rotated on schedule.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption at Rest,Patient Portal,MUST be available via KMS with strict access controls for Patient Portal.,Dependency,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption in Transit (TLS),Patient Portal,MUST be enforced with TLS 1.2+ for all connections to Patient Portal.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption in Transit (TLS),Patient Portal,assumes that TLS certificates for Patient Portal are renewed before expiry.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption in Transit (TLS),HIPAA Enclave,trusts that the CA chain for HIPAA Enclave has not been compromised.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Encryption in Transit (TLS),App Server,MUST be tested to verify mutual TLS is correctly configured for App Server.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Human Factors & Process,Patient Portal,assumes that personnel accessing Patient Portal have completed security awarenes,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Human Factors & Process,App Server,MUST be documented for incident response procedures involving App Server.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Human Factors & Process,Patient Portal,assumes that users of Patient Portal do not share credentials or bypass security,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Identity Lifecycle,Auth0,MUST be enforced to provision users in Auth0 within 24 hours of hire.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Identity Lifecycle,Auth0,MUST be enforced to deactivate access to Auth0 within 1 hour of termination.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Identity Lifecycle,Patient Portal,MUST be documented for quarterly access review of Patient Portal.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Identity Lifecycle,Auth0,trusts that the HR system feeds accurate identity data to Auth0.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Incident Response,SIEM,MUST be tested to detect compromise of SIEM within SLA.,Derived,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Incident Response,Audit Logs,assumes that logs from Audit Logs are retained for forensic investigation.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Incident Response,App Server,MUST be documented with containment steps for compromised App Server.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Incident Response,Patient Portal,assumes that Patient Portal logs cannot be tampered with by attackers.,Implicit,,Y,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Least Privilege,App Server,MUST be enforced for all service accounts accessing App Server.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Least Privilege,PHI Database,assumes that database accounts for PHI Database are scoped to specific tables.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Least Privilege,Patient Portal,MUST be validated via privilege escalation review for Patient Portal.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Least Privilege,Patient Portal,assumes that API keys for Patient Portal are scoped to the minimum operations re,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Monitoring & Alerting,SIEM,assumes that security alerts from SIEM are configured to detect attack patterns.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Monitoring & Alerting,SIEM,MUST be documented with escalation paths for alerts from SIEM.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Monitoring & Alerting,PHI Database,MUST be tested to validate baseline deviations for PHI Database.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Monitoring & Alerting,Audit Logs,MUST be available to capture all events from Audit Logs.,Dependency,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Network Segmentation,HIPAA Enclave,MUST be enforced to isolate HIPAA Enclave from untrusted networks.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Network Segmentation,HIPAA Enclave,"assumes that HIPAA Enclave is isolated at the workload level, not just perimeter",Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Network Segmentation,Patient Portal,MUST be documented showing all allowed traffic flows through Patient Portal.,Operational,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Network Segmentation,HIPAA Enclave,MUST be tested for tenant isolation at HIPAA Enclave.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Physical Security,PHI Database,assumes that physical access to PHI Database is restricted to authorized personn,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Physical Security,Patient Portal,MUST be enforced to prevent unauthorized physical access to Patient Portal.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Physical Security,HIPAA Enclave,assumes that physical network ports for HIPAA Enclave are not publicly accessibl,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Supply Chain Security,Patient Portal,assumes that software dependencies used by Patient Portal have no known vulnerab,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Supply Chain Security,App Server,MUST be enforced to verify artifact signatures before deploying to App Server.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Supply Chain Security,Patient Portal,MUST be documented with traceable provenance for all artifacts deployed to Patie,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Supply Chain Security,HIPAA Enclave,trusts that third-party components used by HIPAA Enclave are not malicious.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Third-party Dependency,App Server,MUST be available for App Server to function as specified in the SLA.,Dependency,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Third-party Dependency,Patient Portal,trusts that the third-party provider for Patient Portal maintains security certi,Trust,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Third-party Dependency,HIPAA Enclave,assumes that third-party HIPAA Enclave processes data in approved geographic reg,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A4,Healthcare -> PHI -> HIPAA,Third-party Dependency,PHI Database,MUST be documented and have data processing agreements for PHI Database.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (MFA),Finance Team,MUST be available for Finance Team to enforce step-up authentication.,Dependency,B,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (MFA),Finance Team,MUST be enforced for all users accessing Finance Team without exception.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (MFA),Finance Team,trusts that MFA tokens are provisioned before users need access to Finance Team.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (MFA),Finance Team,assumes that MFA factor is not interceptable via phishing for Finance Team.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (SSO),Finance Team,MUST be enforced for all application access through Finance Team without excepti,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (SSO),Finance Team,MUST be available to authenticate users at Finance Team.,Dependency,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (SSO),Finance Team,assumes that SSO sessions are properly scoped and timed at Finance Team.,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Authentication (SSO),Finance Team,trusts that the SSO identity provider assertions are cryptographically verified ,Trust,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Availability & Resilience,ERP Web App,MUST be available for ERP Web App to handle peak load without degradation.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Availability & Resilience,Financial DB,architecturally requires replica failover for Financial DB to maintain availabil,Architectural,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Availability & Resilience,Finance Team,assumes that Finance Team is deployed across multiple availability zones.,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Availability & Resilience,SOX Enclave,MUST be tested for failover scenarios involving SOX Enclave.,Derived,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Backup & Recovery,Financial DB,MUST be tested via restore drill for Financial DB at least quarterly.,Derived,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Backup & Recovery,Financial DB,MUST be available for Financial DB in a separate geographic region.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Backup & Recovery,Finance Team,assumes that Finance Team backup data is not silently corrupted.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Change Management,ERP Web App,MUST be documented and approved before deployment to ERP Web App.,Operational,B,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Change Management,Finance Team,MUST be tested in a staging environment before promoting to Finance Team.,Derived,B,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Change Management,SOX Enclave,assumes that changes to SOX Enclave do not bypass security controls.,Implicit,B,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Cloud Security (IAM),ERP Web App,MUST be enforced with least-privilege IAM roles for ERP Web App.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Cloud Security (IAM),Finance Team,assumes that IAM policies attached to Finance Team do not grant unintended acces,Implicit,B,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Cloud Security (IAM),Finance Team,trusts that IAM roles assumed by Finance Team are scoped to trusted entities.,Trust,B,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Cloud Security (IAM),ERP Web App,MUST be available to prevent actions on ERP Web App outside of approved regions.,Dependency,B,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Data Flow & Classification,Financial DB,assumes that data flowing to Financial DB is properly classified by sensitivity.,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Data Flow & Classification,SOX Enclave,MUST be documented for all data paths through SOX Enclave.,Operational,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Data Flow & Classification,ERP Web App,MUST be enforced to prevent unauthorized data exfiltration from ERP Web App.,Explicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Data Flow & Classification,Finance Team,assumes that Finance Team validates all data schemas before processing.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption at Rest,Financial DB,MUST be enforced for all data stored in Financial DB using AES-256.,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption at Rest,Financial DB,assumes that encryption keys for Financial DB are rotated on schedule.,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption at Rest,Finance Team,MUST be available via KMS with strict access controls for Finance Team.,Dependency,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption in Transit (TLS),Finance Team,MUST be enforced with TLS 1.2+ for all connections to Finance Team.,Explicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption in Transit (TLS),Finance Team,assumes that TLS certificates for Finance Team are renewed before expiry.,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption in Transit (TLS),SOX Enclave,trusts that the CA chain for SOX Enclave has not been compromised.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Encryption in Transit (TLS),ERP Web App,MUST be tested to verify mutual TLS is correctly configured for ERP Web App.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Human Factors & Process,Finance Team,assumes that personnel accessing Finance Team have completed security awareness ,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Human Factors & Process,ERP Web App,MUST be documented for incident response procedures involving ERP Web App.,Operational,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Human Factors & Process,Finance Team,assumes that users of Finance Team do not share credentials or bypass security c,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Identity Lifecycle,Finance Team,MUST be enforced to provision users in Finance Team within 24 hours of hire.,Explicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Identity Lifecycle,Finance Team,MUST be enforced to deactivate access to Finance Team within 1 hour of terminati,Explicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Identity Lifecycle,Finance Team,MUST be documented for quarterly access review of Finance Team.,Operational,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Identity Lifecycle,Finance Team,trusts that the HR system feeds accurate identity data to Finance Team.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Incident Response,Finance Team,MUST be tested to detect compromise of Finance Team within SLA.,Derived,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Incident Response,Audit Logs,assumes that logs from Audit Logs are retained for forensic investigation.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Incident Response,ERP Web App,MUST be documented with containment steps for compromised ERP Web App.,Operational,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Incident Response,Finance Team,assumes that Finance Team logs cannot be tampered with by attackers.,Implicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Least Privilege,ERP Web App,MUST be enforced for all service accounts accessing ERP Web App.,Explicit,Y,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Least Privilege,Financial DB,assumes that database accounts for Financial DB are scoped to specific tables.,Implicit,,B,,,1,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Least Privilege,Finance Team,MUST be validated via privilege escalation review for Finance Team.,Derived,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Least Privilege,Finance Team,assumes that API keys for Finance Team are scoped to the minimum operations requ,Implicit,Y,N,,,1,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Monitoring & Alerting,Finance Team,assumes that security alerts from Finance Team are configured to detect attack p,Implicit,B,B,,,2,Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Monitoring & Alerting,Finance Team,MUST be documented with escalation paths for alerts from Finance Team.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Monitoring & Alerting,Financial DB,MUST be tested to validate baseline deviations for Financial DB.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Monitoring & Alerting,Audit Logs,MUST be available to capture all events from Audit Logs.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Network Segmentation,SOX Enclave,MUST be enforced to isolate SOX Enclave from untrusted networks.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Network Segmentation,SOX Enclave,"assumes that SOX Enclave is isolated at the workload level, not just perimeter.",Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Network Segmentation,Finance Team,MUST be documented showing all allowed traffic flows through Finance Team.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Network Segmentation,SOX Enclave,MUST be tested for tenant isolation at SOX Enclave.,Derived,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Physical Security,Financial DB,assumes that physical access to Financial DB is restricted to authorized personn,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Physical Security,Finance Team,MUST be enforced to prevent unauthorized physical access to Finance Team.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Physical Security,SOX Enclave,assumes that physical network ports for SOX Enclave are not publicly accessible.,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Supply Chain Security,Finance Team,assumes that software dependencies used by Finance Team have no known vulnerabil,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Supply Chain Security,ERP Web App,MUST be enforced to verify artifact signatures before deploying to ERP Web App.,Explicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Supply Chain Security,Finance Team,MUST be documented with traceable provenance for all artifacts deployed to Finan,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Supply Chain Security,SOX Enclave,trusts that third-party components used by SOX Enclave are not malicious.,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Third-party Dependency,ERP Web App,MUST be available for ERP Web App to function as specified in the SLA.,Dependency,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Third-party Dependency,Finance Team,trusts that the third-party provider for Finance Team maintains security certifi,Trust,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Third-party Dependency,SOX Enclave,assumes that third-party SOX Enclave processes data in approved geographic regio,Implicit,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown
+A5,ERP -> SOX -> Financial Reporting,Third-party Dependency,Financial DB,MUST be documented and have data processing agreements for Financial DB.,Operational,,N,,,0,Claude:Tier unknown; Gemini:unknown; Gemma:unknown

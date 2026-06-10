@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ASF_VERSION="1.0.0"
-ASF_REPO="asfsecurity/asf"
+ASF_REPO="moksh5936-2/asfassumption"
 
 echo "  /\   /\ "
 echo " (  o.o  )"
@@ -49,16 +49,39 @@ echo ""
 mkdir -p "$HOME/.asf"
 
 DOWNLOAD_URL="https://github.com/${ASF_REPO}/releases/download/v${ASF_VERSION}/${BINARY}"
+echo "  Downloading from: $DOWNLOAD_URL"
+echo ""
+
 if command -v curl &>/dev/null; then
-    curl -sfL "$DOWNLOAD_URL" -o "$HOME/.asf/asf"
+    HTTP_CODE=$(curl -sfL -w "%{http_code}" "$DOWNLOAD_URL" -o "$HOME/.asf/asf" 2>/dev/null || echo "000")
 elif command -v wget &>/dev/null; then
-    wget -q "$DOWNLOAD_URL" -O "$HOME/.asf/asf"
+    HTTP_CODE=$(wget --server-response -q "$DOWNLOAD_URL" -O "$HOME/.asf/asf" 2>&1 | grep "HTTP/" | tail -1 | awk '{print $2}' || echo "000")
+    [ -z "$HTTP_CODE" ] && HTTP_CODE="000"
 else
     echo "Error: need curl or wget"
     exit 1
 fi
 
+if [ ! -s "$HOME/.asf/asf" ] || [ "$HTTP_CODE" = "000" ] || [ "$HTTP_CODE" = "404" ]; then
+    rm -f "$HOME/.asf/asf"
+    echo ""
+    echo "  ✗ Download failed (HTTP $HTTP_CODE or empty file)."
+    echo ""
+    echo "    This usually means the release binary doesn't exist yet."
+    echo "    Possible causes:"
+    echo "      - No GitHub release tagged v${ASF_VERSION}"
+    echo "      - Binary not uploaded for your platform (${OS}/${ARCH})"
+    echo "      - Release URL is incorrect"
+    echo ""
+    echo "    To build from source instead:"
+    echo "      git clone https://github.com/${ASF_REPO}.git"
+    echo "      cd asf-tui && go build -o asf-tui ."
+    echo ""
+    exit 1
+fi
+
 chmod +x "$HOME/.asf/asf"
+echo "  ✓ Download complete ($(ls -lh "$HOME/.asf/asf" | awk '{print $5}'))"
 
 mkdir -p "$HOME/.asf/models"
 mkdir -p "$HOME/.asf/reports"
