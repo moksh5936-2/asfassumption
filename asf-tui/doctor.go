@@ -2,12 +2,35 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
+
+func resolvedPath(p string) string {
+	real, err := filepath.EvalSymlinks(p)
+	if err != nil {
+		return p
+	}
+	return real
+}
+
+func asfModuleVersion(pyPath string) string {
+	cmd := exec.Command(pyPath, "-c", "import asf; print(asf.__version__)")
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func engineBundleURL(version string) string {
+	return fmt.Sprintf("https://github.com/moksh5936-2/asfassumption/releases/download/v%s/asf-python-engine-v%s.tar.gz", version, version)
+}
 
 func runDoctor(verbose bool) {
 	fmt.Println("ASF Doctor — System Diagnostic")
@@ -16,14 +39,22 @@ func runDoctor(verbose bool) {
 	printSection("System")
 	printField("OS", runtime.GOOS)
 	printField("Architecture", runtime.GOARCH)
-	printField("Binary", binaryPath())
 	printField("Version", ASFVersion)
+
+	exe, _ := os.Executable()
+	printField("Go binary (invoked)", exe)
+	if resolved := resolvedPath(exe); resolved != exe {
+		printField("Go binary (resolved)", resolved)
+	}
+
+	pyPath := findPython()
 
 	printSection("Paths")
 	checkPath("Config directory", asfConfigDir())
 	checkPath("Config file", asfConfigPath())
 	checkPath("Cache directory", asfCacheDir())
 	checkPath("Data directory", asfDataDir())
+	checkPath("Engine directory", asfEngineDir())
 	checkPath("License file", asfLicensePath())
 
 	printSection("Permissions")
@@ -50,40 +81,12 @@ func runDoctor(verbose bool) {
 		printField("Status", lic.Message)
 	}
 
-	printSection("Python Engine Error")
-	pyPath := findPython()
-	if pyPath == "" {
-		printField("Python binary", "not found")
-	} else {
-		pyVer := pythonVersion(pyPath)
-		printField("Python binary", pyPath)
-		printField("Python version", pyVer)
-	}
-	enginePath := findAsfEngine()
-	if enginePath == "" {
-		printField("ASF engine", "not found")
-	} else {
-		printField("ASF engine", enginePath)
-	}
-
-	editable := findEditableInstall()
-	if editable != "" {
-		printField("WARNING", "")
-		printField("Editable install", editable)
-		printField("Remediation", "pip uninstall asf-validator && pip install -e /correct/path")
-	}
-
-	printSection("Dependencies")
-	checkDep("tesseract", "tesseract --version")
-	checkDep("ollama", "ollama --version")
-	checkDep("python3", "python3 --version")
-
+	printSection("ASF Go TUI Binary")
+	active := exe
 	binaries := findAllAsfBinaries()
-	printSection("ASF Binaries in PATH")
 	if len(binaries) == 0 {
 		printField("None found", "")
 	} else {
-		active := binaryPath()
 		for _, b := range binaries {
 			tag := ""
 			if b == active {
@@ -100,16 +103,48 @@ func runDoctor(verbose bool) {
 		}
 	}
 
+	printSection("ASF Python Engine")
+	if pyPath == "" {
+		printField("Python binary", "not found")
+	} else {
+		pyVer := pythonVersion(pyPath)
+		printField("Python binary", pyPath)
+		printField("Python version", pyVer)
+	}
+	engineDir := asfEngineDir()
+	if bundledEngineExists() {
+		printField("Engine directory", engineDir+" ✓")
+		asfVer := asfModuleVersion(pyPath)
+		if asfVer != "" {
+			printField("ASF module version", asfVer+" ✓")
+		} else {
+			printField("ASF module status", "NOT importable (PYTHONPATH issue)")
+		}
+	} else {
+		printField("Engine directory", engineDir+" ✗")
+		printField("ASF module status", "not installed")
+	}
+
+	editable := findEditableInstall()
+	if editable != "" {
+		printField("Editable install", editable)
+		printField("Remediation", "pip uninstall asf-validator && pip install -e /correct/path")
+	}
+
+	printSection("Dependencies")
+	checkDep("tesseract", "tesseract --version")
+	checkDep("ollama", "ollama --version")
+	checkDep("python3", "python3 --version")
+
 	if verbose {
 		printSection("Runtime Diagnostics")
-		exe, _ := os.Executable()
-		printField("Executable", exe)
 		printField("CWD", mustGetwd())
 		printField("PATH", os.Getenv("PATH"))
+		printField("PYTHONPATH", os.Getenv("PYTHONPATH"))
 
 		printSection("Environment")
 		for _, e := range os.Environ() {
-			if strings.HasPrefix(e, "ASF_") || strings.HasPrefix(e, "XDG_") || strings.HasPrefix(e, "HOME") || strings.HasPrefix(e, "USER") {
+			if strings.HasPrefix(e, "ASF_") || strings.HasPrefix(e, "XDG_") || strings.HasPrefix(e, "HOME") || strings.HasPrefix(e, "USER") || strings.HasPrefix(e, "PYTHONPATH") {
 				printField(e[:strings.Index(e, "=")], e[strings.Index(e, "=")+1:])
 			}
 		}
@@ -126,14 +161,22 @@ func runDoctor(verbose bool) {
 
 		printSection("Python Package Check")
 		if pyPath != "" {
-			err2 := exec.Command(pyPath, "-c", "import asf").Run()
-			if err2 == nil {
-				printField("asf package", "importable")
+			cmd := exec.Command(pyPath, "-c", "import asf; print(asf.__file__)")
+			cmd.Env = append(os.Environ(), "PYTHONPATH="+asfEngineDir())
+			out, err := cmd.Output()
+			if err == nil {
+				printField("asf module path", strings.TrimSpace(string(out)))
+				printField("asf package", "importable ✓")
 			} else {
 				printField("asf package", "NOT importable")
+				// try without PYTHONPATH (for pip-installed engines)
+				err2 := exec.Command(pyPath, "-c", "import asf").Run()
+				if err2 == nil {
+					printField("asf package (pip)", "importable via pip install")
+				}
 			}
-			out, _ := exec.Command(pyPath, "-m", "pip", "list", "--format=columns").Output()
-			for _, line := range strings.Split(string(out), "\n") {
+			out2, _ := exec.Command(pyPath, "-m", "pip", "list", "--format=columns").Output()
+			for _, line := range strings.Split(string(out2), "\n") {
 				if strings.Contains(line, "asf") || strings.Contains(line, "asf-validator") {
 					printField("    pip", strings.TrimSpace(line))
 				}
@@ -149,6 +192,58 @@ func runDoctor(verbose bool) {
 	fmt.Println()
 }
 
+func downloadEngineBundle(version string) error {
+	url := engineBundleURL(version)
+	fmt.Printf("  Downloading: %s\n", url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
+	}
+
+	tmpDir, err := os.MkdirTemp("", "asf-engine")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tarPath := filepath.Join(tmpDir, "engine.tar.gz")
+	f, err := os.Create(tarPath)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		return err
+	}
+	f.Close()
+
+	engineDir := asfEngineDir()
+	if err := os.RemoveAll(engineDir); err != nil {
+		return fmt.Errorf("remove old engine: %w", err)
+	}
+	if err := os.MkdirAll(engineDir, 0755); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("tar", "-xzf", tarPath, "-C", engineDir)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("extract engine: %w\n%s", err, string(out))
+	}
+
+	// Verify the bundled engine path exists
+	if !bundledEngineExists() {
+		return fmt.Errorf("extracted engine does not contain asf/ package at %s", engineDir)
+	}
+
+	return nil
+}
+
 func runDoctorFix() {
 	fmt.Println("ASF Doctor — Fix Mode")
 	fmt.Println()
@@ -156,48 +251,88 @@ func runDoctorFix() {
 	binaries := findAllAsfBinaries()
 	active := binaryPath()
 
-	if len(binaries) <= 1 {
-		fmt.Println("  No duplicate binaries found. Nothing to clean up.")
+	if len(binaries) > 1 {
+		fmt.Println("  Found multiple ASF binaries:")
+		fmt.Println()
+		for _, b := range binaries {
+			extra := ""
+			if b == active {
+				extra = " (active — keeping)"
+			}
+			ver := binaryVersion(b)
+			fmt.Printf("    %s  %s%s\n", b, ver, extra)
+		}
+		fmt.Println()
+
+		stale := 0
+		for _, b := range binaries {
+			if b != active {
+				stale++
+			}
+		}
+
+		if stale > 0 {
+			fmt.Printf("  Removing %d stale binary(ies)...\n", stale)
+			for _, b := range binaries {
+				if b != active {
+					fmt.Printf("  Removing: %s\n", b)
+					os.Remove(b)
+					fmt.Printf("    ✓ Removed\n")
+				}
+			}
+			fmt.Println()
+		}
+	}
+
+	// Check Python engine status
+	pyPath := findPython()
+	if pyPath == "" {
+		fmt.Println("  ✗ Python not found. Install Python 3.9+ and try again.")
+		fmt.Println()
 		return
 	}
 
-	fmt.Println("  Found multiple ASF binaries:")
-	fmt.Println()
-	for _, b := range binaries {
-		extra := ""
-		if b == active {
-			extra = " (active — keeping)"
-		}
-		ver := binaryVersion(b)
-		fmt.Printf("    %s  %s%s\n", b, ver, extra)
-	}
-	fmt.Println()
-
-	stale := 0
-	for _, b := range binaries {
-		if b != active {
-			stale++
+	if bundledEngineExists() {
+		asfVer := asfModuleVersion(pyPath)
+		if asfVer != "" {
+			fmt.Println("  ✓ Python ASF engine is already installed (v" + asfVer + ")")
+			fmt.Println()
+			fmt.Println("  Run 'asf doctor --fix' to reinstall if needed.")
+			return
 		}
 	}
 
-	if stale == 0 {
-		fmt.Println("  No stale binaries to remove.")
+	fmt.Println("  ASF Python engine is missing or broken.")
+	fmt.Println()
+
+	version := strings.TrimPrefix(ASFVersion, "v")
+	if version == "" {
+		version = "1.1.0"
+	}
+
+	fmt.Println("  Downloading ASF Python engine v" + version + "...")
+	if err := downloadEngineBundle(version); err != nil {
+		fmt.Printf("  ✗ Failed: %v\n", err)
+		fmt.Println()
+		fmt.Println("  Try running install.sh again:")
+		fmt.Println("    curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash")
 		return
 	}
+	fmt.Println("  ✓ Engine downloaded and extracted")
 
-	fmt.Printf("  Would remove %d stale binary(ies).\n", stale)
-	fmt.Println()
-
-	for _, b := range binaries {
-		if b != active {
-			fmt.Printf("  Removing: %s\n", b)
-			os.Remove(b)
-			fmt.Printf("    ✓ Removed\n")
-		}
+	// Verify the import works
+	cmd := exec.Command(pyPath, "-c", "import asf; print(asf.__version__)")
+	cmd.Env = append(os.Environ(), "PYTHONPATH="+asfEngineDir())
+	out, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("  ⚠  Engine extracted but import failed: %v\n", err)
+		fmt.Println("  Check that PYTHONPATH includes " + asfEngineDir())
+	} else {
+		fmt.Printf("  ✓ Python ASF engine v%s importable\n", strings.TrimSpace(string(out)))
 	}
 
 	fmt.Println()
-	fmt.Println("  Done. Only the active binary remains.")
+	fmt.Println("  Done. Run 'asf doctor' to verify.")
 }
 
 func findAllAsfBinaries() []string {

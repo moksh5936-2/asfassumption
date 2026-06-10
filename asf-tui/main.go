@@ -16,7 +16,7 @@ func printUsage() {
 	fmt.Println("  asf --license              Show license status")
 	fmt.Println("  asf doctor                 Run system diagnostics")
 	fmt.Println("  asf doctor --verbose       Detailed diagnostics")
-	fmt.Println("  asf doctor --fix           Clean up duplicate binaries")
+	fmt.Println("  asf doctor --fix           Clean duplicates + install Python engine")
 	fmt.Println("  asf --help, -h             Show this help")
 	fmt.Println()
 	fmt.Println("Configuration:")

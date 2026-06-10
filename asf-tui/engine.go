@@ -149,6 +149,15 @@ func checkAsfPackage(pyPath string) string {
 	return strings.TrimSpace(string(out))
 }
 
+func bundledEnginePath() string {
+	return filepath.Join(asfEngineDir(), "asf")
+}
+
+func bundledEngineExists() bool {
+	info, err := os.Stat(bundledEnginePath())
+	return err == nil && info.IsDir()
+}
+
 func preFlightCheck(pyPath string) error {
 	if err := ensureRuntimeDirs(); err != nil {
 		return fmt.Errorf("runtime directories: %w", err)
@@ -160,9 +169,12 @@ func preFlightCheck(pyPath string) error {
 	if valid == "" {
 		return fmt.Errorf("Python executable %q is not functional", pyPath)
 	}
+	if !bundledEngineExists() {
+		return fmt.Errorf("ASF Python engine not installed. Run install.sh again or run 'asf doctor --fix'")
+	}
 	asfVer := checkAsfPackage(pyPath)
 	if asfVer == "" {
-		return fmt.Errorf("ASF Python package not installed. Install with: pip install -e /path/to/asf")
+		return fmt.Errorf("ASF Python engine not importable. Run install.sh again or run 'asf doctor --fix'")
 	}
 	debugLog.Printf("pre-flight OK: python=%s asf=%s", valid, asfVer)
 	return nil
@@ -307,6 +319,8 @@ func (e *Engine) callPythonCLI(docPath, evPath string) (*asfJSONResult, error) {
 
 	cmd := exec.Command(e.pythonPath, args...)
 	cmd.Dir = cacheDir
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "PYTHONPATH="+asfEngineDir())
 
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout

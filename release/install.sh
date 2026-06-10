@@ -359,14 +359,48 @@ case ":$PATH:" in
     ;;
 esac
 
+# ─── Download Python Engine ───────────────────────────────
+ENGINE_URL="https://github.com/${REPO}/releases/download/v${VERSION}/asf-python-engine-v${VERSION}.tar.gz"
+ENGINE_TAR="${TMP_DIR}/asf-python-engine.tar.gz"
+
+echo ""
+info "Downloading ASF Python Engine v${VERSION}..."
+info "  ${ENGINE_URL}"
+
+ENGINE_HTTP_CODE="000"
+if command -v curl &>/dev/null; then
+  ENGINE_HTTP_CODE=$(curl -sfL -w "%{http_code}" "${ENGINE_URL}" -o "${ENGINE_TAR}" 2>/dev/null || echo "000")
+elif command -v wget &>/dev/null; then
+  ENGINE_HTTP_CODE=$(wget --server-response -q "${ENGINE_URL}" -O "${ENGINE_TAR}" 2>&1 \
+    | grep "HTTP/" | tail -1 | awk '{print $2}' || echo "000")
+fi
+
+if [ -s "${ENGINE_TAR}" ]; then
+  ok "Engine download complete ($(ls -lh "${ENGINE_TAR}" | awk '{print $5}'))"
+
+  # Extract engine to data dir
+  mkdir -p "${ASF_DATA_DIR}"
+  rm -rf "${ASF_DATA_DIR}/engine" 2>/dev/null || true
+  tar -xzf "${ENGINE_TAR}" -C "${ASF_DATA_DIR}" 2>/dev/null || {
+    warn "Failed to extract Python engine"
+  }
+  if [ -d "${ASF_DATA_DIR}/asf" ]; then
+    ok "Python engine extracted to ${ASF_DATA_DIR}"
+  else
+    warn "Python engine extraction may have failed — asf/ directory not found"
+  fi
+else
+  warn "Python engine download failed (HTTP ${ENGINE_HTTP_CODE})"
+  info "  The Go TUI will still work, but analysis requires the Python engine."
+  info "  Run 'asf doctor --fix' after installation to download it."
+fi
+
 # ─── Run post-install verification ─────────────────────────
 echo ""
 info "Running post-install verification..."
-VERIFY_OK=true
 
 if ! "${INSTALL_DIR}/asf" --version &>/dev/null; then
   warn "Binary not working from install location"
-  VERIFY_OK=false
 fi
 
 if "${INSTALL_DIR}/asf" doctor &>/dev/null; then
@@ -387,9 +421,8 @@ info "Cache:  ${ASF_CACHE_DIR}"
 info "Data:   ${ASF_DATA_DIR}"
 echo ""
 info "Prerequisites (full functionality):"
-info "  Python ASF engine: cd /path/to/asf && pip install -e ."
-info "  Ollama (AI):       brew install ollama"
-info "  Tesseract (OCR):   brew install tesseract"
+info "  Tesseract (OCR):   apt install tesseract-ocr / brew install tesseract"
+info "  Ollama (AI):       brew install ollama / curl -fsSL https://ollama.com/install.sh | sh"
 echo ""
 info "Documentation: https://github.com/${REPO}"
 info "Issues:        https://github.com/${REPO}/issues"

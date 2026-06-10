@@ -41,6 +41,10 @@ func asfDataDir() string {
 	}
 }
 
+func asfEngineDir() string {
+	return filepath.Join(asfDataDir(), "engine")
+}
+
 func asfConfigPath() string {
 	return filepath.Join(asfConfigDir(), "config.yaml")
 }
@@ -50,7 +54,7 @@ func asfLicensePath() string {
 }
 
 func ensureRuntimeDirs() error {
-	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir()} {
+	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir(), asfEngineDir()} {
 		if err := os.MkdirAll(d, 0755); err != nil {
 			return err
 		}

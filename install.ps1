@@ -208,6 +208,38 @@ appearance:
     Write-Host "  ✓ Created default config" -ForegroundColor Green
 }
 
+# ─── Download Python Engine ───────────────────────────────
+$EngineUrl = "https://github.com/${Repo}/releases/download/v${Version}/asf-python-engine-v${Version}.tar.gz"
+$EngineTar = "${TmpDir}\asf-python-engine.tar.gz"
+$EngineDir = "$env:LOCALAPPDATA\ASF\engine"
+
+Write-Host ""
+Write-Host "  Downloading ASF Python Engine v${Version}..." -ForegroundColor Cyan
+Write-Host "  ${EngineUrl}" -ForegroundColor Cyan
+
+try {
+    Invoke-WebRequest -Uri $EngineUrl -OutFile $EngineTar -ErrorAction Stop
+    Write-Host "  ✓ Engine download complete" -ForegroundColor Green
+
+    # We need a tar extraction tool. Try tar.exe (Windows 10+), else warn.
+    if (Get-Command tar.exe -ErrorAction SilentlyContinue) {
+        Remove-Item -Recurse -Force $EngineDir -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force -Path $EngineDir | Out-Null
+        tar -xzf $EngineTar -C $EngineDir 2>&1 | Out-Null
+        if (Test-Path "${EngineDir}\asf") {
+            Write-Host "  ✓ Python engine extracted to ${EngineDir}" -ForegroundColor Green
+        } else {
+            Write-Host "  ⚠  Engine extraction may have failed" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "  ⚠  tar.exe not found. Python engine not extracted." -ForegroundColor Yellow
+        Write-Host "      Extract ${EngineTar} to ${EngineDir} manually." -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "  ⚠  Python engine download failed: $_" -ForegroundColor Yellow
+    Write-Host "      The Go TUI will work, but run 'asf doctor --fix' for analysis." -ForegroundColor Yellow
+}
+
 # ─── Cleanup ──────────────────────────────────────────────
 Remove-Item -Recurse -Force $TmpDir -ErrorAction SilentlyContinue
 
@@ -222,6 +254,7 @@ Write-Host ""
 Write-Host "  Run: asf" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Prerequisites (full functionality):" -ForegroundColor Cyan
-Write-Host "    Python ASF engine: cd /path/to/asf && pip install -e ." -ForegroundColor Cyan
+Write-Host "    Tesseract (OCR): choco install tesseract" -ForegroundColor Cyan
+Write-Host "    Ollama (AI):      https://ollama.com/download/windows" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Documentation: https://github.com/${Repo}" -ForegroundColor Cyan
