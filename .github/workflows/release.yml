@@ -125,7 +125,7 @@ jobs:
       - name: Flatten and prepare release assets
         working-directory: release
         run: |
-          find . -type f -name "ASF-*" -o -name "checksums.txt" -exec mv {} . \;
+          find . \( -type f -name "ASF-*" -o -name "checksums.txt" \) -exec mv {} . \;
           rm -rf linux-* darwin-* windows-* checksums
           chmod +x ASF-* 2>/dev/null || true
           ls -lh
