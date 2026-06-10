@@ -1,0 +1,119 @@
+# ASF Release Checklist — v1.0.0 → v1.0.1
+
+> Generated: June 2026 | Target: v1.0.1
+
+## Pre-Release
+
+- [ ] Update `VERSION` in `asf-tui/license.go` (source of truth)
+- [ ] Update `VERSION` in `release/VERSION`
+- [ ] Update version references in `README.md` (ASCII art header)
+- [ ] Run `go mod tidy` to clean dependency list
+- [ ] Run `go vet ./...` to check for issues
+- [ ] Run `go test -race ./...` to check for race conditions
+- [ ] Run `go test -coverprofile=coverage.out ./...` to measure coverage
+- [ ] Generate coverage report: `go tool cover -html=coverage.out -o coverage.html`
+- [ ] Verify all 20 explainability tests pass
+- [ ] Verify manual build: `go build -o asf-tui .`
+- [ ] Verify `--version` flag outputs correct version
+- [ ] Verify `--license` flag works
+- [ ] Verify `--exit` flag works (non-interactive mode)
+
+## Build
+
+- [ ] Build `darwin/arm64`: `GOOS=darwin GOARCH=arm64 go build -o release/asf-darwin-arm64 .`
+- [ ] Build `darwin/amd64`: `GOOS=darwin GOARCH=amd64 go build -o release/asf-darwin-amd64 .`
+- [ ] Build `linux/amd64`: `GOOS=linux GOARCH=amd64 go build -o release/asf-linux-amd64 .`
+- [ ] Build `linux/arm64`: `GOOS=linux GOARCH=arm64 go build -o release/asf-linux-arm64 .`
+- [ ] Build `windows/amd64`: `GOOS=windows GOARCH=amd64 go build -o release/asf-windows-amd64.exe .`
+- [ ] Generate SHA-256 checksums: `cd release && shasum -a 256 * > checksums.txt`
+- [ ] Verify checksums: `cd release && shasum -a 256 -c checksums.txt`
+- [ ] Create platform archives (`.tar.gz` for Unix, `.zip` for Windows)
+- [ ] ⚠️ **Blocked:** Go not installed on this machine
+
+## Test
+
+### Functional Testing
+
+- [ ] Launch binary: `./asf-darwin-arm64`
+- [ ] Navigate all TUI screens (Menu, Analysis, Results, Review, Validation, Settings, About)
+- [ ] Test "Analyze Architecture" with a sample `.drawio` file
+- [ ] Test with `.mmd` (Mermaid) file
+- [ ] Test with `.txt` file
+- [ ] Test with `.json` file
+- [ ] Test with `.yaml` file
+- [ ] Verify evidence traceability in results
+- [ ] Verify STRIDE justification display
+- [ ] Verify risk matrix display (5×5)
+- [ ] Verify confidence scoring display
+- [ ] Test all 5 export formats (JSON, MD, CSV, PDF, HTML)
+- [ ] Verify exports contain explainability data
+- [ ] Test Review Mode (`r` key): Accept, Reject, Modified
+- [ ] Test Validation Mode (`v` key): display, navigation
+- [ ] Test AI Settings screen (even without Ollama)
+- [ ] Test Settings: theme switching (Dark, Midnight, Cyber, Minimal)
+- [ ] Test all keyboard shortcuts
+
+### Edge Cases
+
+- [ ] Test with empty/minimal architecture file
+- [ ] Test with very large architecture file (1000+ components)
+- [ ] Test with invalid file format
+- [ ] Test with missing Python ASF engine
+- [ ] Test with missing `license.key` file
+- [ ] Test `q` key at every screen
+- [ ] Test terminal resize
+- [ ] Test with no terminal (pipe mode)
+
+## Documentation
+
+- [ ] Update `CHANGELOG.md` with v1.0.1 changes
+- [ ] Verify `ARCHITECTURE.md` still accurate
+- [ ] Verify `EXECUTIVE_SUMMARY.md` reflects current state
+- [ ] Verify `USER_MANUAL.md` covers all features
+- [ ] Verify `DEVELOPER_GUIDE.md` up to date
+- [ ] Verify `TECHNICAL_REFERENCE.md` accurate
+- [ ] Verify `VALIDATION_STATUS.md` updated
+- [ ] Verify `README.md` feature list accurate
+- [ ] Verify `release/README.md` reflects available artifacts
+- [ ] Review all new docs: `PROJECT_AUDIT_REPORT.md`, `BUILD_SYSTEM.md`, `INSTALLATION_ARCHITECTURE.md`, `LICENSE_ARCHITECTURE.md`, `SECURITY_REVIEW.md`, `EXPERT_VALIDATION_STUDY.md`, `MARKET_POSITIONING.md`, `DEFENSIBILITY_ANALYSIS.md`, `RELEASE_CHECKLIST.md`
+
+## Security
+
+- [ ] Review `.gitignore` for any leaked secrets
+- [ ] Verify no hardcoded credentials in source
+- [ ] Verify no `license.key` or private keys in repo
+- [ ] Run `gitleaks` or equivalent secret scanner (if available)
+- [ ] Verify `go.sum` matches `go.mod`
+- [ ] Check for any new CVEs in dependencies
+
+## Release
+
+- [ ] Create GitHub Release: `v1.0.1`
+- [ ] Write release notes (summary of changes)
+- [ ] Upload all platform binaries + checksums.txt + install.sh
+- [ ] Verify uploaded checksums match local
+- [ ] Tag release: `git tag v1.0.1 && git push origin v1.0.1`
+- [ ] Notarize macOS binaries (if Apple Developer account available)
+- [ ] Update GitHub release description
+- [ ] Verify release is publicly accessible
+- [ ] Test download + install from GitHub Release URL
+
+## Post-Release
+
+- [ ] Announce release on GitHub Discussions
+- [ ] Update website (if applicable)
+- [ ] Monitor for issues/feedback
+- [ ] Update `SUPPORTED_VERSIONS.md` if applicable
+
+## Go Toolchain Check
+
+- [ ] `which go` → returns path ✅ / ❌
+- [ ] `go version` → 1.24+ ✅ / ❌
+- [ ] `go env GOPATH` → configured ✅ / ❌
+- [ ] Build test: `go build ./...` → passes ✅ / ❌
+
+**Current Status:** ❌ Go is NOT installed on this machine. All build/test items above are blocked until Go 1.24+ is available.
+
+---
+
+*Generated by `RELEASE_CHECKLIST.md` — ASF Release Engineering Phase 12*

@@ -303,7 +303,7 @@ License format: `ASF-XXXX-XXXX-XXXX-XXXX` (16 hex characters + 8-char HMAC signa
 | Metric | Status |
 |--------|--------|
 | Unit tests | ✅ 20 passing |
-| Code quality | ✅ `go vet` clean |
+| Code quality | ✅ `go vet` clean (unverifiable — Go not on this machine) |
 | Benchmark run | ✅ 2158 assumptions processed |
 | Precision | ❌ Not measured |
 | Recall | ❌ Not measured |
@@ -324,12 +324,14 @@ asf-tui/                   # Go TUI application
   engine.go                # Python bridge, result builder
   parser.go                # All input format parsers
   stride.go                # STRIDE rule engine
-  justify.go               # Explainability pipeline (6 engines)
+  justify.go               # Explainability pipeline (7 engines)
   explain.go               # Data structures
+  validation.go            # TUI validation mode
+  review.go                # Review mode
   ai.go                    # AI enhancement
   model.go                 # Ollama manager
+  localai.go               # AI model manager
   export.go                # 5 export formats
-  review.go                # Review mode
   config.go                # Configuration
   license.go               # License system
   styles.go                # 4 themes
@@ -339,7 +341,6 @@ asf-tui/                   # Go TUI application
   results.go               # Results display
   settings.go              # Settings editor
   about.go                 # About screen
-  localai.go               # AI model manager
   explain_test.go          # 20 unit tests
   install.sh               # Installer script
   go.mod / go.sum          # Dependencies
@@ -352,9 +353,30 @@ docs/                      # Documentation
   VALIDATION_STATUS.md
   risk_model.md
   EXPLAINABILITY_ENGINE.md
+  EXPLAINABILITY.md
+  EXPLAINABILITY_GAP_ANALYSIS.md
+  EXPLAINABILITY_READINESS_REPORT.md
   MIGRATION_GUIDE.md
-benchmark/                 # Research validation
-asf/                       # Python ASF engine (v1)
+  BUILD_SYSTEM.md
+  INSTALLATION_ARCHITECTURE.md
+  LICENSE_ARCHITECTURE.md
+  SECURITY_REVIEW.md
+  EXPERT_VALIDATION_STUDY.md
+  MARKET_POSITIONING.md
+  DEFENSIBILITY_ANALYSIS.md
+release/                    # Release artifacts
+  README.md
+  VERSION
+  checksums.txt
+  install.sh
+scripts/                    # Build automation scripts
+  build-release.sh
+  build-release.ps1
+benchmark/                  # Research validation
+asf/                        # Python ASF engine (v1)
+PROJECT_AUDIT_REPORT.md     # Comprehensive codebase audit
+RELEASE_CHECKLIST.md        # Release verification checklist
+EXECUTIVE_RELEASE_REPORT.md # Executive release report
 ```
 
 ---
