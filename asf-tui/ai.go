@@ -207,10 +207,15 @@ func mergeAIResults(original *AnalysisResult, ai *AIEnhancedResult) *AnalysisRes
 			Confidence:  0.5,
 		})
 		original.TotalAssumptions++
-		if risk == RiskCritical {
+		switch risk {
+		case RiskCritical:
 			original.CriticalCount++
-		} else if risk == RiskHigh {
+		case RiskHigh:
 			original.HighCount++
+		case RiskMedium:
+			original.MediumCount++
+		case RiskLow:
+			original.LowCount++
 		}
 	}
 

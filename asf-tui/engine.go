@@ -5,10 +5,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"asf-tui/asf/analyzer"
+	"asf-tui/asf/models"
 )
 
 var debugLog = log.New(os.Stderr, "[asf-debug] ", log.Ltime|log.Lshortfile)
@@ -73,6 +75,8 @@ type AnalysisResult struct {
 	Assumptions        []Assumption
 	CriticalCount      int
 	HighCount          int
+	MediumCount        int
+	LowCount           int
 	TotalAssumptions   int
 	StrideDistribution map[StrideCategory]int
 	Controls           []ControlDetail
@@ -347,13 +351,52 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 
 		result.Assumptions = append(result.Assumptions, assumption)
 
-		if assumption.Risk == RiskCritical {
+		switch assumption.Risk {
+		case RiskCritical:
 			result.CriticalCount++
-		} else if assumption.Risk == RiskHigh {
+		case RiskHigh:
 			result.HighCount++
+		case RiskMedium:
+			result.MediumCount++
+		case RiskLow:
+			result.LowCount++
 		}
 
 		_ = i
+	}
+
+	// Process explicit assumptions from YAML/JSON
+	if len(e.archDesc.ExplicitAssumptions) > 0 {
+		explicitSet := e.processExplicitAssumptions(result.Assumptions)
+		for _, ea := range explicitSet {
+			result.Assumptions = append(result.Assumptions, ea)
+			switch ea.Risk {
+			case RiskCritical:
+				result.CriticalCount++
+			case RiskHigh:
+				result.HighCount++
+			case RiskMedium:
+				result.MediumCount++
+			case RiskLow:
+				result.LowCount++
+			}
+		}
+	}
+
+	// Update totals to include explicit assumptions (post-dedup)
+	result.TotalAssumptions = len(result.Assumptions)
+
+	// Populate compliance from architecture description
+	result.Compliance = e.buildComplianceOutput()
+
+	// Validate expected results if present
+	if len(e.archDesc.ExpectedResults) > 0 {
+		result.Summary = e.buildValidationSummary(result)
+	}
+
+	result.Controls = generateControls(result.Assumptions)
+	if len(e.archDesc.SecurityControls) > 0 {
+		result.Controls = enhanceControlsWithSecurityControls(result.Controls, e.archDesc.SecurityControls)
 	}
 
 	// Build evidence summary
@@ -361,11 +404,6 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 		result.EvidenceSummary = e.explainPipe.BuildEvidenceSummary(result.Assumptions)
 		confSummary := buildConfidenceSummary(result.Assumptions)
 		result.ConfidenceSummary = confSummary
-	}
-
-	result.Controls = generateControls(result.Assumptions)
-	result.Compliance = []string{
-		"ASF analysis completed — see gap analysis for compliance mapping",
 	}
 
 	return result
@@ -545,6 +583,62 @@ func generateControls(assumptions []Assumption) []ControlDetail {
 	return controls
 }
 
+// enhanceControlsWithSecurityControls extends generated controls with specifics from YAML security_controls.
+// This is called from generateControls with the archDesc.SecurityControls map.
+func enhanceControlsWithSecurityControls(controls []ControlDetail, securityControls map[string][]string) []ControlDetail {
+	if len(securityControls) == 0 {
+		return controls
+	}
+
+	// Category mapping from security_controls categories to template categories
+	catMap := map[string]string{
+		"authentication": "AUTHENTICATION",
+		"authorization":  "AUTHORIZATION",
+		"encryption":     "ENCRYPTION",
+		"logging":        "LOGGING",
+		"backup":         "BACKUP",
+		"network":        "NETWORK",
+		"monitoring":     "PROCESS",
+		"third_party":    "THIRD_PARTY",
+		"session":        "SESSION",
+	}
+
+	for scCategory, scControls := range securityControls {
+		tmplCat := catMap[scCategory]
+		if tmplCat == "" {
+			continue
+		}
+
+		// Find matching control
+		found := false
+		for i := range controls {
+			if controls[i].Category == tmplCat {
+				// Enrich description with specific controls
+				if len(scControls) > 0 {
+					controls[i].Description = fmt.Sprintf("%s: %s", controls[i].Description, strings.Join(scControls, ", "))
+				}
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			// Create a new control for this security category
+			ctrlID := fmt.Sprintf("CTRL-%03d", len(controls)+1)
+			ctrl := ControlDetail{
+				ID:          ctrlID,
+				Description: fmt.Sprintf("Implement %s controls: %s", scCategory, strings.Join(scControls, ", ")),
+				Rationale:   fmt.Sprintf("Architecture defines %s controls that must be verified.", scCategory),
+				Category:    tmplCat,
+				Priority:    1,
+			}
+			controls = append(controls, ctrl)
+		}
+	}
+
+	return controls
+}
+
 func hasMatchingStride(target []StrideCategory, catStride map[string]map[StrideCategory]bool) bool {
 	for _, cat := range catStride {
 		for _, t := range target {
@@ -554,6 +648,349 @@ func hasMatchingStride(target []StrideCategory, catStride map[string]map[StrideC
 		}
 	}
 	return false
+}
+
+// processExplicitAssumptions processes explicit assumptions from YAML/JSON,
+// deduplicates against existing assumptions, and enriches them.
+func (e *Engine) processExplicitAssumptions(existing []Assumption) []Assumption {
+	existingSet := make(map[string]bool)
+	for _, a := range existing {
+		existingSet[normalizeText(a.Description)] = true
+	}
+
+	var result []Assumption
+	nextID := 1
+
+	for _, raw := range e.archDesc.ExplicitAssumptions {
+		normalized := normalizeText(raw)
+		if normalized == "" {
+			continue
+		}
+		if existingSet[normalized] {
+			continue
+		}
+		existingSet[normalized] = true
+
+		atype := classifyExplicitAssumption(raw)
+		keywords := extractKeywords(raw)
+		component := extractComponent(keywords, raw)
+
+		id := fmt.Sprintf("ASM-%03d", nextID)
+		nextID++
+
+		risk := e.assessExplicitRisk(raw, atype)
+		lh, im := riskToLikelihoodImpact(risk)
+		stride := e.strideEngine.MapAssumption(string(atype), raw, keywords)
+
+		assumption := Assumption{
+			ID:          id,
+			Description: raw,
+			Component:   component,
+			Category:    string(atype),
+			Risk:        risk,
+			Stride:      stride,
+			Likelihood:  lh,
+			Impact:      im,
+			Confidence:  0.75,
+			Keywords:    keywords,
+		}
+
+		if e.explainPipe != nil {
+			e.explainPipe.Explain(&assumption)
+		}
+
+		result = append(result, assumption)
+	}
+	return result
+}
+
+// classifyExplicitAssumption classifies an explicit assumption into a type.
+func classifyExplicitAssumption(text string) models.AssumptionType {
+	lower := strings.ToLower(text)
+
+	// Identity/authentication keywords
+	identityKws := []string{"mfa", "multi-factor", "authentication", "password", "credential", "sso", "oauth", "oidc", "auth0", "login", "identity"}
+	for _, kw := range identityKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeIDENTITY
+		}
+	}
+
+	// Access/authorization keywords
+	accessKws := []string{"access", "authorized", "permission", "rbac", "acl", "restricted", "least privilege", "admin"}
+	for _, kw := range accessKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeACCESS
+		}
+	}
+
+	// Encryption keywords
+	encKws := []string{"encrypt", "tls", "ssl", "cipher", "key", "kms", "cryptographic", "aes"}
+	for _, kw := range encKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeCONFIGURATION
+		}
+	}
+
+	// Network keywords
+	netKws := []string{"network", "subnet", "firewall", "segment", "tls termination", "private", "internet"}
+	for _, kw := range netKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeNETWORK
+		}
+	}
+
+	// Logging/monitoring keywords
+	logKws := []string{"log", "audit", "monitor", "alert", "detect"}
+	for _, kw := range logKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeCONFIGURATION
+		}
+	}
+
+	// Backup keywords
+	backupKws := []string{"backup", "restore", "recovery", "replicate"}
+	for _, kw := range backupKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeCONFIGURATION
+		}
+	}
+
+	// Session keywords
+	sessionKws := []string{"session", "token", "jwt", "expire", "rotate"}
+	for _, kw := range sessionKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeIDENTITY
+		}
+	}
+
+	// Third-party keywords
+	thirdKws := []string{"third-party", "third party", "vendor", "external", "supplier"}
+	for _, kw := range thirdKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypeDEPENDENCY
+		}
+	}
+
+	// Process/governance keywords
+	procKws := []string{"incident", "response", "breach", "procedure", "policy", "review", "assessment"}
+	for _, kw := range procKws {
+		if strings.Contains(lower, kw) {
+			return models.AssumptionTypePROCESS
+		}
+	}
+
+	return models.AssumptionTypeGOVERNANCE
+}
+
+// assessExplicitRisk determines the initial risk level for an explicit assumption.
+func (e *Engine) assessExplicitRisk(text string, atype models.AssumptionType) RiskLevel {
+	lower := strings.ToLower(text)
+	score := 0
+
+	// PHI/healthcare keywords boost risk
+	phiKws := []string{"phi", "health", "hipaa", "patient", "medical", "phi data", "protected health"}
+	for _, kw := range phiKws {
+		if strings.Contains(lower, kw) {
+			score += 3
+			break
+		}
+	}
+
+	// High-severity keywords
+	highKws := []string{"critical", "compromise", "breach", "unauthorized", "restricted", "immutable"}
+	for _, kw := range highKws {
+		if strings.Contains(lower, kw) {
+			score += 2
+			break
+		}
+	}
+
+	// Medium-severity keywords
+	medKws := []string{"encrypt", "kms", "access", "authenticate", "mfa", "token", "key", "audit", "backup", "monitor", "rate limit", "session"}
+	for _, kw := range medKws {
+		if strings.Contains(lower, kw) {
+			score += 1
+			break
+		}
+	}
+
+	// Type-based boost
+	switch atype {
+	case models.AssumptionTypeACCESS:
+		score += 1
+	case models.AssumptionTypeIDENTITY:
+		score += 1
+	}
+
+	switch {
+	case score >= 5:
+		return RiskCritical
+	case score >= 3:
+		return RiskHigh
+	case score >= 2:
+		return RiskMedium
+	default:
+		return RiskLow
+	}
+}
+
+// buildComplianceOutput builds the compliance section from architecture description.
+func (e *Engine) buildComplianceOutput() []string {
+	if e.archDesc == nil || len(e.archDesc.Compliance) == 0 {
+		return []string{
+			"ASF analysis completed — see gap analysis for compliance mapping",
+		}
+	}
+
+	compliance := e.archDesc.Compliance
+	output := make([]string, 0, len(compliance)+2)
+	output = append(output, "Compliance frameworks identified in architecture definition:")
+	for _, c := range compliance {
+		output = append(output, fmt.Sprintf("- %s related findings reviewed in this analysis", c))
+	}
+	output = append(output, "Review gap analysis for detailed compliance mapping.")
+	return output
+}
+
+// buildValidationSummary validates expected results against actual analysis results.
+func (e *Engine) buildValidationSummary(result *AnalysisResult) string {
+	expected := e.archDesc.ExpectedResults
+	var violations []string
+	var met []string
+
+	// Check minimum assumptions count
+	if minAssump, ok := expected["minimum_assumptions"]; ok {
+		if min, ok := toFloat(minAssump); ok {
+			if result.TotalAssumptions < int(min) {
+				violations = append(violations, fmt.Sprintf("expected ≥%.0f assumptions, got %d", min, result.TotalAssumptions))
+			} else {
+				met = append(met, fmt.Sprintf("minimum assumptions met: %d (≥%.0f)", result.TotalAssumptions, min))
+			}
+		}
+	}
+
+	// Check minimum critical count
+	if minCrit, ok := expected["minimum_critical"]; ok {
+		if min, ok := toFloat(minCrit); ok {
+			if result.CriticalCount < int(min) {
+				violations = append(violations, fmt.Sprintf("expected ≥%.0f critical findings, got %d", min, result.CriticalCount))
+			} else {
+				met = append(met, fmt.Sprintf("minimum critical findings met: %d (≥%.0f)", result.CriticalCount, min))
+			}
+		}
+	}
+
+	// Check minimum high count
+	if minHigh, ok := expected["minimum_high"]; ok {
+		if min, ok := toFloat(minHigh); ok {
+			if result.HighCount < int(min) {
+				violations = append(violations, fmt.Sprintf("expected ≥%.0f high findings, got %d", min, result.HighCount))
+			} else {
+				met = append(met, fmt.Sprintf("minimum high findings met: %d (≥%.0f)", result.HighCount, min))
+			}
+		}
+	}
+
+	// Check expected STRIDE categories
+	if expStride, ok := expected["expected_stride_categories"]; ok {
+		if strideList, ok := expStride.([]interface{}); ok {
+			present := make(map[string]bool)
+			for cat, count := range result.StrideDistribution {
+				if count > 0 {
+					present[string(cat)] = true
+				}
+			}
+			for _, s := range strideList {
+				str := fmt.Sprintf("%v", s)
+				if !present[str] {
+					violations = append(violations, fmt.Sprintf("expected STRIDE category %q not found", str))
+				} else {
+					met = append(met, fmt.Sprintf("STRIDE category %q present", str))
+				}
+			}
+		}
+	}
+
+	// Build summary
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("ASF processed architecture"))
+	if e.archDesc != nil && e.archDesc.Name != "" {
+		b.WriteString(fmt.Sprintf(" %q", e.archDesc.Name))
+	}
+	b.WriteString(fmt.Sprintf(" and found %d assumptions (%d critical, %d high, %d medium, %d low). ",
+		result.TotalAssumptions, result.CriticalCount, result.HighCount, result.MediumCount, result.LowCount))
+
+	if len(violations) > 0 {
+		b.WriteString(fmt.Sprintf("Validation: %d violation(s) found — %s.",
+			len(violations), strings.Join(violations, "; ")))
+	} else {
+		b.WriteString("Validation: all expected criteria met.")
+	}
+	if len(met) > 0 {
+		b.WriteString(fmt.Sprintf(" Criteria met: %s.", strings.Join(met, "; ")))
+	}
+
+	return b.String()
+}
+
+// toFloat converts an interface{} to float64 for numeric comparisons.
+func toFloat(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int:
+		return float64(n), true
+	case int32:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	default:
+		return 0, false
+	}
+}
+
+// normalizeText normalizes text for deduplication comparison.
+func normalizeText(text string) string {
+	lower := strings.ToLower(text)
+	// Collapse whitespace and strip periods from each token
+	parts := strings.Fields(lower)
+	cleaned := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSuffix(p, ".")
+		if p != "" {
+			cleaned = append(cleaned, p)
+		}
+	}
+	return strings.Join(cleaned, " ")
+}
+
+// extractKeywords extracts significant keywords from text for explicit assumptions.
+func extractKeywords(text string) []string {
+	re := regexp.MustCompile(`\b[a-zA-Z]{3,}\b`)
+	words := re.FindAllString(strings.ToLower(text), -1)
+	var result []string
+	stop := map[string]bool{
+		"the": true, "and": true, "for": true, "are": true, "but": true,
+		"not": true, "you": true, "all": true, "can": true, "has": true,
+		"have": true, "may": true, "must": true, "shall": true, "should": true,
+		"will": true, "with": true, "from": true, "that": true, "this": true,
+		"each": true, "every": true, "than": true, "then": true, "just": true,
+		"been": true, "were": true, "was": true, "its": true, "also": true,
+		"per": true, "via": true, "is": true, "to": true, "in": true,
+		"of": true, "on": true, "at": true, "by": true, "as": true,
+		"an": true, "or": true,
+	}
+	for _, w := range words {
+		if !stop[w] {
+			result = append(result, w)
+		}
+	}
+	return result
 }
 
 func fileBase(path string) string {

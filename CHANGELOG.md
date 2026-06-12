@@ -5,7 +5,37 @@ All notable changes to ASF are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.0.0] — 2026-06-11
+## [2.1.0] — 2026-06-12
+
+### Added
+
+- YAML/JSON archive definition now parses 13 fields (up from 5): assumptions, security_controls, compliance, expected_results, validation_criteria, notes
+- Explicit assumptions from YAML/JSON classified into 8 security types, assessed for risk and STRIDE-mapped
+- Security controls enrichment — generated controls enhanced with YAML-defined specific controls
+- Compliance framework output — structured display of compliance targets (HIPAA, SOC2, ISO27001, etc.)
+- Expected results validation — compares actual analysis against declared benchmarks
+- Low and Medium risk tracking separated from Critical/High for accurate distribution
+- `processExplicitAssumptions`, `classifyExplicitAssumption`, `assessExplicitRisk`, `buildComplianceOutput`, `buildValidationSummary`, `enhanceControlsWithSecurityControls` methods
+- `ingestion_test.go` with 40 tests covering all new parsing, classification, risk, compliance, and validation paths
+- `testdata/asftest.yaml` — comprehensive healthcare architecture test file with 30 assumptions, 9 components, 7 control categories, 3 compliance frameworks
+- `docs/STRUCTURED_YAML_INGESTION_IMPROVEMENT_REPORT.md`
+
+### Changed
+
+- `ArchDescription` struct: 6 new optional fields (backward compatible)
+- `archDefinition` struct: 7 new optional YAML/JSON fields (backward compatible)
+- `AnalysisResult` struct: added `MediumCount`, `LowCount` fields
+- `buildResult` processes explicit assumptions through dedup, classification, risk, and explainability pipeline
+- All export formats (Markdown, HTML, PDF, CSV) include Medium/Low risk distribution
+- TUI results header shows Medium and Low risk counts
+- `mergeAIResults` tracks Medium/Low for AI-generated assumptions
+
+### Fixed
+
+- `normalizeText` now correctly strips trailing periods from individual tokens
+- `toFloat` handles `int32` and `uint` types
+- `buildValidationSummary` reports "all expected criteria met" for empty expected results
+- `buildResult` computes TotalAssumptions from actual deduplicated count
 
 ### Changed
 

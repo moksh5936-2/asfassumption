@@ -32,6 +32,14 @@ type ArchDescription struct {
 	Relationships []Relation
 	Policies      []string
 	RawText       string
+
+	// Structured fields (populated from YAML/JSON definitions)
+	ExplicitAssumptions []string
+	SecurityControls    map[string][]string
+	Compliance         []string
+	ExpectedResults    map[string]interface{}
+	ValidationCriteria []string
+	Notes              []string
 }
 
 func ParseArchitecture(path string) (*ArchDescription, error) {
@@ -407,6 +415,23 @@ type archDefinition struct {
 		Description string `yaml:"description" json:"description"`
 	} `yaml:"relationships" json:"relationships"`
 	Policies []string `yaml:"policies" json:"policies"`
+
+	// Structured YAML/JSON fields (populated from architecture definitions)
+	Metadata *struct {
+		Name        string   `yaml:"name" json:"name"`
+		Version     string   `yaml:"version" json:"version"`
+		Purpose     string   `yaml:"purpose" json:"purpose"`
+		Compliance  []string `yaml:"compliance" json:"compliance"`
+	} `yaml:"metadata" json:"metadata"`
+	System *struct {
+		Name        string `yaml:"name" json:"name"`
+		Description string `yaml:"description" json:"description"`
+	} `yaml:"system" json:"system"`
+	Assumptions        []string               `yaml:"assumptions" json:"assumptions"`
+	SecurityControls   map[string][]string    `yaml:"security_controls" json:"security_controls"`
+	ExpectedResults    map[string]interface{} `yaml:"expected_results" json:"expected_results"`
+	ValidationCriteria []string               `yaml:"validation_criteria" json:"validation_criteria"`
+	Notes              []string               `yaml:"notes" json:"notes"`
 }
 
 func parseYAMLArch(path string) (*ArchDescription, error) {
@@ -476,9 +501,54 @@ func buildFromDefinition(def *archDefinition, path string) (*ArchDescription, er
 		text += "\n"
 	}
 
+	// Extract structured fields
+	if def.Metadata != nil {
+		desc.Compliance = def.Metadata.Compliance
+	}
+	if len(def.Assumptions) > 0 {
+		desc.ExplicitAssumptions = def.Assumptions
+		text += "## Explicit Assumptions\n\n"
+		for _, a := range def.Assumptions {
+			text += fmt.Sprintf("- %s.\n", a)
+		}
+		text += "\n"
+	}
+	if len(def.SecurityControls) > 0 {
+		desc.SecurityControls = def.SecurityControls
+		text += "## Security Controls\n\n"
+		for category, controls := range def.SecurityControls {
+			text += fmt.Sprintf("- %s: %s\n", category, strings.Join(controls, ", "))
+		}
+		text += "\n"
+	}
+	if def.ExpectedResults != nil {
+		desc.ExpectedResults = def.ExpectedResults
+	}
+	if len(def.ValidationCriteria) > 0 {
+		desc.ValidationCriteria = def.ValidationCriteria
+	}
+	if len(def.Notes) > 0 {
+		desc.Notes = def.Notes
+	}
+
 	desc.RawText = text
 	if len(desc.Components) > 0 {
 		desc.RawText = buildTextFromDiagram(desc.Name, desc.Components, desc.Relationships)
+		// Append structured content to the diagram text for claim extraction
+		if len(def.Assumptions) > 0 {
+			desc.RawText += "\n## Explicit Assumptions\n\n"
+			for _, a := range def.Assumptions {
+				desc.RawText += fmt.Sprintf("- %s.\n", a)
+			}
+			desc.RawText += "\n"
+		}
+		if len(def.SecurityControls) > 0 {
+			desc.RawText += "## Security Controls\n\n"
+			for category, controls := range def.SecurityControls {
+				desc.RawText += fmt.Sprintf("- %s: %s\n", category, strings.Join(controls, ", "))
+			}
+			desc.RawText += "\n"
+		}
 	}
 	return desc, nil
 }

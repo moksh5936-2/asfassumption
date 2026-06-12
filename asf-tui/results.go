@@ -91,8 +91,8 @@ func (m mainModel) viewResults() string {
 	header := lipgloss.JoinVertical(lipgloss.Left,
 		s.Title.Render(fmt.Sprintf("Results: %s", result.ArchitectureName)),
 		s.Subtitle.Render(fmt.Sprintf("Mode: %s%s  |  Date: %s", result.AnalysisMode, aiBadge, result.AnalysisDate.Format("Jan 2, 2006 15:04"))),
-		s.Subtitle.Render(fmt.Sprintf("Total Assumptions: %d  |  Critical: %d  |  High: %d",
-			result.TotalAssumptions, result.CriticalCount, result.HighCount)),
+		s.Subtitle.Render(fmt.Sprintf("Total Assumptions: %d  |  Critical: %d  |  High: %d  |  Medium: %d  |  Low: %d",
+			result.TotalAssumptions, result.CriticalCount, result.HighCount, result.MediumCount, result.LowCount)),
 	)
 
 	if r.exportComplete {
@@ -250,8 +250,8 @@ func renderRiskMatrix(s StyleSet, result *AnalysisResult) string {
 	counts := map[RiskLevel]int{
 		RiskCritical: result.CriticalCount,
 		RiskHigh:     result.HighCount,
-		RiskMedium:   result.TotalAssumptions - result.CriticalCount - result.HighCount,
-		RiskLow:      0,
+		RiskMedium:   result.MediumCount,
+		RiskLow:      result.LowCount,
 	}
 	var rows []string
 
@@ -370,9 +370,16 @@ func renderControls(s StyleSet, controls []ControlDetail) string {
 }
 
 func renderCompliance(s StyleSet, compliance []string) string {
+	if len(compliance) == 0 {
+		return "No compliance frameworks specified."
+	}
 	var items []string
-	for _, c := range compliance {
-		items = append(items, "▸ "+c)
+	for i, c := range compliance {
+		if i == 0 {
+			items = append(items, s.Value.Render(c))
+		} else {
+			items = append(items, "▸ "+c)
+		}
 	}
 	return strings.Join(items, "\n")
 }

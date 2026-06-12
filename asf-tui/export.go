@@ -95,7 +95,8 @@ func exportMarkdown(result *AnalysisResult, path string) error {
 	b.WriteString("## Risk Distribution\n\n")
 	b.WriteString(fmt.Sprintf("- **Critical:** %d\n", result.CriticalCount))
 	b.WriteString(fmt.Sprintf("- **High:** %d\n", result.HighCount))
-	b.WriteString(fmt.Sprintf("- **Medium:** %d\n", result.TotalAssumptions-result.CriticalCount-result.HighCount))
+	b.WriteString(fmt.Sprintf("- **Medium:** %d\n", result.MediumCount))
+	b.WriteString(fmt.Sprintf("- **Low:** %d\n", result.LowCount))
 	b.WriteString(fmt.Sprintf("- **Risk Model:** %s\n", result.RiskModelVersion))
 	b.WriteString("\n")
 
@@ -318,16 +319,10 @@ func exportHTML(result *AnalysisResult, path string) error {
 
 	b.WriteString("<h2>Risk Distribution</h2>\n")
 	b.WriteString("<table>\n<tr><th>Level</th><th>Count</th></tr>\n")
-	highRisk := 0
-	for _, a := range result.Assumptions {
-		if a.Risk == RiskHigh || a.Risk == RiskCritical {
-			highRisk++
-		}
-	}
-	medRisk := result.TotalAssumptions - highRisk
 	b.WriteString(fmt.Sprintf("<tr><td class=\"badge badge-critical\">Critical</td><td>%d</td></tr>\n", result.CriticalCount))
 	b.WriteString(fmt.Sprintf("<tr><td class=\"badge badge-high\">High</td><td>%d</td></tr>\n", result.HighCount))
-	b.WriteString(fmt.Sprintf("<tr><td class=\"badge badge-medium\">Medium</td><td>%d</td></tr>\n", medRisk))
+	b.WriteString(fmt.Sprintf("<tr><td class=\"badge badge-medium\">Medium</td><td>%d</td></tr>\n", result.MediumCount))
+	b.WriteString(fmt.Sprintf("<tr><td class=\"badge badge-low\">Low</td><td>%d</td></tr>\n", result.LowCount))
 	b.WriteString("</table>\n")
 	b.WriteString(fmt.Sprintf("<p><em>Risk Model: %s</em></p>\n", result.RiskModelVersion))
 
@@ -573,21 +568,10 @@ func exportPDF(result *AnalysisResult, path string) error {
 	}
 	pdf.Ln(2)
 
-	highRisk, medRisk, lowRisk := 0, 0, 0
-	for _, a := range result.Assumptions {
-		switch a.Risk {
-		case RiskHigh:
-			highRisk++
-		case RiskMedium:
-			medRisk++
-		case RiskLow:
-			lowRisk++
-		}
-	}
 	pdf.CellFormat(190, 7, fmt.Sprintf("Critical: %d", result.CriticalCount), "", 1, "L", false, 0, "")
-	pdf.CellFormat(190, 7, fmt.Sprintf("High Risk: %d", highRisk), "", 1, "L", false, 0, "")
-	pdf.CellFormat(190, 7, fmt.Sprintf("Medium Risk: %d", medRisk), "", 1, "L", false, 0, "")
-	pdf.CellFormat(190, 7, fmt.Sprintf("Low Risk: %d", lowRisk), "", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 7, fmt.Sprintf("High Risk: %d", result.HighCount), "", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 7, fmt.Sprintf("Medium Risk: %d", result.MediumCount), "", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 7, fmt.Sprintf("Low Risk: %d", result.LowCount), "", 1, "L", false, 0, "")
 	pdf.CellFormat(190, 7, "Risk Model: "+result.RiskModelVersion, "", 1, "L", false, 0, "")
 	pdf.Ln(4)
 

@@ -1,0 +1,202 @@
+metadata:
+  name: Healthcare PHI Architecture
+  version: "1.0"
+  purpose: Security assessment of cloud-native healthcare data platform
+  compliance:
+    - HIPAA
+    - SOC2
+    - ISO27001
+
+system:
+  name: HealthData Platform
+  description: Cloud-native platform for managing protected health information (PHI)
+
+components:
+  - name: Auth0
+    type: identity_provider
+    description: OAuth2/OIDC identity provider for authentication
+
+  - name: WebApp
+    type: web_application
+    description: React-based healthcare provider portal
+
+  - name: APIGateway
+    type: api_gateway
+    description: AWS API Gateway for request routing and throttling
+
+  - name: PHIDatabase
+    type: database
+    description: PostgreSQL database storing patient health records
+
+  - name: KMS
+    type: encryption_service
+    description: AWS KMS for encryption key management
+
+  - name: AuditLog
+    type: logging_service
+    description: Immutable audit log for PHI access events
+
+  - name: BackupService
+    type: storage_service
+    description: Encrypted backup service for PHI data
+
+  - name: ThirdPartyAnalytics
+    type: external_service
+    description: Third-party analytics provider with PHI access
+
+  - name: AdminConsole
+    type: admin_tool
+    description: Internal admin console for system management
+
+relationships:
+  - source: WebApp
+    target: Auth0
+    protocol: OAuth2
+    description: WebApp authenticates users via Auth0
+
+  - source: WebApp
+    target: APIGateway
+    protocol: HTTPS
+    description: WebApp sends API requests through gateway
+
+  - source: APIGateway
+    target: PHIDatabase
+    protocol: TLS
+    description: Gateway proxies requests to PHI database
+
+  - source: APIGateway
+    target: KMS
+    protocol: TLS
+    description: Gateway requests key encryption/decryption
+
+  - source: PHIDatabase
+    target: BackupService
+    protocol: TLS
+    description: Database sends encrypted backups
+
+  - source: PHIDatabase
+    target: AuditLog
+    protocol: TLS
+    description: Database logs all PHI access events
+
+  - source: AdminConsole
+    target: PHIDatabase
+    protocol: TLS
+    description: Admin console directly queries PHI data
+
+  - source: AdminConsole
+    target: Auth0
+    protocol: HTTPS
+    description: Admin console manages Auth0 users and roles
+
+  - source: ThirdPartyAnalytics
+    target: PHIDatabase
+    protocol: TLS
+    description: Analytics provider queries de-identified PHI
+
+assumptions:
+  - MFA is enforced for all Auth0 user authentication
+  - Auth0 administrative access is restricted to authorized admins only
+  - All API requests pass through APIGateway for authentication validation
+  - PHI data is encrypted at rest in PHIDatabase
+  - PHI data is encrypted in transit between all components
+  - Encryption keys are stored and managed in KMS with automatic rotation
+  - KMS access is restricted to authorized services only
+  - Audit logging is immutable and tamper-proof
+  - All PHI access events are logged with user and timestamp
+  - Backup data is encrypted at rest and in transit
+  - Backup restore procedures are tested regularly
+  - ThirdPartyAnalytics has access only to de-identified PHI
+  - Third-party provider maintains equivalent security controls
+  - AdminConsole requires MFA for all administrative access
+  - Object-level authorization is enforced for PHI record access
+  - Database connection pooling does not leak data between sessions
+  - TLS certificates are monitored and renewed before expiry
+  - API rate limiting prevents abuse of PHI endpoints
+  - Network segmentation isolates the PHI database in a private subnet
+  - Unauthorized PHI export is detected and alerted
+  - Session tokens expire and are rotated periodically
+  - Auth0 tenant is configured with breach detection and anomaly alerts
+  - Audit log storage has sufficient retention for compliance
+  - PHI data minimization policies are enforced at application layer
+  - Incident response plan includes PHI breach notification
+  - Vendor risk assessments are conducted for ThirdPartyAnalytics
+  - Database backups are stored in a separate geographic region
+  - KMS key deletion is protected with multi-factor authorization
+  - API Gateway logs are monitored for anomalous access patterns
+  - System health and availability monitoring covers all components
+
+security_controls:
+  authentication:
+    - MFA
+    - Password_Policy
+    - Session_Management
+    - SSO_Integration
+    - Breach_Detection
+  authorization:
+    - RBAC
+    - Object_Level_Access_Control
+    - API_Gateway_Validation
+    - Least_Privilege
+  encryption:
+    - KMS_Key_Management
+    - TLS_1.3
+    - AES256_At_Rest
+    - Key_Rotation
+    - Key_Deletion_Protection
+  logging:
+    - Immutable_Audit_Log
+    - PHI_Access_Logging
+    - API_Request_Logging
+    - Anomaly_Detection
+  backup:
+    - Encrypted_Backups
+    - Cross_Region_Replication
+    - Restore_Testing
+  network:
+    - Private_Subnet
+    - Network_Segmentation
+    - TLS_Termination
+    - Rate_Limiting
+  monitoring:
+    - Health_Checks
+    - Availability_Monitoring
+    - Unauthorized_Access_Detection
+  third_party:
+    - Vendor_Risk_Assessment
+    - Contractual_Security_Controls
+    - De_identified_Access_Only
+
+expected_results:
+  minimum_assumptions: 25
+  minimum_critical: 3
+  minimum_high: 8
+  expected_stride_categories:
+    - Spoofing
+    - Tampering
+    - Repudiation
+    - Information Disclosure
+    - Denial of Service
+    - Elevation of Privilege
+  expected_high_risk_themes:
+    - PHI data exposure
+    - Unauthorized access
+    - Key compromise
+    - Third-party risk
+    - Audit integrity
+
+validation_criteria:
+  - All PHI access must be authenticated and authorized
+  - All data in transit must use TLS 1.3
+  - All data at rest must use AES-256 encryption
+  - Encryption keys must be managed by KMS
+  - Audit logs must be immutable with tamper detection
+  - Backup must be encrypted and geographically redundant
+  - Third-party access must be restricted to de-identified data
+  - Administrative access must require MFA
+
+notes:
+  - This architecture supports regulated healthcare workloads
+  - Formal HIPAA risk assessment is required before production
+  - SOC2 Type II audit is in progress
+  - ISO27001 certification is targeted for Q3 2026
