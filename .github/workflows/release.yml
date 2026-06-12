@@ -135,10 +135,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${GITHUB_REF_NAME}"
-          gh release create "${VERSION}" \
-            --title "ASF ${VERSION}" \
-            --notes "See [CHANGELOG.md](CHANGELOG.md) for details." \
-            release/ASF-* release/checksums.txt
+          if gh release view "${VERSION}" >/dev/null 2>&1; then
+            echo "Release ${VERSION} already exists. Updating assets..."
+            gh release upload "${VERSION}" release/ASF-* release/checksums.txt --clobber
+          else
+            gh release create "${VERSION}" \
+              --title "ASF ${VERSION}" \
+              --notes "See [CHANGELOG.md](CHANGELOG.md) for details." \
+              release/ASF-* release/checksums.txt
+          fi
 
   build-current-platform:
     name: Build (current platform)
