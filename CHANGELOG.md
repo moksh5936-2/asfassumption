@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Trust Boundary Intelligence Engine (TBI)** — Auto-discovers trust zones, boundaries, control gaps, and compliance mappings
+- **Contradiction Intelligence Engine (CIE)** — Detects conflicting security claims with rich evidence and recommendations
+- **Intelligence Engine V3** — Taxonomy, reasoning, domain packs, and quality scoring for assumption generation
 - Structured YAML/Markdown architecture analysis with explicit assumption extraction
 - Security controls verification — assumptions matched against declared controls for partial verification
-- Compliance framework output — HIPAA, SOC2, ISO27001, PCI DSS, GDPR, FedRAMP specific areas
+- Compliance framework output — HIPAA, SOC2, ISO27001, PCI DSS, GDPR, FedRAMP, NIST specific areas
 - Architecture-specific controls — 7 component-specific control categories generated
 - Deduplication engine — normalizes and merges explicit/native assumptions (63 → 48 assumptions)
 - Source metadata tracking — assumptions carry source_type, source_section, source_index, source_file
@@ -20,22 +23,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - PHI risk calibration — healthcare-specific risk scoring with +4/+3 boosts
 - Markdown parser with structured section extraction (assumptions, controls, compliance, notes)
 - `baseline_test.go` — comprehensive baseline tests for YAML and Markdown parsing
+- `tbi_test.go` — 57 TBI integration tests covering 20+ architecture patterns
+- `cie_test.go` — 11 CIE contradiction detection tests
 - Zero-trust release certification documentation (10 audit phases)
+- Trust Boundary Intelligence Engine certification documentation
+- **Threat Modeling Intelligence Engine (TMI)** — 12-category threat generation with STRIDE correlation, severity scoring, threat clustering, and control recommendations
+- `tmi_test.go` — 57 TMI integration tests covering 5 architecture patterns
+- Threat Modeling Intelligence Engine certification documentation
+- **Attack Path Discovery Engine (APD)** — Discovers attacker journeys from entry points to target assets with threat chaining, kill chain mapping, MITRE ATT&CK mapping, and business impact
+- `testdata/attack_paths/` — 5 architecture benchmarks (healthcare, fintech, SaaS, Kubernetes, VPN)
+- `apd_test.go` — 15 APD integration tests covering all phases
+- Attack Path Discovery Engine certification documentation
 
 ### Changed
 
 - CLI `analyze` command routes structured files (.yaml, .md, .json) through full Engine pipeline
 - `Assumption` struct extended with SourceType, SourceSection, SourceIndex, SourceFile, VerificationStatus
-- `AnalysisResult` includes validation summary and compliance output
-- All 5 export formats include structured controls and compliance data
+- `AnalysisResult` includes validation summary, compliance output, CIE contradictions, and TBI zones/boundaries/weaknesses
+- All 5 export formats include structured controls, compliance data, CIE findings, and TBI findings
 - TUI scrolling implemented with PgUp/PgDn/Ctrl+U/Ctrl+D
 - README version updated to 2.1.2
+- Deterministic zone classification with priority-based tie-breaking
 
 ### Fixed
 
 - Version fallback in all 4 installer files: 2.1.1 → 2.1.2
 - STRIDE mapping timing bug — distribution now populated before validation
 - Duplicate installer file maintenance risk documented
+- Compliance enrichment lookup — fixed case-sensitivity and multi-word framework names (e.g., "PCI DSS")
+- TBI zone classification determinism — eliminated Go map iteration randomness for reproducible results
+- TMI severity threshold calibration — adjusted thresholds (Critical ≥0.6, High ≥0.4) to produce realistic threat distributions across architecture benchmarks
 
 ## [2.1.1] — 2026-06-12
 

@@ -1,0 +1,99 @@
+{
+  "architecture_id": "arch-075",
+  "name": "manufacturing-EDR Platform",
+  "domain": "manufacturing",
+  "analysis_date": "2025-03-19T00:00:00Z",
+  "version": "5.4",
+  "findings": [
+    {
+      "id": "F-arch-075-0",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-075-1",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-075-2",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-075-3",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-075-4",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-075-0",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-075-0",
+      "name": "Attack Path 1",
+      "risk_score": 3.6535302764786843,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-075-1",
+      "name": "Attack Path 2",
+      "risk_score": 5.504945298253837,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HITRUST"
+  ],
+  "risk_score": 7.593873841723257,
+  "metadata": {
+    "contact": "owner-manufacturing@company.com",
+    "env": "dev",
+    "region": "eu-west",
+    "team": "team-manufacturing"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "architecture_id": "arch-016",
+  "name": "gov-Message Queue",
+  "domain": "gov",
+  "analysis_date": "2025-04-16T00:00:00Z",
+  "version": "1.5",
+  "findings": [
+    {
+      "id": "F-arch-016-0",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-016-1",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-016-2",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-016-3",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-016-0",
+      "name": "Supply Chain Compromise",
+      "severity": "Critical",
+      "risk_score": 8
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "HITRUST"
+  ],
+  "risk_score": 4.401866910359116,
+  "metadata": {
+    "contact": "owner-gov@company.com",
+    "env": "prod",
+    "region": "ap-southeast",
+    "team": "team-gov"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "architecture_id": "arch-025",
+  "name": "manufacturing-IoT Hub",
+  "domain": "manufacturing",
+  "analysis_date": "2025-01-25T00:00:00Z",
+  "version": "5.4",
+  "findings": [
+    {
+      "id": "F-arch-025-0",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-025-1",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-025-2",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-025-3",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-025-0",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-025-0",
+      "name": "Attack Path 1",
+      "risk_score": 8.812805688054262,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "PCI DSS"
+  ],
+  "risk_score": 6.656821651336342,
+  "metadata": {
+    "contact": "owner-manufacturing@company.com",
+    "env": "prod",
+    "region": "us-east",
+    "team": "team-manufacturing"
+  }
+}

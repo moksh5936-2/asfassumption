@@ -1,0 +1,87 @@
+{
+  "architecture_id": "arch-057",
+  "name": "defense-Cache Layer",
+  "domain": "defense",
+  "analysis_date": "2025-09-01T00:00:00Z",
+  "version": "2.6",
+  "findings": [
+    {
+      "id": "F-arch-057-0",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-057-1",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-057-0",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    },
+    {
+      "id": "T-arch-057-1",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-057-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.692471533357426,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "FedRAMP"
+  ],
+  "risk_score": 3.059531383044034,
+  "metadata": {
+    "contact": "owner-defense@company.com",
+    "env": "dev",
+    "region": "us-east",
+    "team": "team-defense"
+  }
+}

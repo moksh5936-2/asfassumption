@@ -1,0 +1,93 @@
+{
+  "architecture_id": "arch-030",
+  "name": "logistics-Backup Service",
+  "domain": "logistics",
+  "analysis_date": "2025-06-02T00:00:00Z",
+  "version": "5.9",
+  "findings": [
+    {
+      "id": "F-arch-030-0",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-030-1",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-030-0",
+      "name": "Supply Chain Compromise",
+      "severity": "Critical",
+      "risk_score": 8
+    },
+    {
+      "id": "T-arch-030-1",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    },
+    {
+      "id": "T-arch-030-2",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-030-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.47474198493365,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-030-1",
+      "name": "Attack Path 2",
+      "risk_score": 3.997924642432374,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HITRUST"
+  ],
+  "risk_score": 4.707671938828412,
+  "metadata": {
+    "contact": "owner-logistics@company.com",
+    "env": "dev",
+    "region": "us-west",
+    "team": "team-logistics"
+  }
+}

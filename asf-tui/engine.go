@@ -6,11 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"asf-tui/asf/analyzer"
 	"asf-tui/asf/models"
+	"asf-tui/intelligence"
 )
 
 var debugLog = log.New(os.Stderr, "[asf-debug] ", log.Ltime|log.Lshortfile)
@@ -81,6 +83,156 @@ type Assumption struct {
 	ReviewStatus         string                `json:"review_status"`
 	ReviewNotes          string                `json:"review_notes"`
 	ReviewTimestamp      time.Time             `json:"review_timestamp"`
+
+	QualityScore float64 `json:"quality_score,omitempty"`
+}
+
+// Contradiction represents a detected logical contradiction.
+type Contradiction struct {
+	ID                  string    `json:"id"`
+	Severity            RiskLevel `json:"severity"`
+	Description         string    `json:"description"`
+	Explanation         string    `json:"explanation"`
+	AffectedAssumptions []string  `json:"affected_assumptions"`
+	Evidence            []string  `json:"evidence"`
+	RuleName            string    `json:"rule_name"`
+}
+
+// TrustBoundary represents a discovered trust boundary.
+type TrustBoundary struct {
+	Type        string    `json:"type"`
+	Components  []string  `json:"components"`
+	RiskLevel   RiskLevel `json:"risk_level"`
+	Description string    `json:"description"`
+}
+
+// QualityScore represents the quality score of an assumption.
+type QualityScore struct {
+	Hiddenness             float64 `json:"hiddenness"`
+	Impact                 float64 `json:"impact"`
+	Novelty                float64 `json:"novelty"`
+	ArchitecturalRelevance float64 `json:"architectural_relevance"`
+	Risk                   float64 `json:"risk"`
+	Confidence             float64 `json:"confidence"`
+	Overall                float64 `json:"overall"`
+}
+
+// CIEContradiction represents a rich contradiction from the Contradiction Intelligence Engine.
+type CIEContradiction struct {
+	ID                      string       `json:"id"`
+	Type                    string       `json:"type"`
+	Severity                RiskLevel    `json:"severity"`
+	Confidence              float64      `json:"confidence"`
+	Summary                 string       `json:"summary"`
+	Description             string       `json:"description"`
+	StatementA              CIEStatement `json:"statement_a"`
+	StatementB              CIEStatement `json:"statement_b"`
+	AffectedAssets          []string     `json:"affected_assets,omitempty"`
+	AffectedComponents      []string     `json:"affected_components,omitempty"`
+	AffectedControls        []string     `json:"affected_controls,omitempty"`
+	AffectedTrustBoundaries []string     `json:"affected_trust_boundaries,omitempty"`
+	Reasoning               string       `json:"reasoning"`
+	Evidence                []string     `json:"evidence,omitempty"`
+	Recommendations         []string     `json:"recommendations,omitempty"`
+}
+
+// CIEStatement represents a normalized claim in a contradiction.
+type CIEStatement struct {
+	ID           string  `json:"id"`
+	Source       string  `json:"source"`
+	OriginalText string  `json:"original_text"`
+	Category     string  `json:"category"`
+	Confidence   float64 `json:"confidence"`
+}
+
+// TBITrustZone represents a trust zone for TBI output.
+type TBITrustZone struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Sensitivity string   `json:"sensitivity"`
+	Components  []string `json:"components"`
+	Description string   `json:"description"`
+}
+
+// TBITrustBoundary represents a trust boundary for TBI output.
+type TBITrustBoundary struct {
+	ID                  string    `json:"id"`
+	SourceZone          string    `json:"source_zone"`
+	DestinationZone     string    `json:"destination_zone"`
+	SourceZoneType      string    `json:"source_zone_type"`
+	DestinationZoneType string    `json:"destination_zone_type"`
+	CrossingType        string    `json:"crossing_type"`
+	Risk                RiskLevel `json:"risk"`
+	Confidence          float64   `json:"confidence"`
+	RequiredControls    []string  `json:"required_controls"`
+	RequiredAssumptions []string  `json:"required_assumptions"`
+	Threats             []string  `json:"threats"`
+	MissingControls     []string  `json:"missing_controls,omitempty"`
+	MissingAssumptions  []string  `json:"missing_assumptions,omitempty"`
+	Reasoning           string    `json:"reasoning"`
+	Recommendations     []string  `json:"recommendations,omitempty"`
+	ComplianceMappings  []string  `json:"compliance_mappings,omitempty"`
+}
+
+// TBIWeakness represents a boundary weakness for TBI output.
+type TBIWeakness struct {
+	ID              string    `json:"id"`
+	BoundaryID      string    `json:"boundary_id"`
+	Type            string    `json:"type"`
+	Severity        RiskLevel `json:"severity"`
+	Description     string    `json:"description"`
+	Reasoning       string    `json:"reasoning"`
+	Recommendations []string  `json:"recommendations,omitempty"`
+}
+
+// Threat represents a generated threat from TMI.
+type Threat struct {
+	ID                 string    `json:"id"`
+	Name               string    `json:"name"`
+	Category           string    `json:"category"`
+	Severity           RiskLevel `json:"severity"`
+	Likelihood         float64   `json:"likelihood"`
+	Impact             float64   `json:"impact"`
+	RiskScore          float64   `json:"risk_score"`
+	Confidence         float64   `json:"confidence"`
+	Description        string    `json:"description"`
+	AffectedAssets     []string  `json:"affected_assets,omitempty"`
+	AffectedComponents []string  `json:"affected_components,omitempty"`
+	AffectedBoundaries []string  `json:"affected_boundaries,omitempty"`
+	AffectedData       []string  `json:"affected_data,omitempty"`
+	Assumptions        []string  `json:"assumptions,omitempty"`
+	Controls           []string  `json:"controls,omitempty"`
+	STRIDECategories   []string  `json:"stride_categories,omitempty"`
+	Reasoning          string    `json:"reasoning"`
+	Recommendations    []string  `json:"recommendations,omitempty"`
+	PreventiveControls []string  `json:"preventive_controls,omitempty"`
+	DetectiveControls  []string  `json:"detective_controls,omitempty"`
+	CorrectiveControls []string  `json:"corrective_controls,omitempty"`
+}
+
+// ThreatCluster represents a group of related threats.
+type ThreatCluster struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Category        string   `json:"category"`
+	Threats         []string `json:"threats"`
+	RiskScore       float64  `json:"risk_score"`
+	AffectedAssets  []string `json:"affected_assets,omitempty"`
+	Recommendations []string `json:"recommendations,omitempty"`
+}
+
+// ThreatModelSummary represents a summary of threat modeling results.
+type ThreatModelSummary struct {
+	TotalThreats       int            `json:"total_threats"`
+	CriticalCount      int            `json:"critical_count"`
+	HighCount          int            `json:"high_count"`
+	MediumCount        int            `json:"medium_count"`
+	LowCount           int            `json:"low_count"`
+	ClusterCount       int            `json:"cluster_count"`
+	STRIDEDistribution map[string]int `json:"stride_distribution"`
+	TopThreats         []string       `json:"top_threats"`
+	SummaryText        string         `json:"summary_text"`
 }
 
 type AnalysisResult struct {
@@ -105,6 +257,71 @@ type AnalysisResult struct {
 	EvidenceSummary   EvidenceSummary `json:"evidence_summary"`
 	RiskModelVersion  string          `json:"risk_model_version"`
 	ConfidenceSummary string          `json:"confidence_summary"`
+
+	// Intelligence engine fields
+	Contradictions      []Contradiction         `json:"contradictions,omitempty"`
+	TrustBoundaries     []TrustBoundary         `json:"trust_boundaries,omitempty"`
+	QualityScores       map[string]QualityScore `json:"quality_scores,omitempty"`
+	Domain              string                  `json:"domain,omitempty"`
+	IntelligenceSummary string                  `json:"intelligence_summary,omitempty"`
+
+	// Contradiction Intelligence Engine (CIE) fields
+	CIEContradictions []CIEContradiction `json:"cie_contradictions,omitempty"`
+	CIESummary        string             `json:"cie_summary,omitempty"`
+
+	// Trust Boundary Intelligence Engine (TBI) fields
+	TBIZones      []TBITrustZone     `json:"tbi_zones,omitempty"`
+	TBIBoundaries []TBITrustBoundary `json:"tbi_boundaries,omitempty"`
+	TBIWeaknesses []TBIWeakness      `json:"tbi_weaknesses,omitempty"`
+	TBISummary    string             `json:"tbi_summary,omitempty"`
+
+	// Threat Modeling Intelligence Engine (TMI) fields
+	Threats            []Threat           `json:"threats,omitempty"`
+	ThreatClusters     []ThreatCluster    `json:"threat_clusters,omitempty"`
+	ThreatModelSummary ThreatModelSummary `json:"threat_model_summary,omitempty"`
+
+	// Attack Path Discovery Engine (APD) fields
+	AttackPaths       []AttackPath      `json:"attack_paths,omitempty"`
+	ThreatChains      []ThreatChain     `json:"threat_chains,omitempty"`
+	AttackPathSummary AttackPathSummary `json:"attack_path_summary,omitempty"`
+
+	// Security Design Review Intelligence (SDRI) fields
+	SDRIControls               []SDRIControl               `json:"sdri_controls,omitempty"`
+	SDRIDesignFindings         []SDRIDesignFinding         `json:"sdri_design_findings,omitempty"`
+	SDRIAchitecturalWeaknesses []SDRIArchitecturalWeakness `json:"sdri_architectural_weaknesses,omitempty"`
+	SDRIRemediations           []SDRIRemediation           `json:"sdri_remediations,omitempty"`
+	SDRICoverageByCategory     []SDRICoverageItem          `json:"sdri_coverage_by_category,omitempty"`
+	SDRICoverageDashboard      map[string]float64          `json:"sdri_coverage_dashboard,omitempty"`
+	SDRIComplianceAlignments   []SDRIComplianceMapping     `json:"sdri_compliance_alignments,omitempty"`
+	SDRISummary                string                      `json:"sdri_summary,omitempty"`
+
+	// Compliance Intelligence & Audit Readiness Engine (CIARE) fields
+	CIAREFrameworkCoverages   []CIAREFrameworkCoverage   `json:"ciare_framework_coverages,omitempty"`
+	CIAREAuditReadiness       []CIAREAuditReadiness      `json:"ciare_audit_readiness,omitempty"`
+	CIAREEvidenceRequirements []CIAREEvidenceRequirement `json:"ciare_evidence_requirements,omitempty"`
+	CIAREMissingEvidences     []CIAREMissingEvidence     `json:"ciare_missing_evidences,omitempty"`
+	CIAREAuditorQuestions     []CIAREAuditorQuestion     `json:"ciare_auditor_questions,omitempty"`
+	CIAREComplianceGaps       []CIAREComplianceGap       `json:"ciare_compliance_gaps,omitempty"`
+	CIAREControlMaturities    []CIAREControlMaturity     `json:"ciare_control_maturities,omitempty"`
+	CIAREComplianceNarratives []CIAREComplianceNarrative `json:"ciare_compliance_narratives,omitempty"`
+	CIAREAuditPackage         *CIAREAuditPackage         `json:"ciare_audit_package,omitempty"`
+	CIAREComplianceDashboard  *CIAREComplianceDashboard  `json:"ciare_compliance_dashboard,omitempty"`
+	CIAREProcurementQuestions []CIAREProcurementQuestion `json:"ciare_procurement_questions,omitempty"`
+
+	// Domain Knowledge Pack Intelligence (DKPI) fields
+	DKPI DKPIIntelligence `json:"dkpi,omitempty"`
+
+	// Executive Risk Narratives (ERN) fields
+	ERN ERNIntelligence `json:"ern,omitempty"`
+
+	// Security Architecture Memory & Portfolio Intelligence (SAMPI) fields
+	SAMPI SAMPIIntelligence `json:"sampi,omitempty"`
+
+	// Security Decision Intelligence (SDI) fields
+	SDI SDIIntelligence `json:"sdi,omitempty"`
+
+	// Security Digital Twin (SDT) fields
+	SDT SDTIntelligence `json:"sdt,omitempty"`
 }
 
 type AnalysisProgress struct {
@@ -184,6 +401,294 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 	progress <- AnalysisProgress{Percent: 60, Stage: "Processing Results..."}
 
 	result := e.buildResult(asfResult, archPath, mode)
+
+	// Run Intelligence Engine for advanced assumption discovery
+	progress <- AnalysisProgress{Percent: 65, Stage: "Running Intelligence Engine..."}
+	if e.archDesc != nil {
+		ie := intelligence.NewIntelligenceEngine()
+		intelArch := convertToIntelArch(e.archDesc)
+		existingIntelAssumptions := convertAssumptionsToIntel(result.Assumptions)
+		debugLog.Printf("intel: passing %d assumptions to intelligence engine", len(existingIntelAssumptions))
+		intelResult := ie.RunWithExistingAssumptions(intelArch, existingIntelAssumptions)
+		debugLog.Printf("intel: generated %d assumptions, %d contradictions, %d boundaries", len(intelResult.Assumptions), len(intelResult.Contradictions), len(intelResult.TrustBoundaries))
+
+		// Merge intelligence results
+		intelAssumptions := convertIntelAssumptions(intelResult.Assumptions)
+		result.Assumptions = mergeAssumptions(result.Assumptions, intelAssumptions)
+		result.Contradictions = convertIntelContradictions(intelResult.Contradictions)
+		result.TrustBoundaries = convertIntelTrustBoundaries(intelResult.TrustBoundaries)
+		result.Domain = intelResult.Domain
+		result.IntelligenceSummary = intelResult.Summary
+
+		// Run Contradiction Intelligence Engine (CIE)
+		progress <- AnalysisProgress{Percent: 70, Stage: "Running Contradiction Intelligence Engine..."}
+		cie := intelligence.NewCIEEngine()
+		cieContradictions := cie.DetectAllContradictions(intelArch, existingIntelAssumptions, convertControlsToIntel(result.Controls), convertTrustBoundariesToIntel(result.TrustBoundaries))
+		result.CIEContradictions = convertCIEContradictions(cieContradictions)
+		result.CIESummary = intelligence.BuildContradictionSummary(cieContradictions)
+		debugLog.Printf("cie: detected %d contradictions", len(cieContradictions))
+
+		// Run Trust Boundary Intelligence Engine (TBI)
+		progress <- AnalysisProgress{Percent: 75, Stage: "Running Trust Boundary Intelligence Engine..."}
+		tbi := intelligence.NewTBIEngine()
+		tbiResult, err := tbi.Run(intelArch, existingIntelAssumptions)
+		if err == nil && tbiResult != nil {
+			result.TBIZones = convertTBIZones(tbiResult.Zones)
+			result.TBIBoundaries = convertTBIBoundaries(tbiResult.Boundaries)
+			result.TBIWeaknesses = convertTBIWeaknesses(tbiResult.Weaknesses)
+			result.TBISummary = tbiResult.Summary
+			// Merge TBI-generated assumptions
+			intelAssumptions = mergeAssumptions(intelAssumptions, convertIntelAssumptions(tbiResult.Assumptions))
+			result.Assumptions = intelAssumptions
+			debugLog.Printf("tbi: discovered %d zones, %d boundaries, %d weaknesses", len(tbiResult.Zones), len(tbiResult.Boundaries), len(tbiResult.Weaknesses))
+		}
+
+		// Run Threat Modeling Intelligence Engine (TMI)
+		progress <- AnalysisProgress{Percent: 78, Stage: "Running Threat Modeling Intelligence Engine..."}
+		tmi := intelligence.NewTMIEngine()
+		tmiResult := tmi.Run(intelArch, existingIntelAssumptions, convertTBIBoundariesToIntel(result.TBIBoundaries))
+		if tmiResult != nil {
+			result.Threats = convertIntelThreats(tmiResult.Threats)
+			result.ThreatClusters = convertIntelThreatClusters(tmiResult.Clusters)
+			result.ThreatModelSummary = convertIntelThreatModelSummary(tmiResult.Summary)
+			debugLog.Printf("tmi: generated %d threats, %d clusters", len(tmiResult.Threats), len(tmiResult.Clusters))
+		}
+
+		// Run Attack Path Discovery Engine (APD)
+		progress <- AnalysisProgress{Percent: 82, Stage: "Running Attack Path Discovery Engine..."}
+		apd := intelligence.NewAPDEngine()
+		apdResult := apd.Run(intelArch, tmiResult.Threats, convertTBIBoundariesToIntel(result.TBIBoundaries), convertTBIZonesToIntel(result.TBIZones), existingIntelAssumptions)
+		if apdResult != nil {
+			result.AttackPaths = convertAPDAttackPaths(apdResult.AttackPaths)
+			result.ThreatChains = convertAPDThreatChains(apdResult.ThreatChains)
+			result.AttackPathSummary = convertAPDSummary(apdResult)
+			debugLog.Printf("apd: discovered %d attack paths, %d threat chains", len(apdResult.AttackPaths), len(apdResult.ThreatChains))
+		}
+
+		// Run Security Design Review Intelligence Engine (SDRI)
+		progress <- AnalysisProgress{Percent: 84, Stage: "Running Security Design Review Intelligence Engine..."}
+		sdri := intelligence.NewSDRIEngine()
+		apdPaths := make([]intelligence.AttackPath, 0)
+		tmiThreats := make([]intelligence.Threat, 0)
+		if apdResult != nil {
+			apdPaths = apdResult.AttackPaths
+		}
+		if tmiResult != nil {
+			tmiThreats = tmiResult.Threats
+		}
+		sdriResult := sdri.Run(intelArch, existingIntelAssumptions, intelResult.Controls, apdPaths, tmiThreats, result.Domain)
+		if sdriResult != nil {
+			result.SDRIControls = convertSDRIControls(sdriResult.Controls)
+			result.SDRIDesignFindings = convertSDRIDesignFindings(sdriResult.DesignFindings)
+			result.SDRIAchitecturalWeaknesses = convertSDRIWeaknesses(sdriResult.ArchitecturalWeaknesses)
+			result.SDRIRemediations = convertSDRIRemediations(sdriResult.Remediations)
+			result.SDRICoverageByCategory = convertSDRICoverage(sdriResult.CoverageByCategory)
+			result.SDRICoverageDashboard = sdriResult.CoverageDashboard
+			result.SDRIComplianceAlignments = convertSDRIComplianceMappings(sdriResult.ComplianceAlignments)
+			result.SDRISummary = sdriResult.ExecutiveSummary
+			debugLog.Printf("sdri: %d findings, %d weaknesses, %d remediations, coverage %.1f%%",
+				len(sdriResult.DesignFindings), len(sdriResult.ArchitecturalWeaknesses),
+				len(sdriResult.Remediations), averageCoverage(sdriResult.CoverageByCategory))
+		}
+
+		// Run Compliance Intelligence & Audit Readiness Engine (CIARE)
+		progress <- AnalysisProgress{Percent: 86, Stage: "Running Compliance Intelligence Engine..."}
+		ciare := intelligence.NewCIAREEngine()
+		ciareInput := intelligence.CIAREInput{
+			Architecture: intelArch,
+			SDRIResult:   sdriResult,
+			Domain:       result.Domain,
+			Compliance:   result.Compliance,
+		}
+		ciareResult := ciare.Run(ciareInput)
+		if ciareResult != nil {
+			result.CIAREFrameworkCoverages = convertCIAREFrameworkCoverages(ciareResult.FrameworkCoverages)
+			result.CIAREAuditReadiness = convertCIAREAuditReadiness(ciareResult.AuditReadinessScores)
+			result.CIAREEvidenceRequirements = convertCIAREEvidenceRequirements(ciareResult.EvidenceRequirements)
+			result.CIAREMissingEvidences = convertCIAREMissingEvidences(ciareResult.MissingEvidences)
+			result.CIAREAuditorQuestions = convertCIAREAuditorQuestions(ciareResult.AuditorQuestions)
+			result.CIAREComplianceGaps = convertCIAREComplianceGaps(ciareResult.ComplianceGaps)
+			result.CIAREControlMaturities = convertCIAREControlMaturities(ciareResult.ControlMaturities)
+			result.CIAREComplianceNarratives = convertCIAREComplianceNarratives(ciareResult.ComplianceNarratives)
+			result.CIAREAuditPackage = convertCIAREAuditPackage(ciareResult.AuditPackage)
+			result.CIAREComplianceDashboard = convertCIAREComplianceDashboard(ciareResult.ComplianceDashboard)
+			result.CIAREProcurementQuestions = convertCIAREProcurementQuestions(ciareResult.ProcurementQuestions)
+			debugLog.Printf("ciare: %d frameworks, %.1f%% avg coverage, %d gaps, %d missing evidence, %d readiness scores",
+				len(ciareResult.FrameworkCoverages), ciareAvgCoverage(ciareResult.FrameworkCoverages),
+				len(ciareResult.ComplianceGaps), len(ciareResult.MissingEvidences),
+				len(ciareResult.AuditReadinessScores))
+		}
+
+		// Run Domain Knowledge Pack Intelligence Engine (DKPI)
+		progress <- AnalysisProgress{Percent: 88, Stage: "Running Domain Knowledge Pack Intelligence Engine..."}
+		dkpi := intelligence.NewDKPIEngine()
+		dkpiExistingThreats := make([]intelligence.Threat, 0)
+		if tmiResult != nil {
+			dkpiExistingThreats = tmiResult.Threats
+		}
+		dkpiExistingControls := make([]intelligence.SDRIControl, 0)
+		dkpiExistingFindings := make([]intelligence.SDRIFinding, 0)
+		if sdriResult != nil {
+			dkpiExistingControls = sdriResult.Controls
+			dkpiExistingFindings = sdriResult.DesignFindings
+		}
+		dkpiInput := intelligence.DKPIInput{
+			Architecture:        intelArch,
+			ExistingAssumptions: existingIntelAssumptions,
+			ExistingThreats:     dkpiExistingThreats,
+			ExistingControls:    dkpiExistingControls,
+			ExistingFindings:    dkpiExistingFindings,
+			Domain:              result.Domain,
+			Compliance:          result.Compliance,
+		}
+		dkpiResult := dkpi.Run(dkpiInput)
+		if dkpiResult != nil {
+			result.DKPI = convertDKPIResult(dkpiResult)
+			// Update boosted assumptions and enriched controls
+			if len(dkpiResult.BoostedAssumptions) > 0 {
+				boosted := convertIntelAssumptions(dkpiResult.BoostedAssumptions)
+				result.Assumptions = mergeAssumptions(result.Assumptions, boosted)
+			}
+			if len(dkpiResult.EnrichedControls) > 0 {
+				result.SDRIControls = mergeSDRIControls(result.SDRIControls, convertSDRIControls(dkpiResult.EnrichedControls))
+			}
+			debugLog.Printf("dkpi: domain=%s, confidence=%.1f%%, %d threats, %d recommendations",
+				dkpiResult.DetectedDomain.PrimaryDomain, dkpiResult.DetectedDomain.Confidence,
+				len(dkpiResult.InjectedThreats), len(dkpiResult.Recommendations))
+		}
+
+		// Run Executive Risk Narratives Engine (ERN)
+		progress <- AnalysisProgress{Percent: 92, Stage: "Running Executive Risk Narratives Engine..."}
+		ern := intelligence.NewERNEngine()
+		ernThreats := make([]intelligence.Threat, 0)
+		ernAttackPaths := make([]intelligence.AttackPath, 0)
+		ernControls := make([]intelligence.SDRIControl, 0)
+		ernFindings := make([]intelligence.SDRIFinding, 0)
+		if tmiResult != nil {
+			ernThreats = tmiResult.Threats
+		}
+		if apdResult != nil {
+			ernAttackPaths = apdResult.AttackPaths
+		}
+		if sdriResult != nil {
+			ernControls = sdriResult.Controls
+			ernFindings = sdriResult.DesignFindings
+		}
+		ernInput := intelligence.ERNInput{
+			Domain:               result.Domain,
+			Threats:              ernThreats,
+			AttackPaths:          ernAttackPaths,
+			Controls:             ernControls,
+			Findings:             ernFindings,
+			Assumptions:          existingIntelAssumptions,
+			ComplianceFrameworks: result.Compliance,
+			Architecture:         intelArch,
+		}
+		if dkpiResult != nil {
+			ernInput.Domain = dkpiResult.DetectedDomain.PrimaryDomain
+			ernInput.DomainPack = dkpiResult.ActivePack
+		}
+		ernResult := ern.Run(ernInput)
+		if ernResult != nil {
+			result.ERN = convertERNResult(ernResult)
+			debugLog.Printf("ern: %d executive risks, %d themes, exposure=%s",
+				len(ernResult.ExecutiveRisks), len(ernResult.RiskThemes), ernResult.FinancialExposure.Level)
+		}
+
+		// Run Security Decision Intelligence Engine (SDI)
+		progress <- AnalysisProgress{Percent: 96, Stage: "Running Security Decision Intelligence Engine..."}
+		sdi := intelligence.NewSDIEngine()
+		sdiFindings := make([]intelligence.SDRIFinding, 0)
+		sdiThreats := make([]intelligence.Threat, 0)
+		sdiAttackPaths := make([]intelligence.AttackPath, 0)
+		sdiControls := make([]intelligence.SDRIControl, 0)
+		if tmiResult != nil {
+			sdiThreats = tmiResult.Threats
+		}
+		if apdResult != nil {
+			sdiAttackPaths = apdResult.AttackPaths
+		}
+		if sdriResult != nil {
+			sdiControls = sdriResult.Controls
+			sdiFindings = sdriResult.DesignFindings
+		}
+		sdiInput := intelligence.SDIInput{
+			ArchitectureName:   result.ArchitectureName,
+			Domain:             result.Domain,
+			Findings:           sdiFindings,
+			Threats:            sdiThreats,
+			AttackPaths:        sdiAttackPaths,
+			Controls:           sdiControls,
+			Compliance:         result.Compliance,
+			RiskScore:          float64(result.CriticalCount)*4 + float64(result.HighCount)*3 + float64(result.MediumCount)*2 + float64(result.LowCount)*1,
+			CoverageByCategory: nil,
+			Assumptions:        nil,
+			AnalysisMode:       result.AnalysisMode,
+		}
+		sdiResult := sdi.Run(sdiInput)
+		if sdiResult != nil {
+			result.SDI = convertSDIResult(sdiResult)
+			debugLog.Printf("sdi: %d recommendations, %d fix simulations, %d failure simulations",
+				len(sdiResult.Recommendations), len(sdiResult.FixSimulations), len(sdiResult.FailureSimulations))
+		}
+
+		// Run Security Digital Twin Engine (SDT)
+		sdtFindings := make([]intelligence.SDRIFinding, 0)
+		sdtThreats := make([]intelligence.Threat, 0)
+		sdtAttackPaths := make([]intelligence.AttackPath, 0)
+		sdtControls := make([]intelligence.SDRIControl, 0)
+		if tmiResult != nil {
+			sdtThreats = tmiResult.Threats
+		}
+		if apdResult != nil {
+			sdtAttackPaths = apdResult.AttackPaths
+		}
+		if sdriResult != nil {
+			sdtControls = sdriResult.Controls
+			sdtFindings = sdriResult.DesignFindings
+		}
+		sdtInput := intelligence.SDTInput{
+			ArchitectureName: result.ArchitectureName,
+			Domain:           result.Domain,
+			RiskScore:        float64(result.CriticalCount)*4 + float64(result.HighCount)*3 + float64(result.MediumCount)*2 + float64(result.LowCount)*1,
+			Coverage:         0,
+			Findings:         sdtFindings,
+			Threats:          sdtThreats,
+			Controls:         sdtControls,
+			Compliance:       result.Compliance,
+			AttackPaths:      sdtAttackPaths,
+		}
+		for _, a := range result.Assumptions {
+			sdtInput.Assumptions = append(sdtInput.Assumptions, intelligence.Assumption{ID: a.ID, Description: a.Description, VerificationStatus: a.VerificationStatus})
+		}
+
+		sdt := intelligence.NewSDTEngine()
+		sdtResult := sdt.Run(sdtInput)
+		if sdtResult != nil {
+			result.SDT = convertSDTResult(sdtResult)
+			debugLog.Printf("sdt: %d change impacts, %d control drifts, %d what-if scenarios",
+				len(sdtResult.ChangeImpacts), len(sdtResult.ControlDrifts), len(sdtResult.WhatIfScenarios))
+		}
+
+		// Recompute counts after merge
+		result.TotalAssumptions = len(result.Assumptions)
+		result.CriticalCount = 0
+		result.HighCount = 0
+		result.MediumCount = 0
+		result.LowCount = 0
+		for _, a := range result.Assumptions {
+			switch a.Risk {
+			case RiskCritical:
+				result.CriticalCount++
+			case RiskHigh:
+				result.HighCount++
+			case RiskMedium:
+				result.MediumCount++
+			case RiskLow:
+				result.LowCount++
+			}
+		}
+	}
 
 	progress <- AnalysisProgress{Percent: 80, Stage: "Generating STRIDE Mapping..."}
 	result.StrideDistribution = e.mapStrideDistribution(result.Assumptions)
@@ -1397,4 +1902,1370 @@ func extractComponent(keywords []string, text string) string {
 		return words[0]
 	}
 	return "general"
+}
+
+// ──────────────────────────────────────────────
+// Intelligence Engine Conversion Helpers
+// ──────────────────────────────────────────────
+
+func convertToIntelArch(arch *ArchDescription) *intelligence.ArchDescription {
+	if arch == nil {
+		return nil
+	}
+	var components []intelligence.Component
+	for _, c := range arch.Components {
+		components = append(components, intelligence.Component{ID: c.ID, Label: c.Label})
+	}
+	var relationships []intelligence.Relation
+	for _, r := range arch.Relationships {
+		relationships = append(relationships, intelligence.Relation{Source: r.Source, Target: r.Target, Label: r.Label})
+	}
+	return &intelligence.ArchDescription{
+		Name:                arch.Name,
+		Components:          components,
+		Relationships:       relationships,
+		Policies:            arch.Policies,
+		RawText:             arch.RawText,
+		ExplicitAssumptions: arch.ExplicitAssumptions,
+		SecurityControls:    arch.SecurityControls,
+		Compliance:          arch.Compliance,
+		ExpectedResults:     arch.ExpectedResults,
+		ValidationCriteria:  arch.ValidationCriteria,
+		Notes:               arch.Notes,
+	}
+}
+
+func convertAssumptionsToIntel(assumptions []Assumption) []intelligence.Assumption {
+	var result []intelligence.Assumption
+	for _, a := range assumptions {
+		var stride []intelligence.StrideCategory
+		for _, s := range a.Stride {
+			stride = append(stride, intelligence.StrideCategory(s))
+		}
+		result = append(result, intelligence.Assumption{
+			ID:          a.ID,
+			Description: a.Description,
+			Component:   a.Component,
+			Category:    a.Category,
+			Risk:        intelligence.RiskLevel(a.Risk),
+			Stride:      stride,
+			Likelihood:  a.Likelihood,
+			Impact:      a.Impact,
+			Confidence:  a.Confidence,
+			Keywords:    a.Keywords,
+			SourceType:  a.SourceType,
+			SourceFile:  a.SourceFile,
+		})
+	}
+	return result
+}
+
+func convertIntelAssumptions(assumptions []intelligence.Assumption) []Assumption {
+	var result []Assumption
+	for _, a := range assumptions {
+		var stride []StrideCategory
+		for _, s := range a.Stride {
+			stride = append(stride, StrideCategory(s))
+		}
+		result = append(result, Assumption{
+			ID:           a.ID,
+			Description:  a.Description,
+			Component:    a.Component,
+			Category:     a.Category,
+			Risk:         RiskLevel(a.Risk),
+			Stride:       stride,
+			Likelihood:   a.Likelihood,
+			Impact:       a.Impact,
+			Confidence:   a.Confidence,
+			Keywords:     a.Keywords,
+			SourceType:   "intelligence",
+			SourceFile:   a.SourceFile,
+			QualityScore: a.QualityScore,
+			Rationale:    a.Rationale,
+		})
+	}
+	return result
+}
+
+func convertIntelContradictions(contradictions []intelligence.Contradiction) []Contradiction {
+	var result []Contradiction
+	for _, c := range contradictions {
+		result = append(result, Contradiction{
+			ID:                  c.ID,
+			Severity:            RiskLevel(c.Severity),
+			Description:         c.Description,
+			Explanation:         c.Explanation,
+			AffectedAssumptions: c.AffectedAssumptions,
+			Evidence:            c.Evidence,
+			RuleName:            c.RuleName,
+		})
+	}
+	return result
+}
+
+func convertIntelTrustBoundaries(boundaries []intelligence.TrustBoundary) []TrustBoundary {
+	var result []TrustBoundary
+	for _, b := range boundaries {
+		result = append(result, TrustBoundary{
+			Type:        b.Type,
+			Components:  b.Components,
+			RiskLevel:   RiskLevel(b.RiskLevel),
+			Description: b.Description,
+		})
+	}
+	return result
+}
+
+func mergeAssumptions(existing, inferred []Assumption) []Assumption {
+	seen := make(map[string]bool)
+	var result []Assumption
+	for _, a := range existing {
+		key := normalizeText(a.Description)
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, a)
+		}
+	}
+	for _, a := range inferred {
+		key := normalizeText(a.Description)
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
+// CIE conversion helpers
+func convertControlsToIntel(controls []ControlDetail) []intelligence.ControlDetail {
+	var result []intelligence.ControlDetail
+	for _, c := range controls {
+		var stride []intelligence.StrideCategory
+		for _, s := range c.MitigatedSTRIDE {
+			stride = append(stride, intelligence.StrideCategory(s))
+		}
+		result = append(result, intelligence.ControlDetail{
+			ID:                   c.ID,
+			Name:                 c.ID,
+			Description:          c.Description,
+			Category:             c.Category,
+			STRIDECovered:        stride,
+			MitigatedAssumptions: c.MitigatedAssumptionIDs,
+			Component:            "",
+			Priority:             fmt.Sprintf("%d", c.Priority),
+		})
+	}
+	return result
+}
+
+func convertTrustBoundariesToIntel(boundaries []TrustBoundary) []intelligence.TrustBoundary {
+	var result []intelligence.TrustBoundary
+	for _, b := range boundaries {
+		result = append(result, intelligence.TrustBoundary{
+			Type:        b.Type,
+			Components:  b.Components,
+			RiskLevel:   intelligence.RiskLevel(b.RiskLevel),
+			Description: b.Description,
+		})
+	}
+	return result
+}
+
+func convertCIEContradictions(cieContradictions []intelligence.CIEContradiction) []CIEContradiction {
+	var result []CIEContradiction
+	for _, c := range cieContradictions {
+		result = append(result, CIEContradiction{
+			ID:                      c.ID,
+			Type:                    string(c.Type),
+			Severity:                RiskLevel(c.Severity),
+			Confidence:              c.Confidence,
+			Summary:                 c.Summary,
+			Description:             c.Description,
+			StatementA:              CIEStatement{ID: c.StatementA.ID, Source: c.StatementA.Source, OriginalText: c.StatementA.OriginalText, Category: c.StatementA.Category, Confidence: c.StatementA.Confidence},
+			StatementB:              CIEStatement{ID: c.StatementB.ID, Source: c.StatementB.Source, OriginalText: c.StatementB.OriginalText, Category: c.StatementB.Category, Confidence: c.StatementB.Confidence},
+			AffectedAssets:          c.AffectedAssets,
+			AffectedComponents:      c.AffectedComponents,
+			AffectedControls:        c.AffectedControls,
+			AffectedTrustBoundaries: c.AffectedTrustBoundaries,
+			Reasoning:               c.Reasoning,
+			Evidence:                c.Evidence,
+			Recommendations:         c.Recommendations,
+		})
+	}
+	return result
+}
+
+// TBI conversion helpers
+func convertTBIZones(zones []intelligence.TrustZone) []TBITrustZone {
+	var result []TBITrustZone
+	for _, z := range zones {
+		result = append(result, TBITrustZone{
+			ID:          z.ID,
+			Name:        z.Name,
+			Type:        string(z.Type),
+			Sensitivity: z.Sensitivity,
+			Components:  z.Components,
+			Description: z.Description,
+		})
+	}
+	return result
+}
+
+func convertTBIBoundaries(boundaries []intelligence.TBITrustBoundary) []TBITrustBoundary {
+	var result []TBITrustBoundary
+	for _, b := range boundaries {
+		result = append(result, TBITrustBoundary{
+			ID:                  b.ID,
+			SourceZone:          b.SourceZone,
+			DestinationZone:     b.DestinationZone,
+			SourceZoneType:      string(b.SourceZoneType),
+			DestinationZoneType: string(b.DestinationZoneType),
+			CrossingType:        string(b.CrossingType),
+			Risk:                RiskLevel(b.Risk),
+			Confidence:          b.Confidence,
+			RequiredControls:    b.RequiredControls,
+			RequiredAssumptions: b.RequiredAssumptions,
+			Threats:             b.Threats,
+			MissingControls:     b.MissingControls,
+			MissingAssumptions:  b.MissingAssumptions,
+			Reasoning:           b.Reasoning,
+			Recommendations:     b.Recommendations,
+			ComplianceMappings:  b.ComplianceMappings,
+		})
+	}
+	return result
+}
+
+func convertTBIWeaknesses(weaknesses []intelligence.BoundaryWeakness) []TBIWeakness {
+	var result []TBIWeakness
+	for _, w := range weaknesses {
+		result = append(result, TBIWeakness{
+			ID:              w.ID,
+			BoundaryID:      w.BoundaryID,
+			Type:            w.Type,
+			Severity:        RiskLevel(w.Severity),
+			Description:     w.Description,
+			Reasoning:       w.Reasoning,
+			Recommendations: w.Recommendations,
+		})
+	}
+	return result
+}
+
+// Convert TBI boundaries back to intelligence format for TMI engine.
+func convertTBIBoundariesToIntel(boundaries []TBITrustBoundary) []intelligence.TBITrustBoundary {
+	var result []intelligence.TBITrustBoundary
+	for _, b := range boundaries {
+		result = append(result, intelligence.TBITrustBoundary{
+			ID:                  b.ID,
+			SourceZone:          b.SourceZone,
+			DestinationZone:     b.DestinationZone,
+			SourceZoneType:      intelligence.TrustZoneType(b.SourceZoneType),
+			DestinationZoneType: intelligence.TrustZoneType(b.DestinationZoneType),
+			CrossingType:        intelligence.CrossingType(b.CrossingType),
+			Risk:                intelligence.RiskLevel(b.Risk),
+			Confidence:          b.Confidence,
+			RequiredControls:    b.RequiredControls,
+			RequiredAssumptions: b.RequiredAssumptions,
+			Threats:             b.Threats,
+			MissingControls:     b.MissingControls,
+			MissingAssumptions:  b.MissingAssumptions,
+			Reasoning:           b.Reasoning,
+			Recommendations:     b.Recommendations,
+			ComplianceMappings:  b.ComplianceMappings,
+		})
+	}
+	return result
+}
+
+// TMI conversion helpers
+func convertIntelThreats(threats []intelligence.Threat) []Threat {
+	var result []Threat
+	for _, t := range threats {
+		result = append(result, Threat{
+			ID:                 t.ID,
+			Name:               t.Name,
+			Category:           string(t.Category),
+			Severity:           RiskLevel(t.Severity),
+			Likelihood:         t.Likelihood,
+			Impact:             t.Impact,
+			RiskScore:          t.RiskScore,
+			Confidence:         t.Confidence,
+			Description:        t.Description,
+			AffectedAssets:     t.AffectedAssets,
+			AffectedComponents: t.AffectedComponents,
+			AffectedBoundaries: t.AffectedBoundaries,
+			AffectedData:       t.AffectedData,
+			Assumptions:        t.Assumptions,
+			Controls:           t.Controls,
+			STRIDECategories:   t.STRIDECategories,
+			Reasoning:          t.Reasoning,
+			Recommendations:    t.Recommendations,
+			PreventiveControls: t.PreventiveControls,
+			DetectiveControls:  t.DetectiveControls,
+			CorrectiveControls: t.CorrectiveControls,
+		})
+	}
+	return result
+}
+
+func convertIntelThreatClusters(clusters []intelligence.ThreatCluster) []ThreatCluster {
+	var result []ThreatCluster
+	for _, c := range clusters {
+		result = append(result, ThreatCluster{
+			ID:              c.ID,
+			Name:            c.Name,
+			Category:        c.Category,
+			Threats:         c.Threats,
+			RiskScore:       c.RiskScore,
+			AffectedAssets:  c.AffectedAssets,
+			Recommendations: c.Recommendations,
+		})
+	}
+	return result
+}
+
+func convertIntelThreatModelSummary(summary intelligence.ThreatModelSummary) ThreatModelSummary {
+	return ThreatModelSummary{
+		TotalThreats:       summary.TotalThreats,
+		CriticalCount:      summary.CriticalCount,
+		HighCount:          summary.HighCount,
+		MediumCount:        summary.MediumCount,
+		LowCount:           summary.LowCount,
+		ClusterCount:       summary.ClusterCount,
+		STRIDEDistribution: summary.STRIDEDistribution,
+		TopThreats:         summary.TopThreats,
+		SummaryText:        summary.SummaryText,
+	}
+}
+
+// APD conversion helpers
+func convertTBIZonesToIntel(zones []TBITrustZone) []intelligence.TrustZone {
+	var result []intelligence.TrustZone
+	for _, z := range zones {
+		result = append(result, intelligence.TrustZone{
+			ID:          z.ID,
+			Name:        z.Name,
+			Type:        intelligence.TrustZoneType(z.Type),
+			Sensitivity: z.Sensitivity,
+			Components:  z.Components,
+			Description: z.Description,
+		})
+	}
+	return result
+}
+
+func convertAPDAttackPaths(paths []intelligence.AttackPath) []AttackPath {
+	var result []AttackPath
+	for _, p := range paths {
+		steps := make([]AttackStep, len(p.AttackSteps))
+		for i, s := range p.AttackSteps {
+			steps[i] = AttackStep{
+				SequenceNumber:     s.SequenceNumber,
+				SourceComponent:    s.SourceComponent,
+				TargetComponent:    s.TargetComponent,
+				Action:             s.Action,
+				Threat:             s.Threat,
+				RequiredAssumption: s.RequiredAssumption,
+				ControlBypassed:    s.ControlBypassed,
+				Reasoning:          s.Reasoning,
+				STRIDECategory:     s.STRIDECategory,
+			}
+		}
+		result = append(result, AttackPath{
+			ID:                  p.ID,
+			Name:                p.Name,
+			Description:         p.Description,
+			EntryPoint:          p.EntryPoint,
+			TargetAsset:         p.TargetAsset,
+			AttackSteps:         steps,
+			RequiredAssumptions: p.RequiredAssumptions,
+			RequiredConditions:  p.RequiredConditions,
+			ExploitedThreats:    p.ExploitedThreats,
+			AffectedComponents:  p.AffectedComponents,
+			AffectedBoundaries:  p.AffectedBoundaries,
+			Likelihood:          p.Likelihood,
+			Impact:              p.Impact,
+			RiskScore:           p.RiskScore,
+			Confidence:          p.Confidence,
+			DetectionDifficulty: p.DetectionDifficulty,
+			BusinessImpact:      p.BusinessImpact,
+			Recommendations:     p.Recommendations,
+			KillChainPhases:     p.KillChainPhases,
+			MITREATTACK:         p.MITREATTACK,
+			STRIDECategories:    p.STRIDECategories,
+		})
+	}
+	return result
+}
+
+func convertAPDThreatChains(chains []intelligence.ThreatChain) []ThreatChain {
+	var result []ThreatChain
+	for _, c := range chains {
+		result = append(result, ThreatChain{
+			ID:        c.ID,
+			Threats:   c.Threats,
+			Path:      c.Path,
+			RiskScore: c.RiskScore,
+			Reasoning: c.Reasoning,
+		})
+	}
+	return result
+}
+
+func convertAPDSummary(result *intelligence.APDRunResult) AttackPathSummary {
+	if result == nil {
+		return AttackPathSummary{}
+	}
+	critical := 0
+	high := 0
+	medium := 0
+	low := 0
+	for _, p := range result.AttackPaths {
+		switch {
+		case p.RiskScore >= 0.6:
+			critical++
+		case p.RiskScore >= 0.4:
+			high++
+		case p.RiskScore >= 0.2:
+			medium++
+		default:
+			low++
+		}
+	}
+	topPaths := make([]string, 0, len(result.TopPaths))
+	for _, p := range result.TopPaths {
+		topPaths = append(topPaths, p.Name)
+	}
+	mitreCoverage := make([]string, 0)
+	for technique := range result.MITREMapping {
+		mitreCoverage = append(mitreCoverage, technique)
+	}
+	sort.Strings(mitreCoverage)
+	return AttackPathSummary{
+		TotalAttackPaths:  len(result.AttackPaths),
+		CriticalCount:     critical,
+		HighCount:         high,
+		MediumCount:       medium,
+		LowCount:          low,
+		ThreatChainCount:  len(result.ThreatChains),
+		TopAttackPaths:    topPaths,
+		KillChainCoverage: result.KillChainCoverage,
+		MITRECoverage:     mitreCoverage,
+		SummaryText:       result.Summary,
+	}
+}
+
+// SDRI conversion helpers
+func convertSDRIControls(controls []intelligence.SDRIControl) []SDRIControl {
+	var result []SDRIControl
+	for _, c := range controls {
+		result = append(result, SDRIControl{
+			ID:          c.ID,
+			Name:        c.Name,
+			Category:    c.Category,
+			Description: c.Description,
+			ControlType: string(c.ControlType),
+			Preventive:  c.Preventive,
+			Detective:   c.Detective,
+			Corrective:  c.Corrective,
+			Strength:    string(c.Strength),
+			Evidence:    c.Evidence,
+			Coverage:    c.Coverage,
+			Status:      c.Status,
+		})
+	}
+	return result
+}
+
+func convertSDRIDesignFindings(findings []intelligence.SDRIFinding) []SDRIDesignFinding {
+	var result []SDRIDesignFinding
+	for _, f := range findings {
+		result = append(result, SDRIDesignFinding{
+			ID:                 f.ID,
+			Title:              f.Title,
+			Description:        f.Description,
+			Severity:           f.Severity,
+			Category:           f.Category,
+			AffectedComponents: f.AffectedComponents,
+			AffectedControls:   f.AffectedControls,
+			BusinessImpact:     f.BusinessImpact,
+			Recommendation:     f.Recommendation,
+			Reasoning:          f.Reasoning,
+		})
+	}
+	return result
+}
+
+func convertSDRIWeaknesses(weaknesses []intelligence.SDRIArchitecturalWeakness) []SDRIArchitecturalWeakness {
+	var result []SDRIArchitecturalWeakness
+	for _, w := range weaknesses {
+		result = append(result, SDRIArchitecturalWeakness{
+			ID:             w.ID,
+			Pattern:        w.Pattern,
+			Description:    w.Description,
+			Severity:       w.Severity,
+			Components:     w.Components,
+			Impact:         w.Impact,
+			Recommendation: w.Recommendation,
+		})
+	}
+	return result
+}
+
+func convertSDRIRemediations(remediations []intelligence.SDRIRemediation) []SDRIRemediation {
+	var result []SDRIRemediation
+	for _, r := range remediations {
+		result = append(result, SDRIRemediation{
+			ID:                 r.ID,
+			Priority:           r.Priority,
+			Description:        r.Description,
+			RiskScore:          r.RiskScore,
+			BusinessImpact:     r.BusinessImpact,
+			Effort:             r.Effort,
+			Category:           r.Category,
+			Recommendation:     r.Recommendation,
+			AffectedComponents: r.AffectedComponents,
+		})
+	}
+	return result
+}
+
+func convertSDRICoverage(coverage []intelligence.SDRICoverage) []SDRICoverageItem {
+	var result []SDRICoverageItem
+	for _, c := range coverage {
+		result = append(result, SDRICoverageItem{
+			Category: c.Category,
+			Expected: c.Expected,
+			Observed: c.Observed,
+			Coverage: c.Coverage,
+			Level:    c.Level,
+		})
+	}
+	return result
+}
+
+func convertSDRIComplianceMappings(mappings []intelligence.SDRIComplianceMapping) []SDRIComplianceMapping {
+	var result []SDRIComplianceMapping
+	for _, m := range mappings {
+		result = append(result, SDRIComplianceMapping{
+			Framework: m.Framework,
+			Coverage:  m.Coverage,
+			Controls:  m.Controls,
+			Status:    m.Status,
+		})
+	}
+	return result
+}
+
+func averageCoverage(coverage []intelligence.SDRICoverage) float64 {
+	if len(coverage) == 0 {
+		return 0
+	}
+	total := 0.0
+	for _, c := range coverage {
+		total += c.Coverage
+	}
+	return total / float64(len(coverage))
+}
+
+// ── CIARE Conversion Helpers ──
+
+func convertCIAREFrameworkCoverages(c []intelligence.CIAREFrameworkCoverage) []CIAREFrameworkCoverage {
+	var r []CIAREFrameworkCoverage
+	for _, v := range c {
+		r = append(r, CIAREFrameworkCoverage{
+			Framework:        v.Framework,
+			Required:         v.Required,
+			Observed:         v.Observed,
+			Missing:          v.Missing,
+			CoveragePct:      v.CoveragePct,
+			Status:           v.Status,
+			ObservedControls: v.ObservedControls,
+			MissingControls:  v.MissingControls,
+		})
+	}
+	return r
+}
+
+func convertCIAREAuditReadiness(a []intelligence.CIAREAuditReadiness) []CIAREAuditReadiness {
+	var r []CIAREAuditReadiness
+	for _, v := range a {
+		r = append(r, CIAREAuditReadiness{
+			Framework:       v.Framework,
+			ReadinessScore:  v.ReadinessScore,
+			Status:          v.Status,
+			ControlCoverage: v.ControlCoverage,
+			EvidenceScore:   v.EvidenceScore,
+			ThreatExposure:  v.ThreatExposure,
+			FindingsPenalty: v.FindingsPenalty,
+			Factors:         v.Factors,
+		})
+	}
+	return r
+}
+
+func convertCIAREEvidenceRequirements(e []intelligence.CIAREEvidenceRequirement) []CIAREEvidenceRequirement {
+	var r []CIAREEvidenceRequirement
+	for _, v := range e {
+		r = append(r, CIAREEvidenceRequirement{
+			Framework: v.Framework,
+			Control:   v.Control,
+			Evidence:  v.Evidence,
+		})
+	}
+	return r
+}
+
+func convertCIAREMissingEvidences(m []intelligence.CIAREMissingEvidence) []CIAREMissingEvidence {
+	var r []CIAREMissingEvidence
+	for _, v := range m {
+		r = append(r, CIAREMissingEvidence{
+			Framework: v.Framework,
+			Control:   v.Control,
+			Evidences: v.Evidences,
+		})
+	}
+	return r
+}
+
+func convertCIAREAuditorQuestions(q []intelligence.CIAREAuditorQuestion) []CIAREAuditorQuestion {
+	var r []CIAREAuditorQuestion
+	for _, v := range q {
+		r = append(r, CIAREAuditorQuestion{
+			Framework: v.Framework,
+			Control:   v.Control,
+			Question:  v.Question,
+		})
+	}
+	return r
+}
+
+func convertCIAREComplianceGaps(g []intelligence.CIAREComplianceGap) []CIAREComplianceGap {
+	var r []CIAREComplianceGap
+	for _, v := range g {
+		r = append(r, CIAREComplianceGap{
+			ID:          v.ID,
+			Framework:   v.Framework,
+			Requirement: v.Requirement,
+			Observed:    v.Observed,
+			Missing:     v.Missing,
+			Risk:        v.Risk,
+		})
+	}
+	return r
+}
+
+func convertCIAREControlMaturities(m []intelligence.CIAREControlMaturity) []CIAREControlMaturity {
+	var r []CIAREControlMaturity
+	for _, v := range m {
+		r = append(r, CIAREControlMaturity{
+			Domain:   v.Domain,
+			Level:    v.Level,
+			Label:    v.Label,
+			Coverage: v.Coverage,
+		})
+	}
+	return r
+}
+
+func convertCIAREComplianceNarratives(n []intelligence.CIAREComplianceNarrative) []CIAREComplianceNarrative {
+	var r []CIAREComplianceNarrative
+	for _, v := range n {
+		r = append(r, CIAREComplianceNarrative{
+			Framework: v.Framework,
+			Narrative: v.Narrative,
+		})
+	}
+	return r
+}
+
+func convertCIAREAuditPackage(p intelligence.CIAREAuditPackage) *CIAREAuditPackage {
+	return &CIAREAuditPackage{
+		ExecutiveSummary:     p.ExecutiveSummary,
+		FrameworkCoverages:   convertCIAREFrameworkCoverages(p.FrameworkCoverages),
+		ControlInventory:     convertSDRIControls(p.ControlInventory),
+		MissingControls:      convertCIAREComplianceGaps(p.MissingControls),
+		EvidenceRequirements: convertCIAREEvidenceRequirements(p.EvidenceRequirements),
+		AuditorQuestions:     convertCIAREAuditorQuestions(p.AuditorQuestions),
+	}
+}
+
+func convertCIAREComplianceDashboard(d intelligence.CIAREComplianceDashboard) *CIAREComplianceDashboard {
+	return &CIAREComplianceDashboard{
+		FrameworkCoverages: d.FrameworkCoverages,
+		TopGaps:            convertCIAREComplianceGaps(d.TopGaps),
+		TopMissingEvidence: convertCIAREMissingEvidences(d.TopMissingEvidence),
+		TopRisks:           d.TopRisks,
+	}
+}
+
+func convertCIAREProcurementQuestions(q []intelligence.CIAREProcurementQuestion) []CIAREProcurementQuestion {
+	var r []CIAREProcurementQuestion
+	for _, v := range q {
+		r = append(r, CIAREProcurementQuestion{
+			Category: v.Category,
+			Question: v.Question,
+		})
+	}
+	return r
+}
+
+func ciareAvgCoverage(coverages []intelligence.CIAREFrameworkCoverage) float64 {
+	if len(coverages) == 0 {
+		return 0
+	}
+	total := 0.0
+	for _, c := range coverages {
+		total += c.CoveragePct
+	}
+	return total / float64(len(coverages))
+}
+
+// ── DKPI Conversion Helpers ──
+
+func convertDKPIResult(r *intelligence.DKPIEngineResult) DKPIIntelligence {
+	if r == nil {
+		return DKPIIntelligence{}
+	}
+	dkpi := DKPIIntelligence{
+		DomainResult: DKPIDomainResult{
+			PrimaryDomain: r.DetectedDomain.PrimaryDomain,
+			Confidence:    r.DetectedDomain.Confidence,
+			Rationale:     r.DetectedDomain.Rationale,
+		},
+		Recommendations:    r.Recommendations,
+		InjectedThreats:    convertIntelThreats(r.InjectedThreats),
+		DomainControls:     convertSDRIControls(r.DomainControls),
+		DomainCompliance:   r.DomainCompliance,
+		EvidenceReqs:       convertDKPIEvidenceReqs(r.DomainEvidence),
+		BoostedAssumptions: convertIntelAssumptions(r.BoostedAssumptions),
+	}
+	for _, m := range r.DetectedDomain.Matches {
+		dkpi.DomainResult.Matches = append(dkpi.DomainResult.Matches, DKPIDomainMatch{
+			PackID:     m.PackID,
+			PackName:   m.PackName,
+			Score:      m.Score,
+			Confidence: m.Confidence,
+			Reasons:    m.Reasons,
+		})
+	}
+	if r.ActivePack != nil {
+		dkpi.ActivePack = convertDKPIPack(r.ActivePack)
+	}
+	if r.DetectedDomain.PrimaryDomain != "" {
+		dkpi.Summary = fmt.Sprintf("Domain detected: %s (%.1f%% confidence). %d recommendations, %d domain threats.",
+			r.DetectedDomain.PrimaryDomain, r.DetectedDomain.Confidence,
+			len(r.Recommendations), len(r.InjectedThreats))
+	} else {
+		dkpi.Summary = "No domain detected — generic security analysis."
+	}
+	return dkpi
+}
+
+// ── ERN Conversion Helpers ──
+
+func convertERNResult(r *intelligence.ERNRunResult) ERNIntelligence {
+	if r == nil {
+		return ERNIntelligence{}
+	}
+	ern := ERNIntelligence{
+		BoardSummary: ERNBoardSummary{
+			Summary: r.BoardSummary.Summary,
+		},
+		FinancialExposure: ERNFinancialExposure{
+			Level:     r.FinancialExposure.Level,
+			Rationale: r.FinancialExposure.Rationale,
+		},
+	}
+	for _, risk := range r.ExecutiveRisks {
+		ern.ExecutiveRisks = append(ern.ExecutiveRisks, ERNExecutiveRisk{
+			ID:                 risk.ID,
+			Title:              risk.Title,
+			Summary:            risk.Summary,
+			BusinessImpact:     risk.BusinessImpact,
+			OperationalImpact:  risk.OperationalImpact,
+			ComplianceImpact:   risk.ComplianceImpact,
+			FinancialImpact:    risk.FinancialImpact,
+			ReputationImpact:   risk.ReputationImpact,
+			Likelihood:         risk.Likelihood,
+			Severity:           risk.Severity,
+			Priority:           risk.Priority,
+			AffectedAssets:     risk.AffectedAssets,
+			AffectedControls:   risk.AffectedControls,
+			RecommendedActions: risk.RecommendedActions,
+		})
+	}
+	ern.CISOBriefing = ERNCISOBriefing{
+		TopRisks:        r.CISOBriefing.TopRisks,
+		TopRemediations: r.CISOBriefing.TopRemediations,
+		HighRiskAssets:  r.CISOBriefing.HighRiskAssets,
+		CoverageOverview: ERNCoverageOverview{
+			TotalControls: r.CISOBriefing.CoverageOverview.TotalControls,
+			Covered:       r.CISOBriefing.CoverageOverview.Covered,
+			Partial:       r.CISOBriefing.CoverageOverview.Partial,
+			Missing:       r.CISOBriefing.CoverageOverview.Missing,
+			CoverageRate:  r.CISOBriefing.CoverageOverview.CoverageRate,
+		},
+		ComplianceOverview: r.CISOBriefing.ComplianceOverview,
+	}
+	for _, item := range r.RemediationRoadmap.Phase30 {
+		ern.RemediationRoadmap.Phase30 = append(ern.RemediationRoadmap.Phase30, ERNRemediationItem{
+			Action: item.Action, Category: item.Category, Priority: item.Priority,
+		})
+	}
+	for _, item := range r.RemediationRoadmap.Phase90 {
+		ern.RemediationRoadmap.Phase90 = append(ern.RemediationRoadmap.Phase90, ERNRemediationItem{
+			Action: item.Action, Category: item.Category, Priority: item.Priority,
+		})
+	}
+	for _, item := range r.RemediationRoadmap.Phase180 {
+		ern.RemediationRoadmap.Phase180 = append(ern.RemediationRoadmap.Phase180, ERNRemediationItem{
+			Action: item.Action, Category: item.Category, Priority: item.Priority,
+		})
+	}
+	for _, item := range r.RemediationRoadmap.Phase12m {
+		ern.RemediationRoadmap.Phase12m = append(ern.RemediationRoadmap.Phase12m, ERNRemediationItem{
+			Action: item.Action, Category: item.Category, Priority: item.Priority,
+		})
+	}
+	for _, ri := range r.RegulatoryImpacts {
+		ern.RegulatoryImpacts = append(ern.RegulatoryImpacts, ERNRegulatoryImpact{
+			Framework: ri.Framework, Domain: ri.Domain,
+			Exposure: ri.Exposure, Rationale: ri.Rationale,
+		})
+	}
+	for _, ii := range r.InvestmentInsights {
+		ern.InvestmentInsights = append(ern.InvestmentInsights, ERNInvestmentInsight{
+			Area: ii.Area, Description: ii.Description,
+			Priority: ii.Priority, Rationale: ii.Rationale,
+		})
+	}
+	ern.Dashboard = ERNExecutiveDashboard{
+		RiskScore:           r.Dashboard.RiskScore,
+		PriorityFindings:    r.Dashboard.PriorityFindings,
+		ComplianceReadiness: r.Dashboard.ComplianceReadiness,
+		CoverageRate:        r.Dashboard.CoverageRate,
+		AttackPathCount:     r.Dashboard.AttackPathCount,
+		CriticalAssets:      r.Dashboard.CriticalAssets,
+	}
+	for _, da := range r.DecisionSupport.Top3Actions {
+		ern.DecisionSupport.Top3Actions = append(ern.DecisionSupport.Top3Actions, ERNDecisionAction{
+			Rank: da.Rank, Action: da.Action,
+			Impact: da.Impact, Rationale: da.Rationale,
+		})
+	}
+	for _, th := range r.RiskThemes {
+		ern.RiskThemes = append(ern.RiskThemes, ERNRiskTheme{
+			Name: th.Name, Description: th.Description,
+			RiskCount: th.RiskCount, Severity: th.Severity,
+		})
+	}
+	for _, cj := range r.CrownJewelClasses {
+		ern.CrownJewelClasses = append(ern.CrownJewelClasses, ERNCrownJewelClass{
+			TechnicalName: cj.TechnicalName, BusinessCategory: cj.BusinessCategory,
+			BusinessLabel: cj.BusinessLabel,
+		})
+	}
+	ern.ReportPacks = ERNReportPacks{
+		BoardReport:     r.ReportPacks.BoardReport,
+		ExecutiveReport: r.ReportPacks.ExecutiveReport,
+		TechnicalReport: r.ReportPacks.TechnicalReport,
+	}
+	return ern
+}
+
+// ── SAMPI Conversion ──
+
+func convertSAMPIResult(r *intelligence.SAMPIResult) SAMPIIntelligence {
+	if r == nil {
+		return SAMPIIntelligence{}
+	}
+	sampi := SAMPIIntelligence{}
+
+	sampi.Dashboard = SAMPIDashboard{
+		TotalArchitectures: r.Dashboard.TotalArchitectures,
+		TotalFindings:      r.Dashboard.TotalFindings,
+		TotalThreats:       r.Dashboard.TotalThreats,
+		TotalAttackPaths:   r.Dashboard.TotalAttackPaths,
+		TotalControls:      r.Dashboard.TotalControls,
+		AverageCoverage:    r.Dashboard.AverageCoverage,
+		AverageRiskScore:   r.Dashboard.AverageRiskScore,
+		ComplianceCount:    r.Dashboard.ComplianceCount,
+		RiskDistribution:   r.Dashboard.RiskDistribution,
+	}
+
+	for _, h := range r.Heatmaps {
+		sampi.Heatmaps = append(sampi.Heatmaps, SAMPIHeatmap{
+			ArchitectureName: h.ArchitectureName,
+			RiskScore:        h.RiskScore,
+			FindingCount:     h.FindingCount,
+			ControlCount:     h.ControlCount,
+			ComplianceCount:  h.ComplianceCount,
+			RiskBand:         h.RiskBand,
+		})
+	}
+
+	for _, rw := range r.RepeatedWeaknesses {
+		sampi.RepeatedWeaknesses = append(sampi.RepeatedWeaknesses, SAMPIRepeatedWeakness{
+			FindingTitle:          rw.FindingTitle,
+			Category:              rw.Category,
+			Severity:              rw.Severity,
+			AffectedArchitectures: rw.AffectedArchitectures,
+			OccurrenceCount:       rw.OccurrenceCount,
+			Systemic:              rw.Systemic,
+		})
+	}
+
+	for _, et := range r.EnterpriseRiskThemes {
+		sampi.EnterpriseThemes = append(sampi.EnterpriseThemes, SAMPIEnterpriseTheme{
+			Name:                  et.Name,
+			Description:           et.Description,
+			RiskCount:             et.RiskCount,
+			AffectedArchitectures: et.AffectedArchitectures,
+			Severity:              et.Severity,
+		})
+	}
+
+	for _, cc := range r.ControlCoverage {
+		sampi.ControlCoverage = append(sampi.ControlCoverage, SAMPIControlCoverage{
+			ControlName:        cc.ControlName,
+			Category:           cc.Category,
+			ArchitecturesWith:  cc.ArchitecturesWith,
+			ArchitecturesTotal: cc.ArchitecturesTotal,
+			CoveragePercent:    cc.CoveragePercent,
+		})
+	}
+
+	for _, cmp := range r.Comparisons {
+		sampi.Comparisons = append(sampi.Comparisons, SAMPIComparison{
+			ArchitectureA:     cmp.ArchitectureA,
+			ArchitectureB:     cmp.ArchitectureB,
+			SharedAssumptions: cmp.SharedAssumptions,
+			SharedThreats:     cmp.SharedThreats,
+			SharedControls:    cmp.SharedControls,
+			RiskScoreA:        cmp.RiskScoreA,
+			RiskScoreB:        cmp.RiskScoreB,
+			RiskDelta:         cmp.RiskDelta,
+			SimilarityScore:   cmp.SimilarityScore,
+		})
+	}
+
+	for _, rt := range r.RiskTrends {
+		sampi.RiskTrends = append(sampi.RiskTrends, SAMPIRiskTrend{
+			ArchitectureID: rt.ArchitectureID,
+			Name:           rt.Name,
+			PreviousScore:  rt.PreviousScore,
+			CurrentScore:   rt.CurrentScore,
+			Direction:      rt.Direction,
+		})
+	}
+
+	sampi.SecurityDebt = SAMPISecurityDebt{
+		Score:             r.SecurityDebt.Score,
+		LongstandingCount: r.SecurityDebt.LongstandingCount,
+		RepeatedCount:     r.SecurityDebt.RepeatedCount,
+	}
+	for _, d := range r.SecurityDebt.TopDebts {
+		sampi.SecurityDebt.TopDebts = append(sampi.SecurityDebt.TopDebts, SAMPIDebtItem{
+			Description:  d.Description,
+			Architecture: d.Architecture,
+			Category:     d.Category,
+			Severity:     d.Severity,
+			Age:          d.Age,
+		})
+	}
+
+	sampi.AttackSurface = SAMPIExposure{
+		InternetExposure:   r.AttackSurface.InternetExposure,
+		ThirdPartyExposure: r.AttackSurface.ThirdPartyExposure,
+		IdentityExposure:   r.AttackSurface.IdentityExposure,
+		CloudExposure:      r.AttackSurface.CloudExposure,
+		TotalExposure:      r.AttackSurface.TotalExposure,
+	}
+
+	for _, cj := range r.CrownJewelInventory {
+		sampi.CrownJewels = append(sampi.CrownJewels, SAMPICrownJewel{
+			Name:             cj.Name,
+			ArchitectureName: cj.ArchitectureName,
+			Category:         cj.Category,
+			ThreatCount:      cj.ThreatCount,
+			RiskLevel:        cj.RiskLevel,
+		})
+	}
+
+	for _, sd := range r.SharedDependencies {
+		sampi.SharedDependencies = append(sampi.SharedDependencies, SAMISharedDependency{
+			DependencyName:      sd.DependencyName,
+			Category:            sd.Category,
+			UsedByArchitectures: sd.UsedByArchitectures,
+			UsageCount:          sd.UsageCount,
+			RiskLevel:           sd.RiskLevel,
+		})
+	}
+
+	for _, br := range r.BlastRadii {
+		sampi.BlastRadii = append(sampi.BlastRadii, SAMPIBlastRadius{
+			ComponentName:    br.ComponentName,
+			ArchitectureName: br.ArchitectureName,
+			FailureImpact:    br.FailureImpact,
+			AffectedSystems:  br.AffectedSystems,
+			Severity:         br.Severity,
+		})
+	}
+
+	sampi.ComplianceView = SAMPIComplianceView{
+		TotalArchitectures: r.ComplianceView.TotalArchitectures,
+	}
+	for _, fw := range r.ComplianceView.Frameworks {
+		sampi.ComplianceView.Frameworks = append(sampi.ComplianceView.Frameworks, SAMPIComplianceFramework{
+			Framework:          fw.Framework,
+			ArchitecturesWith:  fw.ArchitecturesWith,
+			TotalArchitectures: fw.TotalArchitectures,
+			Coverage:           fw.Coverage,
+		})
+	}
+
+	for _, pi := range r.ProgramInsights {
+		sampi.ProgramInsights = append(sampi.ProgramInsights, SAMPIProgramInsight{
+			Area: pi.Area, Insight: pi.Insight,
+			Priority: pi.Priority, Rationale: pi.Rationale,
+		})
+	}
+
+	return sampi
+}
+
+func convertDKPIPack(p *intelligence.KnowledgePack) *DKPIKnowledgePack {
+	if p == nil {
+		return nil
+	}
+	pack := &DKPIKnowledgePack{
+		ID:                   p.ID,
+		Name:                 p.Name,
+		Industry:             p.Industry,
+		Description:          p.Description,
+		CrownJewels:          p.CrownJewels,
+		ComplianceFrameworks: p.ComplianceFrameworks,
+	}
+	for _, c := range p.ExpectedControls {
+		pack.ExpectedControls = append(pack.ExpectedControls, DKPIKnowledgePackControl{
+			Name: c.Name, Description: c.Description,
+			Category: c.Category, Priority: c.Priority,
+		})
+	}
+	for _, t := range p.ThreatPatterns {
+		pack.ThreatPatterns = append(pack.ThreatPatterns, DKPIKnowledgePackThreat{
+			Name: t.Name, Description: t.Description,
+			Severity: t.Severity, Category: t.Category,
+		})
+	}
+	return pack
+}
+
+func convertDKPIEvidenceReqs(ev []intelligence.KnowledgePackEvidence) []DKPIKnowledgePackEvidence {
+	var r []DKPIKnowledgePackEvidence
+	for _, e := range ev {
+		r = append(r, DKPIKnowledgePackEvidence{
+			Control: e.Control, Evidence: e.Evidence,
+		})
+	}
+	return r
+}
+
+func mergeSDRIControls(existing, enriched []SDRIControl) []SDRIControl {
+	seen := make(map[string]int)
+	for i, c := range existing {
+		seen[c.ID] = i
+	}
+	for _, c := range enriched {
+		if idx, ok := seen[c.ID]; ok {
+			if c.Category != "" {
+				existing[idx].Category = c.Category
+			}
+			if c.Coverage != "" {
+				existing[idx].Coverage = c.Coverage
+			}
+		} else {
+			existing = append(existing, c)
+			seen[c.ID] = len(existing) - 1
+		}
+	}
+	return existing
+}
+
+func convertSDIResult(r *intelligence.SDIResult) SDIIntelligence {
+	if r == nil {
+		return SDIIntelligence{}
+	}
+	sdi := SDIIntelligence{}
+	for _, rec := range r.Recommendations {
+		sdi.Recommendations = append(sdi.Recommendations, SDIDecisionRecommendation{
+			ID: rec.ID, Title: rec.Title, Description: rec.Description,
+			AffectedFindings: rec.AffectedFindings, AffectedThreats: rec.AffectedThreats,
+			AffectedAttackPaths: rec.AffectedAttackPaths, AffectedControls: rec.AffectedControls,
+			AffectedAssets: rec.AffectedAssets, RiskReduction: rec.RiskReduction,
+			Effort: rec.Effort, Priority: rec.Priority,
+			BusinessImpact: rec.BusinessImpact, ComplianceImpact: rec.ComplianceImpact,
+			Rationale: rec.Rationale,
+		})
+	}
+	for _, sim := range r.FixSimulations {
+		sdi.FixSimulations = append(sdi.FixSimulations, SDIFixSimulation{
+			ControlName: sim.ControlName, ControlCategory: sim.ControlCategory,
+			OriginalCritical: sim.OriginalCritical, OriginalHigh: sim.OriginalHigh,
+			OriginalTotal: sim.OriginalTotal, OriginalAttackPaths: sim.OriginalAttackPaths,
+			OriginalCoverage: sim.OriginalCoverage,
+			NewCritical:      sim.NewCritical, NewHigh: sim.NewHigh,
+			NewTotal: sim.NewTotal, NewAttackPaths: sim.NewAttackPaths,
+			NewCoverage: sim.NewCoverage,
+		})
+	}
+	for _, sim := range r.FailureSimulations {
+		sdi.FailureSimulations = append(sdi.FailureSimulations, SDIFailureSimulation{
+			ControlName: sim.ControlName, ControlCategory: sim.ControlCategory,
+			SystemsImpacted: sim.SystemsImpacted, AttackPathsOpened: sim.AttackPathsOpened,
+			NewFindings: sim.NewFindings, RiskIncrease: sim.RiskIncrease,
+			RiskScoreIncrease: sim.RiskScoreIncrease,
+		})
+	}
+	for _, ci := range r.ControlImpacts {
+		sdi.ControlImpacts = append(sdi.ControlImpacts, SDIControlImpact{
+			ControlName: ci.ControlName, Category: ci.Category,
+			SecurityValue: ci.SecurityValue, Effort: ci.Effort, ROI: ci.ROI,
+			FindingCount: ci.FindingCount, ThreatCount: ci.ThreatCount,
+			AttackPathCount: ci.AttackPathCount,
+		})
+	}
+	sdi.DecisionTrees = SDIDecisionTreeResult{
+		SingleAction: sdiConvertTree(r.DecisionTrees.SingleAction),
+		ThreeActions: sdiConvertTree(r.DecisionTrees.ThreeActions),
+		FiveActions:  sdiConvertTree(r.DecisionTrees.FiveActions),
+	}
+	sdi.BoardScenarios = SDIBoardScenarios{
+		DoNothing:        sdiConvertBoardScenario(r.BoardScenarios.DoNothing),
+		PartialRemediate: sdiConvertBoardScenario(r.BoardScenarios.PartialRemediate),
+		FullRemediate:    sdiConvertBoardScenario(r.BoardScenarios.FullRemediate),
+	}
+	for _, ip := range r.InvestmentPriorities {
+		sdi.InvestmentPriorities = append(sdi.InvestmentPriorities, SDIInvestmentPriority{
+			Area: ip.Area, Rank: ip.Rank, Score: ip.Score,
+			Rationale: ip.Rationale, FindingCount: ip.FindingCount,
+			RiskReduction: ip.RiskReduction,
+		})
+	}
+	for _, apc := range r.AttackPathCollapse {
+		sdi.AttackPathCollapse = append(sdi.AttackPathCollapse, SDIAttackPathCollapse{
+			ControlName: apc.ControlName, Category: apc.Category,
+			AttackPathsReduced: apc.AttackPathsReduced,
+			TotalAttackPaths:   apc.TotalAttackPaths,
+			ReductionPercent:   apc.ReductionPercent,
+		})
+	}
+	for _, ci := range r.ComplianceImpacts {
+		sdi.ComplianceImpacts = append(sdi.ComplianceImpacts, SDIComplianceImpact{
+			Framework: ci.Framework, Action: ci.Action,
+			Improvement: ci.Improvement, Rationale: ci.Rationale,
+		})
+	}
+	sdi.RemediationRoadmap = SDIRemediationRoadmap{
+		Phase30:  sdiConvertRoadmapItems(r.RemediationRoadmap.Phase30),
+		Phase90:  sdiConvertRoadmapItems(r.RemediationRoadmap.Phase90),
+		Phase180: sdiConvertRoadmapItems(r.RemediationRoadmap.Phase180),
+		Phase12m: sdiConvertRoadmapItems(r.RemediationRoadmap.Phase12m),
+	}
+	sdi.Dashboard = SDIDecisionDashboard{
+		RiskReductionSummary: r.Dashboard.RiskReductionSummary,
+		TotalRiskReduction:   r.Dashboard.TotalRiskReduction,
+	}
+	for _, td := range r.Dashboard.TopDecisions {
+		sdi.Dashboard.TopDecisions = append(sdi.Dashboard.TopDecisions, sdiConvertRec(td))
+	}
+	for _, qw := range r.Dashboard.QuickWins {
+		sdi.Dashboard.QuickWins = append(sdi.Dashboard.QuickWins, sdiConvertRec(qw))
+	}
+	for _, sa := range r.Dashboard.StrategicActions {
+		sdi.Dashboard.StrategicActions = append(sdi.Dashboard.StrategicActions, sdiConvertRec(sa))
+	}
+	sdi.ExecutiveScenarios = SDIExecutiveScenarios{
+		BestCase:   sdiConvertExecScenario(r.ExecutiveScenarios.BestCase),
+		LikelyCase: sdiConvertExecScenario(r.ExecutiveScenarios.LikelyCase),
+		WorstCase:  sdiConvertExecScenario(r.ExecutiveScenarios.WorstCase),
+	}
+	return sdi
+}
+
+func sdiConvertTree(dt intelligence.DecisionTree) SDIDecisionTree {
+	out := SDIDecisionTree{Budget: dt.Budget, ActionCount: dt.ActionCount, Rationale: dt.Rationale}
+	for _, r := range dt.RecommendedOrder {
+		out.RecommendedOrder = append(out.RecommendedOrder, sdiConvertRec(r))
+	}
+	return out
+}
+
+func sdiConvertBoardScenario(bs intelligence.BoardScenario) SDIBoardScenario {
+	return SDIBoardScenario{
+		Scenario: bs.Scenario, Description: bs.Description,
+		RiskScore: bs.RiskScore, CriticalFindings: bs.CriticalFindings,
+		AttackPaths: bs.AttackPaths, CoverageRate: bs.CoverageRate,
+		KeyRisks: bs.KeyRisks,
+	}
+}
+
+func sdiConvertRoadmapItems(items []intelligence.SDIRoadmapItem) []SDIRoadmapItem {
+	var out []SDIRoadmapItem
+	for _, item := range items {
+		out = append(out, SDIRoadmapItem{
+			Action: item.Action, Category: item.Category,
+			Priority: item.Priority, Effort: item.Effort,
+			RiskReduction: item.RiskReduction,
+		})
+	}
+	return out
+}
+
+func sdiConvertRec(r intelligence.DecisionRecommendation) SDIDecisionRecommendation {
+	return SDIDecisionRecommendation{
+		ID: r.ID, Title: r.Title, Description: r.Description,
+		AffectedFindings: r.AffectedFindings, AffectedThreats: r.AffectedThreats,
+		AffectedAttackPaths: r.AffectedAttackPaths, AffectedControls: r.AffectedControls,
+		AffectedAssets: r.AffectedAssets, RiskReduction: r.RiskReduction,
+		Effort: r.Effort, Priority: r.Priority,
+		BusinessImpact: r.BusinessImpact, ComplianceImpact: r.ComplianceImpact,
+		Rationale: r.Rationale,
+	}
+}
+
+func sdiConvertExecScenario(es intelligence.ExecutiveScenario) SDIExecutiveScenario {
+	return SDIExecutiveScenario{
+		Scenario: es.Scenario, RiskScore: es.RiskScore,
+		FindingsResolved: es.FindingsResolved, AttackPathsClosed: es.AttackPathsClosed,
+		CoverageAchieved: es.CoverageAchieved, Description: es.Description,
+	}
+}
+
+func convertSDTResult(r *intelligence.SDTResult) SDTIntelligence {
+	if r == nil {
+		return SDTIntelligence{}
+	}
+	sdt := SDTIntelligence{
+		Twin: ArchitectureTwinPR{
+			ID: r.Twin.ID, Version: r.Twin.Version,
+			ArchitectureName: r.Twin.ArchitectureName, Domain: r.Twin.Domain,
+			RiskScore: r.Twin.RiskScore, Coverage: r.Twin.Coverage,
+			SourceHash: r.Twin.SourceHash,
+		},
+	}
+	for _, ci := range r.ChangeImpacts {
+		sdt.ChangeImpacts = append(sdt.ChangeImpacts, ChangeImpactPR{
+			Change: ci.Change, ComponentAffected: ci.ComponentAffected,
+			ImpactType: ci.ImpactType, Severity: ci.Severity,
+			RisksAffected: ci.RisksAffected, AttackPathsAffected: ci.AttackPathsAffected,
+			ControlsAffected: ci.ControlsAffected, Description: ci.Description,
+		})
+	}
+	for _, ad := range r.ArchitectureDiffs {
+		sdt.ArchitectureDiffs = append(sdt.ArchitectureDiffs, ArchitectureDiffPR{
+			Category: ad.Category, AddedCount: ad.AddedCount, RemovedCount: ad.RemovedCount,
+			ChangedCount: ad.ChangedCount, RiskScoreDelta: ad.RiskScoreDelta,
+			CoverageDelta: ad.CoverageDelta, Description: ad.Description,
+		})
+	}
+	for _, ei := range r.EvolutionInsights {
+		sdt.EvolutionInsights = append(sdt.EvolutionInsights, EvolutionInsightPR{
+			Scenario: ei.Scenario, Assumption: ei.Assumption,
+			Status: ei.Status, Rationale: ei.Rationale,
+		})
+	}
+	for _, cd := range r.ControlDrifts {
+		sdt.ControlDrifts = append(sdt.ControlDrifts, ControlDriftPR{
+			ControlName: cd.ControlName, Category: cd.Category,
+			ExpectedState: cd.ExpectedState, CurrentState: cd.CurrentState,
+			RiskImpact: cd.DriftType,
+		})
+	}
+	for _, ad := range r.AssumptionDecays {
+		sdt.AssumptionDecays = append(sdt.AssumptionDecays, AssumptionDecayPR{
+			AssumptionID: ad.AssumptionID, Description: ad.Description,
+			TimeElapsed: ad.Age, Status: ad.Status,
+			Recommendation: fmt.Sprintf("evidence: %d sources", ad.EvidenceCount),
+		})
+	}
+	sdt.SecurityDebt = SecurityDebtScorePR{
+		TotalDebt: r.SecurityDebt.TotalDebt, FindingDebt: r.SecurityDebt.FindingDebt,
+		ControlDebt: r.SecurityDebt.ControlDebt, AssumptionDebt: r.SecurityDebt.AssumptionDebt,
+		RiskScore: r.SecurityDebt.RiskScore,
+	}
+	for _, cd := range r.ComplianceDrifts {
+		sdt.ComplianceDrifts = append(sdt.ComplianceDrifts, ComplianceDriftPR{
+			Framework: cd.Framework, Status: cd.Status,
+			NewGaps: cd.NewGaps, ResolvedGaps: cd.ResolvedGaps,
+			RegressedAreas: cd.RegressedAreas,
+		})
+	}
+	sdt.AttackSurfaceTrend = AttackSurfaceTrendPR{
+		InternetExposure: r.AttackSurfaceTrend.InternetExposure,
+		ThirdParties:     r.AttackSurfaceTrend.ThirdParties,
+		IdentitySystems:  r.AttackSurfaceTrend.IdentitySystems,
+		CloudServices:    r.AttackSurfaceTrend.CloudServices,
+		AdminPaths:       r.AttackSurfaceTrend.AdminPaths,
+		GrowthRate:       r.AttackSurfaceTrend.GrowthRate,
+	}
+	sdt.Timeline = ArchitectureTimelinePR{
+		Trend: r.Timeline.Trend, DeltaRisk: r.Timeline.DeltaRisk,
+	}
+	for _, wi := range r.WhatIfScenarios {
+		sdt.WhatIfScenarios = append(sdt.WhatIfScenarios, WhatIfScenarioPR{
+			Name: wi.Name, RiskDelta: wi.RiskDelta,
+			CoverageDelta: wi.CoverageDelta, FindingsDelta: wi.ThreatDelta,
+			Description: wi.Description,
+		})
+	}
+	sdt.MergerAnalysis = MergerAnalysisPR{
+		CombinedRiskScore: r.MergerAnalysis.CombinedRiskScore,
+		InheritedRisks:    r.MergerAnalysis.InheritedRisks,
+		InheritedControls: r.MergerAnalysis.InheritedControls,
+		SharedRisks:       r.MergerAnalysis.SharedRisks,
+	}
+	ztd := ZeroTrustAnalysisPR{Overall: r.ZeroTrust.Overall, Target: r.ZeroTrust.Target, Gap: r.ZeroTrust.Gap}
+	for _, d := range r.ZeroTrust.Dimensions {
+		ztd.Dimensions = append(ztd.Dimensions, ZeroTrustDimensionPR{
+			Dimension: d.Dimension, Score: d.CurrentScore,
+			Target: d.TargetScore, Gap: d.Gap, Status: d.Progress,
+		})
+	}
+	sdt.ZeroTrust = ztd
+	for _, rs := range r.Resilience {
+		sdt.Resilience = append(sdt.Resilience, ResilienceScenarioPR{
+			FailurePoint: rs.FailurePoint, BusinessImpact: rs.BusinessImpact,
+			SecurityImpact: rs.SecurityImpact, AffectedAssets: rs.AffectedAssets,
+			AttackPathsOpened:   rs.AttackPathsOpened,
+			RecoveryAssumptions: rs.RecoveryAssumptions,
+		})
+	}
+	for _, cj := range r.CrownJewels {
+		sdt.CrownJewels = append(sdt.CrownJewels, CrownJewelRankingPR{
+			AssetName: cj.AssetName, BusinessValue: cj.BusinessValue,
+			AttackValue: cj.AttackValue, DependencyCount: cj.DependencyCount,
+			ThreatCount: cj.ThreatCount, BlastRadius: cj.BlastRadius,
+			OverallScore: cj.OverallScore,
+		})
+	}
+	sdt.ExecutiveReport = DigitalTwinReportPR{
+		ArchitectureHealth:   r.ExecutiveReport.ArchitectureHealth,
+		SecurityDebtScore:    r.ExecutiveReport.SecurityDebtScore,
+		ControlDriftCount:    r.ExecutiveReport.ControlDriftCount,
+		ComplianceDriftCount: r.ExecutiveReport.ComplianceDriftCount,
+		RiskTrend:            r.ExecutiveReport.RiskTrend,
+		AttackSurfaceTrend:   r.ExecutiveReport.AttackSurfaceTrend,
+	}
+	sdt.PortfolioSummary = PortfolioTwinSummaryPR{
+		ArchitectureCount: r.PortfolioSummary.ArchitectureCount,
+		SharedRisks:       r.PortfolioSummary.SharedRisks,
+		SharedVendors:     r.PortfolioSummary.SharedVendors,
+		SharedControls:    r.PortfolioSummary.SharedControls,
+		EnterpriseTrends:  r.PortfolioSummary.EnterpriseTrends,
+		AggregatedDebt:    r.PortfolioSummary.AggregatedDebt,
+	}
+	return sdt
 }

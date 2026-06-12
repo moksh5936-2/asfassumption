@@ -1,0 +1,94 @@
+{
+  "architecture_id": "arch-054",
+  "name": "saas-Load Balancer",
+  "domain": "saas",
+  "analysis_date": "2025-06-26T00:00:00Z",
+  "version": "4.3",
+  "findings": [
+    {
+      "id": "F-arch-054-0",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-054-1",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-054-2",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-054-0",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    },
+    {
+      "id": "T-arch-054-1",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-054-2",
+      "name": "Man-in-the-Middle",
+      "severity": "Medium",
+      "risk_score": 4.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-054-0",
+      "name": "Attack Path 1",
+      "risk_score": 9.810701510142543,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "GDPR",
+    "FedRAMP"
+  ],
+  "risk_score": 7.216759706743374,
+  "metadata": {
+    "contact": "owner-saas@company.com",
+    "env": "dev",
+    "region": "us-west",
+    "team": "team-saas"
+  }
+}

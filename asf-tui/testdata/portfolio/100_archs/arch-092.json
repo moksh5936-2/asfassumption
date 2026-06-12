@@ -1,0 +1,97 @@
+{
+  "architecture_id": "arch-092",
+  "name": "healthcare-CI/CD Pipeline",
+  "domain": "healthcare",
+  "analysis_date": "2025-08-08T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-092-0",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-092-1",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-092-2",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-092-3",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-092-4",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-092-0",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-092-1",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    },
+    {
+      "id": "T-arch-092-2",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "FedRAMP"
+  ],
+  "risk_score": 3.692349682711677,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "staging",
+    "region": "ap-southeast",
+    "team": "team-healthcare"
+  }
+}

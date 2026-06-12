@@ -1,0 +1,86 @@
+{
+  "architecture_id": "arch-038",
+  "name": "media-Asset Inventory",
+  "domain": "media",
+  "analysis_date": "2025-02-10T00:00:00Z",
+  "version": "3.7",
+  "findings": [
+    {
+      "id": "F-arch-038-0",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-038-1",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-038-2",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-038-0",
+      "name": "Man-in-the-Middle",
+      "severity": "Medium",
+      "risk_score": 4.5
+    },
+    {
+      "id": "T-arch-038-1",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-038-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.276556724460446,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "SOC 2"
+  ],
+  "risk_score": 5.4213086719705395,
+  "metadata": {
+    "contact": "owner-media@company.com",
+    "env": "staging",
+    "region": "us-west",
+    "team": "team-media"
+  }
+}

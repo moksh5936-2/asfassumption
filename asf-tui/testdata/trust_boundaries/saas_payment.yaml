@@ -1,0 +1,72 @@
+metadata:
+  name: SaaS Payment Platform
+  version: "1.0"
+  compliance:
+    - PCI DSS
+    - SOC2
+    - GDPR
+components:
+  - name: Browser
+    type: client
+    description: User browser
+  - name: Auth0
+    type: identity_provider
+    description: OAuth2 identity provider
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: WebApp
+    type: web_application
+    description: Web application
+  - name: PaymentGateway
+    type: external_service
+    description: Payment processor
+  - name: Database
+    type: database
+    description: Application database
+  - name: AuditLog
+    type: logging_service
+    description: Audit logging
+  - name: KMS
+    type: encryption_service
+    description: Key management
+  - name: ThirdPartyAnalytics
+    type: external_service
+    description: External analytics
+  - name: AdminConsole
+    type: admin_tool
+    description: Admin console
+relationships:
+  - source: Browser
+    target: Auth0
+    protocol: HTTPS
+  - source: Browser
+    target: APIGateway
+    protocol: HTTPS
+  - source: Auth0
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: WebApp
+    protocol: HTTPS
+  - source: WebApp
+    target: PaymentGateway
+    protocol: TLS
+  - source: WebApp
+    target: Database
+    protocol: TLS
+  - source: WebApp
+    target: AuditLog
+    protocol: TLS
+  - source: WebApp
+    target: KMS
+    protocol: TLS
+  - source: WebApp
+    target: ThirdPartyAnalytics
+    protocol: HTTPS
+  - source: AdminConsole
+    target: WebApp
+    protocol: HTTPS
+  - source: AdminConsole
+    target: Database
+    protocol: TLS

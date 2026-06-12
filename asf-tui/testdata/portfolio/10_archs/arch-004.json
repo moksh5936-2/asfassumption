@@ -1,0 +1,111 @@
+{
+  "architecture_id": "arch-004",
+  "name": "saas-Data Lake",
+  "domain": "saas",
+  "analysis_date": "2025-04-04T00:00:00Z",
+  "version": "4.3",
+  "findings": [
+    {
+      "id": "F-arch-004-0",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-004-1",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-004-2",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-004-3",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-004-4",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-004-0",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    },
+    {
+      "id": "T-arch-004-1",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-004-2",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-004-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.706932439734999,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "HIPAA"
+  ],
+  "risk_score": 6.45371561788877
+}

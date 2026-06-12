@@ -1,0 +1,73 @@
+{
+  "architecture_id": "arch-096",
+  "name": "gov-Message Queue",
+  "domain": "gov",
+  "analysis_date": "2025-12-12T00:00:00Z",
+  "version": "1.5",
+  "findings": [
+    {
+      "id": "F-arch-096-0",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-096-1",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-096-0",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-096-1",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-096-2",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HIPAA",
+    "NIST 800-53"
+  ],
+  "risk_score": 7.727709420087826,
+  "metadata": {
+    "contact": "owner-gov@company.com",
+    "env": "dev",
+    "region": "ap-southeast",
+    "team": "team-gov"
+  }
+}

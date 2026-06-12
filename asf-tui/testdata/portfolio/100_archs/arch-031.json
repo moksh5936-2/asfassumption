@@ -1,0 +1,105 @@
+{
+  "architecture_id": "arch-031",
+  "name": "fintech-Config Management",
+  "domain": "fintech",
+  "analysis_date": "2025-07-03T00:00:00Z",
+  "version": "1.0",
+  "findings": [
+    {
+      "id": "F-arch-031-0",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-031-1",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-031-2",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-031-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-031-1",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-031-2",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-031-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.614450974824984,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-031-1",
+      "name": "Attack Path 2",
+      "risk_score": 6.233949746691455,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HITRUST"
+  ],
+  "risk_score": 5.188420489179006,
+  "metadata": {
+    "contact": "owner-fintech@company.com",
+    "env": "prod",
+    "region": "eu-west",
+    "team": "team-fintech"
+  }
+}

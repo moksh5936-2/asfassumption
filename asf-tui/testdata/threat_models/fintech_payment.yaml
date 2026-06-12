@@ -1,0 +1,72 @@
+metadata:
+  name: Fintech Payment System
+  version: "1.0"
+  compliance:
+    - PCI DSS
+    - SOC2
+    - GDPR
+components:
+  - name: Browser
+    type: client
+    description: User browser
+  - name: Auth0
+    type: identity_provider
+    description: OAuth2 identity provider
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: PaymentService
+    type: web_application
+    description: Payment processing service
+  - name: PaymentGateway
+    type: external_service
+    description: Payment processor
+  - name: Database
+    type: database
+    description: Transaction database
+  - name: KMS
+    type: encryption_service
+    description: Key management
+  - name: AuditLog
+    type: logging_service
+    description: Audit logging
+  - name: BackupService
+    type: storage_service
+    description: Backup service
+  - name: AdminConsole
+    type: admin_tool
+    description: Admin console
+relationships:
+  - source: Browser
+    target: Auth0
+    protocol: HTTPS
+  - source: Browser
+    target: APIGateway
+    protocol: HTTPS
+  - source: Auth0
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: PaymentService
+    protocol: HTTPS
+  - source: PaymentService
+    target: PaymentGateway
+    protocol: TLS
+  - source: PaymentService
+    target: Database
+    protocol: TLS
+  - source: PaymentService
+    target: KMS
+    protocol: TLS
+  - source: PaymentService
+    target: AuditLog
+    protocol: TLS
+  - source: PaymentService
+    target: BackupService
+    protocol: TLS
+  - source: AdminConsole
+    target: PaymentService
+    protocol: HTTPS
+  - source: AdminConsole
+    target: Database
+    protocol: TLS

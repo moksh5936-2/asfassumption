@@ -1,0 +1,85 @@
+{
+  "architecture_id": "arch-068",
+  "name": "media-Fraud Detection",
+  "domain": "media",
+  "analysis_date": "2025-08-12T00:00:00Z",
+  "version": "3.7",
+  "findings": [
+    {
+      "id": "F-arch-068-0",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-068-1",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-068-2",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-068-0",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HIPAA",
+    "FedRAMP"
+  ],
+  "risk_score": 7.100458235068667,
+  "metadata": {
+    "contact": "owner-media@company.com",
+    "env": "staging",
+    "region": "ap-southeast",
+    "team": "team-media"
+  }
+}

@@ -1,0 +1,56 @@
+metadata:
+  name: Auth0 SaaS Platform
+  version: "1.0"
+  compliance:
+    - SOC2
+    - ISO27001
+components:
+  - name: Browser
+    type: client
+    description: User browser
+  - name: Auth0
+    type: identity_provider
+    description: OAuth2 identity provider
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: WebApp
+    type: web_application
+    description: Web application
+  - name: Database
+    type: database
+    description: Application database
+  - name: KMS
+    type: encryption_service
+    description: Key management
+  - name: AuditLog
+    type: logging_service
+    description: Audit logging
+  - name: BackupService
+    type: storage_service
+    description: Backup service
+relationships:
+  - source: Browser
+    target: Auth0
+    protocol: HTTPS
+  - source: Browser
+    target: APIGateway
+    protocol: HTTPS
+  - source: Auth0
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: WebApp
+    protocol: HTTPS
+  - source: WebApp
+    target: Database
+    protocol: TLS
+  - source: WebApp
+    target: KMS
+    protocol: TLS
+  - source: WebApp
+    target: AuditLog
+    protocol: TLS
+  - source: WebApp
+    target: BackupService
+    protocol: TLS

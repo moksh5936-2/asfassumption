@@ -1,0 +1,117 @@
+{
+  "architecture_id": "arch-029",
+  "name": "energy-Compliance Reporter",
+  "domain": "energy",
+  "analysis_date": "2025-05-01T00:00:00Z",
+  "version": "4.8",
+  "findings": [
+    {
+      "id": "F-arch-029-0",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-029-1",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-029-2",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-029-3",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-029-4",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-029-0",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-029-1",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-029-2",
+      "name": "Supply Chain Compromise",
+      "severity": "Critical",
+      "risk_score": 8
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-029-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.208087951332919,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "ISO 27001",
+    "HIPAA"
+  ],
+  "risk_score": 3.56383262758269,
+  "metadata": {
+    "contact": "owner-energy@company.com",
+    "env": "staging",
+    "region": "us-east",
+    "team": "team-energy"
+  }
+}

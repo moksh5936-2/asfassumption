@@ -1,0 +1,102 @@
+{
+  "architecture_id": "arch-088",
+  "name": "media-Analytics Platform",
+  "domain": "media",
+  "analysis_date": "2025-04-04T00:00:00Z",
+  "version": "3.7",
+  "findings": [
+    {
+      "id": "F-arch-088-0",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-088-1",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-088-2",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-088-3",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-088-4",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-088-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-088-1",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    },
+    {
+      "id": "T-arch-088-2",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HIPAA"
+  ],
+  "risk_score": 6.959493248637544,
+  "metadata": {
+    "contact": "owner-media@company.com",
+    "env": "prod",
+    "region": "ap-southeast",
+    "team": "team-media"
+  }
+}

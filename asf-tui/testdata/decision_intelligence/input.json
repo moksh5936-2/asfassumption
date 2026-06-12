@@ -1,0 +1,28 @@
+{
+  "architecture_name": "TestArch",
+  "domain": "fintech",
+  "risk_score": 7.5,
+  "findings": [
+    {"id": "F-001", "title": "Missing MFA on Admin Access", "category": "AccessControl", "severity": "Critical", "affected_components": ["Admin Console"]},
+    {"id": "F-002", "title": "Unencrypted Data at Rest", "category": "DataProtection", "severity": "High", "affected_components": ["Database"]},
+    {"id": "F-003", "title": "Missing Audit Logging", "category": "Logging", "severity": "High", "affected_components": ["API Gateway"]},
+    {"id": "F-004", "title": "Weak Password Policy", "category": "Authentication", "severity": "Medium", "affected_components": ["User Portal"]},
+    {"id": "F-005", "title": "No Network Segmentation", "category": "NetworkSecurity", "severity": "Critical", "affected_components": ["Production Network"]},
+    {"id": "F-006", "title": "Hardcoded Secrets in Config", "category": "SecretsManagement", "severity": "Critical", "affected_components": ["Config Service"]}
+  ],
+  "threats": [
+    {"id": "T-001", "name": "Internet-Facing Attack Surface", "category": "External", "severity": "Critical", "risk_score": 9.0},
+    {"id": "T-002", "name": "Insider Threat", "category": "Internal", "severity": "High", "risk_score": 6.5}
+  ],
+  "attack_paths": [
+    {"id": "AP-001", "name": "MFA Bypass via Admin Console", "description": "External to admin console through missing MFA authentication", "risk_score": 8.5},
+    {"id": "AP-002", "name": "Unencrypted Data Exfiltration", "description": "Data theft through unencrypted database", "risk_score": 7.0},
+    {"id": "AP-003", "name": "Secrets Exfiltration", "description": "Extract secrets from config service", "risk_score": 9.0},
+    {"id": "AP-004", "name": "Network Pivot Through Flat Network", "description": "Lateral movement across unsegmented network", "risk_score": 8.0}
+  ],
+  "controls": [
+    {"id": "C-AUDIT", "name": "AuditLogging", "category": "Logging"},
+    {"id": "C-FW", "name": "FirewallRules", "category": "NetworkSecurity"}
+  ],
+  "compliance": ["HIPAA", "SOC 2", "PCI DSS"]
+}

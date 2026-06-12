@@ -1,0 +1,72 @@
+metadata:
+  name: VPN Infrastructure
+  version: "1.0"
+  compliance:
+    - SOC2
+    - ISO27001
+    - NIST
+components:
+  - name: Internet
+    type: network
+    description: Public internet
+  - name: VPNGateway
+    type: vpn
+    description: VPN gateway
+  - name: JumpHost
+    type: jump_host
+    description: Jump host / bastion
+  - name: Firewall
+    type: firewall
+    description: Perimeter firewall
+  - name: InternalApp
+    type: web_application
+    description: Internal application
+  - name: PayrollDatabase
+    type: database
+    description: Payroll database
+  - name: FileServer
+    type: storage_service
+    description: File server
+  - name: AdminConsole
+    type: admin_tool
+    description: Admin console
+  - name: Monitoring
+    type: monitoring_service
+    description: Monitoring service
+relationships:
+  - source: Internet
+    target: VPNGateway
+    protocol: VPN
+  - source: VPNGateway
+    target: Firewall
+    protocol: HTTPS
+  - source: Firewall
+    target: JumpHost
+    protocol: HTTPS
+  - source: JumpHost
+    target: InternalApp
+    protocol: HTTPS
+  - source: InternalApp
+    target: PayrollDatabase
+    protocol: TLS
+  - source: InternalApp
+    target: FileServer
+    protocol: TLS
+  - source: AdminConsole
+    target: Firewall
+    protocol: HTTPS
+  - source: AdminConsole
+    target: InternalApp
+    protocol: HTTPS
+  - source: AdminConsole
+    target: PayrollDatabase
+    protocol: TLS
+  - source: Monitoring
+    target: Firewall
+    protocol: TLS
+  - source: Monitoring
+    target: InternalApp
+    protocol: TLS
+  - source: Monitoring
+    target: JumpHost
+    protocol: TLS

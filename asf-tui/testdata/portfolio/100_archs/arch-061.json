@@ -1,0 +1,106 @@
+{
+  "architecture_id": "arch-061",
+  "name": "fintech-Container Orchestrator",
+  "domain": "fintech",
+  "analysis_date": "2025-01-05T00:00:00Z",
+  "version": "1.0",
+  "findings": [
+    {
+      "id": "F-arch-061-0",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-061-1",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-061-2",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-061-3",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-061-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-061-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.164239529840065,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-061-1",
+      "name": "Attack Path 2",
+      "risk_score": 3.417726349905721,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "HIPAA"
+  ],
+  "risk_score": 7.737048840672476,
+  "metadata": {
+    "contact": "owner-fintech@company.com",
+    "env": "prod",
+    "region": "us-east",
+    "team": "team-fintech"
+  }
+}

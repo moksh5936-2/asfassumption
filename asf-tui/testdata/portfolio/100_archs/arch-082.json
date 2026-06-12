@@ -1,0 +1,88 @@
+{
+  "architecture_id": "arch-082",
+  "name": "healthcare-Customer Portal",
+  "domain": "healthcare",
+  "analysis_date": "2025-10-26T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-082-0",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-082-1",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-082-2",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-082-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-082-1",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-082-2",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-082-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.1220509243533465,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "PCI DSS",
+    "HIPAA"
+  ],
+  "risk_score": 7.723215112768404,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "prod",
+    "region": "us-west",
+    "team": "team-healthcare"
+  }
+}

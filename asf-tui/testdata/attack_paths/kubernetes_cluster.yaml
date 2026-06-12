@@ -1,0 +1,96 @@
+metadata:
+  name: Kubernetes Cluster
+  version: "1.0"
+  compliance:
+    - SOC2
+    - ISO27001
+    - NIST
+components:
+  - name: Internet
+    type: network
+    description: Public internet
+  - name: Developer
+    type: client
+    description: Developer workstation
+  - name: IngressController
+    type: load_balancer
+    description: Kubernetes ingress
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: AuthService
+    type: identity_provider
+    description: Authentication service
+  - name: MicroserviceA
+    type: web_application
+    description: Microservice A
+  - name: MicroserviceB
+    type: web_application
+    description: Microservice B
+  - name: PostgreSQL
+    type: database
+    description: PostgreSQL database
+  - name: etcd
+    type: database
+    description: Kubernetes etcd
+  - name: Vault
+    type: secrets_manager
+    description: Secrets vault
+  - name: Monitoring
+    type: monitoring_service
+    description: Monitoring stack
+  - name: Registry
+    type: storage_service
+    description: Container registry
+relationships:
+  - source: Internet
+    target: Developer
+    protocol: HTTPS
+  - source: Internet
+    target: IngressController
+    protocol: HTTPS
+  - source: Developer
+    target: Registry
+    protocol: HTTPS
+  - source: IngressController
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: AuthService
+    protocol: HTTPS
+  - source: APIGateway
+    target: MicroserviceA
+    protocol: HTTPS
+  - source: APIGateway
+    target: MicroserviceB
+    protocol: HTTPS
+  - source: MicroserviceA
+    target: PostgreSQL
+    protocol: TLS
+  - source: MicroserviceB
+    target: PostgreSQL
+    protocol: TLS
+  - source: AuthService
+    target: etcd
+    protocol: TLS
+  - source: AuthService
+    target: Vault
+    protocol: TLS
+  - source: MicroserviceA
+    target: Vault
+    protocol: TLS
+  - source: MicroserviceB
+    target: Vault
+    protocol: TLS
+  - source: Monitoring
+    target: MicroserviceA
+    protocol: TLS
+  - source: Monitoring
+    target: MicroserviceB
+    protocol: TLS
+  - source: Registry
+    target: MicroserviceA
+    protocol: HTTPS
+  - source: Registry
+    target: MicroserviceB
+    protocol: HTTPS

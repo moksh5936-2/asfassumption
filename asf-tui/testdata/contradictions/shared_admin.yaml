@@ -1,0 +1,9 @@
+metadata:
+  name: Shared Admin Contradiction
+  version: "1.0"
+assumptions:
+  - Least privilege is enforced
+  - Administrators share a single account
+components:
+  - name: WebApp
+    type: web_application

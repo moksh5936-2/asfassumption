@@ -1,0 +1,86 @@
+{
+  "architecture_id": "arch-007",
+  "name": "defense-Identity Provider",
+  "domain": "defense",
+  "analysis_date": "2025-07-07T00:00:00Z",
+  "version": "2.6",
+  "findings": [
+    {
+      "id": "F-arch-007-0",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-007-1",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-007-0",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-007-0",
+      "name": "Attack Path 1",
+      "risk_score": 8.797153108698968,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST"
+  ],
+  "risk_score": 9.413052744003895,
+  "metadata": {
+    "contact": "owner-defense@company.com",
+    "env": "prod",
+    "region": "eu-west",
+    "team": "team-defense"
+  }
+}

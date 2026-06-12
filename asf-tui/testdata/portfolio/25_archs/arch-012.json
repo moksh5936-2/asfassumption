@@ -1,0 +1,78 @@
+{
+  "architecture_id": "arch-012",
+  "name": "healthcare-CI/CD Pipeline",
+  "domain": "healthcare",
+  "analysis_date": "2025-12-12T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-012-0",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-012-1",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-012-2",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-012-3",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-012-0",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-012-1",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HIPAA"
+  ],
+  "risk_score": 7.523247831514432,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "dev",
+    "region": "ap-southeast",
+    "team": "team-healthcare"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "architecture_id": "arch-003",
+  "name": "ecommerce-Admin Console",
+  "domain": "ecommerce",
+  "analysis_date": "2025-03-03T00:00:00Z",
+  "version": "3.2",
+  "findings": [
+    {
+      "id": "F-arch-003-0",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-003-1",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-003-2",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-003-3",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-003-4",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-003-0",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-003-1",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-003-0",
+      "name": "Attack Path 1",
+      "risk_score": 4.242206668076729,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "FedRAMP"
+  ],
+  "risk_score": 5.097482583607047,
+  "metadata": {
+    "contact": "owner-ecommerce@company.com",
+    "env": "dev",
+    "region": "eu-west",
+    "team": "team-ecommerce"
+  }
+}

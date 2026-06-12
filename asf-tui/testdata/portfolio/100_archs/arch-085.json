@@ -1,0 +1,98 @@
+{
+  "architecture_id": "arch-085",
+  "name": "manufacturing-API Gateway",
+  "domain": "manufacturing",
+  "analysis_date": "2025-01-01T00:00:00Z",
+  "version": "5.4",
+  "findings": [
+    {
+      "id": "F-arch-085-0",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-085-1",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-085-2",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-085-3",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-085-4",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-085-0",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-085-0",
+      "name": "Attack Path 1",
+      "risk_score": 9.073251562148803,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "FedRAMP"
+  ],
+  "risk_score": 3.190178858845036,
+  "metadata": {
+    "contact": "owner-manufacturing@company.com",
+    "env": "prod",
+    "region": "us-east",
+    "team": "team-manufacturing"
+  }
+}

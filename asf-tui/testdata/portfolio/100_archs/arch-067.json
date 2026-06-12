@@ -1,0 +1,83 @@
+{
+  "architecture_id": "arch-067",
+  "name": "defense-Payment Processor",
+  "domain": "defense",
+  "analysis_date": "2025-07-11T00:00:00Z",
+  "version": "2.6",
+  "findings": [
+    {
+      "id": "F-arch-067-0",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-067-1",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-067-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-067-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.900273309040634,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-067-1",
+      "name": "Attack Path 2",
+      "risk_score": 9.480562108239686,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "NIST 800-53",
+    "ISO 27001",
+    "FedRAMP"
+  ],
+  "risk_score": 6.086470973637847,
+  "metadata": {
+    "contact": "owner-defense@company.com",
+    "env": "prod",
+    "region": "eu-west",
+    "team": "team-defense"
+  }
+}

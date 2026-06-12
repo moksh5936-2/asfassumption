@@ -2,7 +2,7 @@
 
 ## Version
 
-**v2.1.1** — June 2026
+**v2.2.0** — June 2026
 
 > Go-native single binary — no Python runtime required.
 
@@ -10,11 +10,11 @@
 
 | File | Platform | Architecture | Size |
 |------|----------|-------------|------|
-| `ASF-v2.1.1-linux-amd64` | Linux | AMD64 | 9.0MB |
-| `ASF-v2.1.1-linux-arm64` | Linux | ARM64 | 8.4MB |
-| `ASF-v2.1.1-darwin-amd64` | macOS | Intel | 9.2MB |
-| `ASF-v2.1.1-darwin-arm64` | macOS | Apple Silicon | 8.7MB |
-| `ASF-v2.1.1-windows-amd64.exe` | Windows | AMD64 | 9.4MB |
+| `ASF-v2.2.0-linux-amd64` | Linux | AMD64 | 11MB |
+| `ASF-v2.2.0-linux-arm64` | Linux | ARM64 | 10MB |
+| `ASF-v2.2.0-darwin-amd64` | macOS | Intel | 11MB |
+| `ASF-v2.2.0-darwin-arm64` | macOS | Apple Silicon | 11MB |
+| `ASF-v2.2.0-windows-amd64.exe` | Windows | AMD64 | 12MB |
 | `checksums.txt` | All | All | SHA-256 checksums |
 
 ## Verification
@@ -27,18 +27,18 @@ shasum -a 256 -c checksums.txt
 
 Expected output:
 ```
-ASF-v2.1.1-darwin-amd64: OK
-ASF-v2.1.1-darwin-arm64: OK
-ASF-v2.1.1-linux-amd64: OK
-ASF-v2.1.1-linux-arm64: OK
-ASF-v2.1.1-windows-amd64.exe: OK
+ASF-v2.2.0-darwin-amd64: OK
+ASF-v2.2.0-darwin-arm64: OK
+ASF-v2.2.0-linux-amd64: OK
+ASF-v2.2.0-linux-arm64: OK
+ASF-v2.2.0-windows-amd64.exe: OK
 ```
 
 ### Verify binary
 
 ```bash
-./ASF-v2.1.1-darwin-arm64 --version
-# Expected: ASF v2.1.1
+./ASF-v2.2.0-darwin-arm64 --version
+# Expected: ASF v2.2.0
 ```
 
 ## Installation
@@ -51,16 +51,16 @@ chmod +x install.sh
 ./install.sh
 
 # Manual installation
-chmod +x ASF-v2.1.1-darwin-arm64
+chmod +x ASF-v2.2.0-darwin-arm64
 mkdir -p ~/.local/bin ~/.asf
-cp ASF-v2.1.1-darwin-arm64 ~/.asf/asf
+cp ASF-v2.2.0-darwin-arm64 ~/.asf/asf
 ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
 ### Windows
 
 ```powershell
-# See install.ps1 or download ASF-v2.1.1-windows-amd64.exe directly
+# See install.ps1 or download ASF-v2.2.0-windows-amd64.exe directly
 ```
 
 ### Optional Dependencies

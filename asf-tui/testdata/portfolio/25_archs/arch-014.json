@@ -1,0 +1,111 @@
+{
+  "architecture_id": "arch-014",
+  "name": "saas-Load Balancer",
+  "domain": "saas",
+  "analysis_date": "2025-02-14T00:00:00Z",
+  "version": "4.3",
+  "findings": [
+    {
+      "id": "F-arch-014-0",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-014-1",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-014-2",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-014-3",
+      "title": "Missing SIEM Integration",
+      "category": "Monitoring",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-014-0",
+      "name": "Internet-Facing Attack Surface",
+      "severity": "Critical",
+      "risk_score": 9
+    },
+    {
+      "id": "T-arch-014-1",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    },
+    {
+      "id": "T-arch-014-2",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-014-0",
+      "name": "Attack Path 1",
+      "risk_score": 8.495697292184701,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "FedRAMP",
+    "HIPAA"
+  ],
+  "risk_score": 9.204241448391112,
+  "metadata": {
+    "contact": "owner-saas@company.com",
+    "env": "staging",
+    "region": "us-west",
+    "team": "team-saas"
+  }
+}

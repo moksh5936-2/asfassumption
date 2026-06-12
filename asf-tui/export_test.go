@@ -10,7 +10,10 @@ func TestExportAllFormats(t *testing.T) {
 	cfg := &Config{}
 	e := NewEngine(cfg)
 	progress := make(chan AnalysisProgress, 100)
-	go func() { for range progress {} }()
+	go func() {
+		for range progress {
+		}
+	}()
 	result, err := e.RunAnalysis(path, "", ModeASFOnly, progress)
 	if err != nil {
 		t.Fatalf("RunAnalysis: %v", err)

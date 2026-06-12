@@ -1,0 +1,13 @@
+metadata:
+  name: MFA Exemption Contradiction
+  version: "1.0"
+assumptions:
+  - MFA is enforced for all users
+  - Service accounts are exempt from MFA
+  - Admin access requires MFA
+  - Break-glass accounts bypass MFA
+components:
+  - name: WebApp
+    type: web_application
+  - name: Database
+    type: database

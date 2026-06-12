@@ -1,0 +1,93 @@
+{
+  "architecture_id": "arch-056",
+  "name": "gov-Message Queue",
+  "domain": "gov",
+  "analysis_date": "2025-08-28T00:00:00Z",
+  "version": "1.5",
+  "findings": [
+    {
+      "id": "F-arch-056-0",
+      "title": "Missing SIEM Integration",
+      "category": "Monitoring",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-056-1",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-056-2",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-056-3",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-056-0",
+      "name": "Internet-Facing Attack Surface",
+      "severity": "Critical",
+      "risk_score": 9
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-056-0",
+      "name": "Attack Path 1",
+      "risk_score": 3.9514497273840496,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-056-1",
+      "name": "Attack Path 2",
+      "risk_score": 3.705585371877311,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "ISO 27001"
+  ],
+  "risk_score": 9.247714077709356,
+  "metadata": {
+    "contact": "owner-gov@company.com",
+    "env": "staging",
+    "region": "ap-southeast",
+    "team": "team-gov"
+  }
+}

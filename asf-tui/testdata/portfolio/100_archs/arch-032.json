@@ -1,0 +1,82 @@
+{
+  "architecture_id": "arch-032",
+  "name": "healthcare-Secrets Rotation",
+  "domain": "healthcare",
+  "analysis_date": "2025-08-04T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-032-0",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-032-1",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-032-2",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-032-3",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-032-0",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-032-0",
+      "name": "Attack Path 1",
+      "risk_score": 4.38270308357639,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "ISO 27001",
+    "FedRAMP"
+  ],
+  "risk_score": 6.332460989046846,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "staging",
+    "region": "ap-southeast",
+    "team": "team-healthcare"
+  }
+}

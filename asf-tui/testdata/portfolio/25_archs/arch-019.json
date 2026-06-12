@@ -1,0 +1,93 @@
+{
+  "architecture_id": "arch-019",
+  "name": "energy-CDN Edge",
+  "domain": "energy",
+  "analysis_date": "2025-07-19T00:00:00Z",
+  "version": "4.8",
+  "findings": [
+    {
+      "id": "F-arch-019-0",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-019-1",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-019-0",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    },
+    {
+      "id": "T-arch-019-1",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-019-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.144893286702491,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "GDPR",
+    "NIST 800-53"
+  ],
+  "risk_score": 7.6805179379770046,
+  "metadata": {
+    "contact": "owner-energy@company.com",
+    "env": "prod",
+    "region": "eu-west",
+    "team": "team-energy"
+  }
+}

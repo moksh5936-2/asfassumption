@@ -1,0 +1,87 @@
+{
+  "architecture_id": "arch-001",
+  "name": "fintech-Payment Gateway",
+  "domain": "fintech",
+  "analysis_date": "2025-01-01T00:00:00Z",
+  "version": "1.0",
+  "findings": [
+    {
+      "id": "F-arch-001-0",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-001-1",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-001-2",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-001-0",
+      "name": "Supply Chain Compromise",
+      "severity": "Critical",
+      "risk_score": 8
+    },
+    {
+      "id": "T-arch-001-1",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    },
+    {
+      "id": "T-arch-001-2",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-001-0",
+      "name": "Attack Path 1",
+      "risk_score": 9.948832956106955,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "FedRAMP",
+    "ISO 27001"
+  ],
+  "risk_score": 3.9226348699530273,
+  "metadata": {
+    "contact": "owner-fintech@company.com",
+    "env": "prod",
+    "region": "us-east",
+    "team": "team-fintech"
+  }
+}

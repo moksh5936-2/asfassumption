@@ -1,0 +1,100 @@
+{
+  "architecture_id": "arch-021",
+  "name": "fintech-Container Orchestrator",
+  "domain": "fintech",
+  "analysis_date": "2025-09-21T00:00:00Z",
+  "version": "1.0",
+  "findings": [
+    {
+      "id": "F-arch-021-0",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-021-1",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-021-0",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-021-1",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    },
+    {
+      "id": "T-arch-021-2",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-021-0",
+      "name": "Attack Path 1",
+      "risk_score": 9.26575635061154,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-021-1",
+      "name": "Attack Path 2",
+      "risk_score": 9.079767576084386,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "NIST 800-53",
+    "SOC 2"
+  ],
+  "risk_score": 9.14513873036587,
+  "metadata": {
+    "contact": "owner-fintech@company.com",
+    "env": "dev",
+    "region": "us-east",
+    "team": "team-fintech"
+  }
+}

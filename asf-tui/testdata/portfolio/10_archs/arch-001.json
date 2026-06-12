@@ -1,0 +1,100 @@
+{
+  "architecture_id": "arch-001",
+  "name": "fintech-Payment Gateway",
+  "domain": "fintech",
+  "analysis_date": "2025-01-01T00:00:00Z",
+  "version": "1.0",
+  "findings": [
+    {
+      "id": "F-arch-001-0",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-001-1",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-001-2",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-001-3",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-001-4",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-001-0",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    },
+    {
+      "id": "T-arch-001-1",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-001-2",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-001-0",
+      "name": "Attack Path 1",
+      "risk_score": 5.1212380958256984,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-001-1",
+      "name": "Attack Path 2",
+      "risk_score": 8.466203621277451,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "GDPR"
+  ],
+  "risk_score": 3.3730283610466327
+}

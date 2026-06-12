@@ -1,0 +1,18 @@
+{
+  "phase_30": [
+    {"action": "Implement multi-factor authentication for all administrative and privileged access.", "category": "AccessControl", "priority": "Immediate"},
+    {"action": "Review and remediate based on security best practices.", "category": "AccessControl", "priority": "Immediate"}
+  ],
+  "phase_90": [
+    {"action": "Establish centralized logging and monitoring", "category": "Detection", "priority": "High"},
+    {"action": "Implement network segmentation and access controls", "category": "Network", "priority": "High"}
+  ],
+  "phase_180": [
+    {"action": "Deploy key management and certificate automation", "category": "Cryptography", "priority": "Medium"},
+    {"action": "Establish vendor assurance program", "category": "Third Party", "priority": "Medium"}
+  ],
+  "phase_12m": [
+    {"action": "Conduct full security architecture review", "category": "Governance", "priority": "Low"},
+    {"action": "Implement continuous compliance monitoring", "category": "Compliance", "priority": "Low"}
+  ]
+}

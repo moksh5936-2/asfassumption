@@ -1,0 +1,106 @@
+{
+  "architecture_id": "arch-074",
+  "name": "saas-SIEM Collector",
+  "domain": "saas",
+  "analysis_date": "2025-02-18T00:00:00Z",
+  "version": "4.3",
+  "findings": [
+    {
+      "id": "F-arch-074-0",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-074-1",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-074-2",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-074-3",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-074-4",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-074-0",
+      "name": "Man-in-the-Middle",
+      "severity": "Medium",
+      "risk_score": 4.5
+    },
+    {
+      "id": "T-arch-074-1",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    },
+    {
+      "id": "T-arch-074-2",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-074-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.924201209806271,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-074-1",
+      "name": "Attack Path 2",
+      "risk_score": 5.311425017431754,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "ISO 27001",
+    "FedRAMP"
+  ],
+  "risk_score": 6.109984101982259,
+  "metadata": {
+    "contact": "owner-saas@company.com",
+    "env": "staging",
+    "region": "us-west",
+    "team": "team-saas"
+  }
+}

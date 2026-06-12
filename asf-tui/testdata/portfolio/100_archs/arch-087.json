@@ -1,0 +1,90 @@
+{
+  "architecture_id": "arch-087",
+  "name": "defense-Identity Provider",
+  "domain": "defense",
+  "analysis_date": "2025-03-03T00:00:00Z",
+  "version": "2.6",
+  "findings": [
+    {
+      "id": "F-arch-087-0",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-087-1",
+      "title": "No Input Validation",
+      "category": "ApplicationSecurity",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-087-2",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-087-3",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-087-4",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-087-0",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    },
+    {
+      "id": "T-arch-087-1",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    },
+    {
+      "id": "T-arch-087-2",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "PCI DSS"
+  ],
+  "risk_score": 5.997634188021614,
+  "metadata": {
+    "contact": "owner-defense@company.com",
+    "env": "dev",
+    "region": "eu-west",
+    "team": "team-defense"
+  }
+}

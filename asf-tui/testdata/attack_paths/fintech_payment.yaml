@@ -1,0 +1,69 @@
+metadata:
+  name: Fintech Payment System
+  version: "1.0"
+  compliance:
+    - PCI DSS
+    - SOC2
+    - ISO27001
+components:
+  - name: Internet
+    type: network
+    description: Public internet
+  - name: MobileApp
+    type: client
+    description: Mobile banking app
+  - name: WAF
+    type: firewall
+    description: Web application firewall
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: PaymentService
+    type: web_application
+    description: Payment processing service
+  - name: PaymentDatabase
+    type: database
+    description: Payment transaction database
+  - name: Vault
+    type: secrets_manager
+    description: Secrets vault
+  - name: FraudDetection
+    type: monitoring_service
+    description: Fraud detection service
+  - name: ThirdPartyProcessor
+    type: external_service
+    description: Third-party payment processor
+  - name: AdminPortal
+    type: admin_tool
+    description: Admin portal
+relationships:
+  - source: Internet
+    target: MobileApp
+    protocol: HTTPS
+  - source: MobileApp
+    target: WAF
+    protocol: HTTPS
+  - source: WAF
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: PaymentService
+    protocol: HTTPS
+  - source: PaymentService
+    target: PaymentDatabase
+    protocol: TLS
+  - source: PaymentService
+    target: Vault
+    protocol: TLS
+  - source: PaymentService
+    target: FraudDetection
+    protocol: TLS
+  - source: PaymentService
+    target: ThirdPartyProcessor
+    protocol: HTTPS
+  - source: AdminPortal
+    target: APIGateway
+    protocol: HTTPS
+  - source: AdminPortal
+    target: PaymentDatabase
+    protocol: TLS

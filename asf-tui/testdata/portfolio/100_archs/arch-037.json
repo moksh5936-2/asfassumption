@@ -1,0 +1,117 @@
+{
+  "architecture_id": "arch-037",
+  "name": "defense-Patch Manager",
+  "domain": "defense",
+  "analysis_date": "2025-01-09T00:00:00Z",
+  "version": "2.6",
+  "findings": [
+    {
+      "id": "F-arch-037-0",
+      "title": "Missing Audit Logging",
+      "category": "Logging",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-037-1",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-037-2",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-037-3",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-037-4",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-037-0",
+      "name": "Supply Chain Compromise",
+      "severity": "Critical",
+      "risk_score": 8
+    },
+    {
+      "id": "T-arch-037-1",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-037-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.040626135522296,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-037-1",
+      "name": "Attack Path 2",
+      "risk_score": 6.851414138811501,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-FW",
+      "name": "Firewall Rules",
+      "category": "NetworkSecurity",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST"
+  ],
+  "risk_score": 4.925379085242736,
+  "metadata": {
+    "contact": "owner-defense@company.com",
+    "env": "prod",
+    "region": "us-east",
+    "team": "team-defense"
+  }
+}

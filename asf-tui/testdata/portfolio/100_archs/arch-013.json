@@ -1,0 +1,74 @@
+{
+  "architecture_id": "arch-013",
+  "name": "ecommerce-Monitoring Stack",
+  "domain": "ecommerce",
+  "analysis_date": "2025-01-13T00:00:00Z",
+  "version": "3.2",
+  "findings": [
+    {
+      "id": "F-arch-013-0",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-013-1",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-013-2",
+      "title": "Missing SIEM Integration",
+      "category": "Monitoring",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-013-0",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-013-1",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "SOC 2",
+    "GDPR"
+  ],
+  "risk_score": 8.83132185571113,
+  "metadata": {
+    "contact": "owner-ecommerce@company.com",
+    "env": "prod",
+    "region": "us-east",
+    "team": "team-ecommerce"
+  }
+}

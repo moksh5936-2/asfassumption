@@ -1,0 +1,94 @@
+{
+  "architecture_id": "arch-010",
+  "name": "logistics-File Storage",
+  "domain": "logistics",
+  "analysis_date": "2025-10-10T00:00:00Z",
+  "version": "5.9",
+  "findings": [
+    {
+      "id": "F-arch-010-0",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-010-1",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-010-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-010-1",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    },
+    {
+      "id": "T-arch-010-2",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-010-0",
+      "name": "Attack Path 1",
+      "risk_score": 4.600877524014356,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "GDPR",
+    "HIPAA",
+    "SOC 2"
+  ],
+  "risk_score": 5.393768481219583,
+  "metadata": {
+    "contact": "owner-logistics@company.com",
+    "env": "prod",
+    "region": "us-west",
+    "team": "team-logistics"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "architecture_id": "arch-006",
+  "name": "gov-Mobile Backend",
+  "domain": "gov",
+  "analysis_date": "2025-06-06T00:00:00Z",
+  "version": "1.5",
+  "findings": [
+    {
+      "id": "F-arch-006-0",
+      "title": "Missing SIEM Integration",
+      "category": "Monitoring",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-006-1",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-006-2",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-006-3",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-006-4",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-006-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-006-1",
+      "name": "Insider Threat",
+      "severity": "High",
+      "risk_score": 6.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-006-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.239299097605837,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "GDPR"
+  ],
+  "risk_score": 8.215797118658157
+}

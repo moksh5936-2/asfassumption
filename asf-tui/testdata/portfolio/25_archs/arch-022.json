@@ -1,0 +1,92 @@
+{
+  "architecture_id": "arch-022",
+  "name": "healthcare-Service Mesh",
+  "domain": "healthcare",
+  "analysis_date": "2025-10-22T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-022-0",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-022-1",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-022-2",
+      "title": "Insecure Direct Object Reference",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-022-3",
+      "title": "Missing SIEM Integration",
+      "category": "Monitoring",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-022-0",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    },
+    {
+      "id": "T-arch-022-1",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-022-2",
+      "name": "Supply Chain Compromise",
+      "severity": "Critical",
+      "risk_score": 8
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "FedRAMP",
+    "HITRUST",
+    "PCI DSS"
+  ],
+  "risk_score": 3.627249402867683,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "prod",
+    "region": "us-west",
+    "team": "team-healthcare"
+  }
+}

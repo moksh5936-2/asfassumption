@@ -1,0 +1,80 @@
+{
+  "architecture_id": "arch-016",
+  "name": "gov-Message Queue",
+  "domain": "gov",
+  "analysis_date": "2025-04-16T00:00:00Z",
+  "version": "1.5",
+  "findings": [
+    {
+      "id": "F-arch-016-0",
+      "title": "No Network Segmentation",
+      "category": "NetworkSecurity",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-016-1",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-016-0",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-016-0",
+      "name": "Attack Path 1",
+      "risk_score": 7.454685019454844,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "ISO 27001"
+  ],
+  "risk_score": 4.384989483405182,
+  "metadata": {
+    "contact": "owner-gov@company.com",
+    "env": "prod",
+    "region": "ap-southeast",
+    "team": "team-gov"
+  }
+}

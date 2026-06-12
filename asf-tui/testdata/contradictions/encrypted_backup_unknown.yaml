@@ -1,0 +1,11 @@
+metadata:
+  name: Encrypted Backup Unknown Contradiction
+  version: "1.0"
+assumptions:
+  - All data is encrypted at rest
+  - Backup encryption status is unknown
+components:
+  - name: WebApp
+    type: web_application
+  - name: Database
+    type: database

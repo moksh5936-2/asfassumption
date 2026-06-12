@@ -1,0 +1,76 @@
+{
+  "architecture_id": "arch-090",
+  "name": "logistics-File Storage",
+  "domain": "logistics",
+  "analysis_date": "2025-06-06T00:00:00Z",
+  "version": "5.9",
+  "findings": [
+    {
+      "id": "F-arch-090-0",
+      "title": "Missing TLS on API Endpoints",
+      "category": "DataProtection",
+      "severity": "Critical"
+    },
+    {
+      "id": "F-arch-090-1",
+      "title": "Missing MFA on Admin Access",
+      "category": "AccessControl",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-090-0",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-090-0",
+      "name": "Attack Path 1",
+      "risk_score": 8.526033777802958,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-090-1",
+      "name": "Attack Path 2",
+      "risk_score": 3.117423538063592,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "ISO 27001",
+    "PCI DSS"
+  ],
+  "risk_score": 8.895833445456896,
+  "metadata": {
+    "contact": "owner-logistics@company.com",
+    "env": "dev",
+    "region": "us-west",
+    "team": "team-logistics"
+  }
+}

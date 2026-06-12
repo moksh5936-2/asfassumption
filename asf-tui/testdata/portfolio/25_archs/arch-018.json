@@ -1,0 +1,73 @@
+{
+  "architecture_id": "arch-018",
+  "name": "media-DNS Infrastructure",
+  "domain": "media",
+  "analysis_date": "2025-06-18T00:00:00Z",
+  "version": "3.7",
+  "findings": [
+    {
+      "id": "F-arch-018-0",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-018-1",
+      "title": "Missing SIEM Integration",
+      "category": "Monitoring",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-018-2",
+      "title": "Hardcoded Secrets in Config",
+      "category": "SecretsManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-018-0",
+      "name": "Session Hijacking",
+      "severity": "Medium",
+      "risk_score": 5
+    },
+    {
+      "id": "T-arch-018-1",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    }
+  ],
+  "attack_paths": null,
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "NIST 800-53"
+  ],
+  "risk_score": 6.3161461826028,
+  "metadata": {
+    "contact": "owner-media@company.com",
+    "env": "dev",
+    "region": "us-west",
+    "team": "team-media"
+  }
+}

@@ -37,7 +37,7 @@
                 \ | /
                  \|/
 
-               ASF v2.1.2
+               ASF v2.2.0
    Architecture Security Framework
    Security Assumption Discovery Engine
 ```
@@ -51,6 +51,10 @@
 - **🔍 Multi-format input** — Draw.io, Mermaid, YAML, JSON, SVG, images (OCR), TXT, MD, PDF, DOCX
 - **🧠 Deterministic analysis** — No AI for core analysis. Every result is reproducible and auditable.
 - **⚠️ STRIDE threat mapping** — Rule engine: 17 category rules + 34 keyword patterns
+- **🛡️ Trust Boundary Intelligence** — Auto-discovers trust zones, boundaries, and control gaps
+- **🔍 Contradiction Detection** — Detects conflicting security claims across architecture layers
+- **⚔️ Threat Modeling Intelligence** — 12-category threat generation with STRIDE correlation and severity scoring
+- **🔗 Attack Path Discovery** — Discovers attacker journeys from entry points to target assets with threat chaining and MITRE mapping
 - **📊 5×5 risk matrix** — Deterministic likelihood × impact scoring with full decomposition
 - **🎯 Confidence scoring** — 4-metric calculation from evidence, rules, components, relationships
 - **🔗 Evidence traceability** — Every assumption traced back to source components and relationships
@@ -93,6 +97,54 @@
              │  Results │  │  5 fmt   │  │  Mode    │
              └──────────┘  └──────────┘  └──────────┘
 ```
+
+---
+
+## Intelligence Engines
+
+ASF v2.2.0 includes eleven deterministic intelligence engines that run in sequence during analysis:
+
+### 1. Intelligence Engine V3 (65%)
+- **Taxonomy-driven assumption discovery** — 24 categories, 5 severity levels
+- **Domain packs** — Context-aware reasoning for healthcare, fintech, SaaS, infrastructure
+- **Quality scoring** — Assumption scoring with evidence, confidence, relevance
+- **Deduplication** — Normalizes and merges explicit/native assumptions
+- **Source metadata** — Every assumption traced to source type, section, index, file
+
+### 2. Contradiction Intelligence Engine (70%)
+- **12 claim extraction patterns** — Keyword-based claim identification from assumptions
+- **8+ detection rules** — MFA, encryption, access control, networking, compliance contradictions
+- **Implied contradictions** — Detects implicit conflicts (e.g., "no MFA" + "privileged access")
+- **Trust boundary contradictions** — Cross-zone control and authentication gaps
+- **Control contradictions** — Missing controls at declared boundaries
+- **Compliance contradictions** — Framework requirement vs. control gaps
+
+### 3. Trust Boundary Intelligence Engine (75%)
+- **17 trust zone types** — Internet, DMZ, Internal, Secure, Identity, Data, etc.
+- **11 boundary crossing types** — Internet→DMZ, DMZ→Internal, Identity→Internal, etc.
+- **Risk scoring** — PHI/PCI sensitivity boost, identity boost, component count boost
+- **Weakness detection** — Missing controls, missing assumptions, boundary gaps
+- **Compliance enrichment** — HIPAA, SOC2, ISO27001, PCI DSS, GDPR, NIST mappings
+
+### 4. Threat Modeling Intelligence Engine (78%)
+- **12 threat categories** — Injection, authentication, data exposure, DoS, cryptography, etc.
+- **4 rule engines** — Components (20+ types), relationships (4 protocols), assumptions (5 keywords), trust boundaries (11 crossing types)
+- **STRIDE correlation** — 6 STRIDE categories mapped to every threat
+- **Severity engine** — Likelihood × impact with category-based adjustments
+- **Threat clustering** — Groups threats by category with aggregated risk scores
+- **Control recommendations** — Preventive, detective, corrective controls per threat
+
+### 5. Attack Path Discovery Engine (82%)
+- **Entry point discovery** — 5 rule groups (internet, third-party, API gateway, VPN, admin) with exposure scoring
+- **Target asset identification** — 4 sensitivity levels (critical/high/medium/low) via keyword detection
+- **Path construction** — DFS traversal from entry points to crown jewels with cycle detection
+- **Threat chaining** — Links isolated threats into connected attacker journeys
+- **Trust boundary traversal** — Every boundary crossing generates attack opportunities
+- **Risk scoring** — Likelihood × impact with boundary/threat count adjustments
+- **Business impact** — Maps technical risk to business narratives (HIPAA, PCI, SSO)
+- **Detection difficulty** — 4 levels (Easy/Moderate/Hard/Very Hard) based on assumptions
+- **Kill chain mapping** — 12-phase coverage (Reconnaissance through Impact)
+- **MITRE ATT&CK mapping** — 30+ deterministic technique mappings
 
 ---
 
@@ -188,18 +240,18 @@ Download the binary for your platform from the [latest release](https://github.c
 
 | Platform | Download |
 |----------|---------|
-| macOS Apple Silicon | `ASF-v2.1.1-darwin-arm64` |
-| macOS Intel | `ASF-v2.1.1-darwin-amd64` |
-| Linux AMD64 | `ASF-v2.1.1-linux-amd64` |
-| Linux ARM64 | `ASF-v2.1.1-linux-arm64` |
-| Windows AMD64 | `ASF-v2.1.1-windows-amd64.exe` |
+| macOS Apple Silicon | `ASF-v2.2.0-darwin-arm64` |
+| macOS Intel | `ASF-v2.2.0-darwin-amd64` |
+| Linux AMD64 | `ASF-v2.2.0-linux-amd64` |
+| Linux ARM64 | `ASF-v2.2.0-linux-arm64` |
+| Windows AMD64 | `ASF-v2.2.0-windows-amd64.exe` |
 
 ```bash
 # Example: macOS Apple Silicon
-curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v2.1.1/ASF-v2.1.1-darwin-arm64
-chmod +x ASF-v2.1.1-darwin-arm64
+curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v2.2.0/ASF-v2.2.0-darwin-arm64
+chmod +x ASF-v2.2.0-darwin-arm64
 mkdir -p ~/.local/bin ~/.asf
-cp ASF-v2.1.1-darwin-arm64 ~/.asf/asf
+cp ASF-v2.2.0-darwin-arm64 ~/.asf/asf
 ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
@@ -207,7 +259,7 @@ ln -sf ~/.asf/asf ~/.local/bin/asf
 
 ```bash
 asf --version
-# Expected: ASF v2.1.1
+# Expected: ASF v2.2.0
 ```
 
 ### Uninstall
@@ -370,9 +422,9 @@ Use `ReplacePublicKey()` in production deployments to swap the compile-time publ
 
 | Metric | Status |
 |--------|--------|
-| Unit tests | ✅ 168 passing across 10 packages |
+| Unit tests | ✅ 257 tests across 11 packages (all pass) |
 | Code quality | ✅ `go vet` clean |
-| Benchmark run | ✅ 2158 assumptions processed |
+| Benchmark run | ✅ 2158+ assumptions processed across 25+ architecture benchmarks |
 | Precision | ❌ Not measured |
 | Recall | ❌ Not measured |
 | False positive rate | ❌ Not measured |
@@ -409,7 +461,7 @@ asf-tui/                   # Go TUI application
   results.go               # Results display
   settings.go              # Settings editor
   about.go                 # About screen
-  *_test.go               # 168 tests across all packages
+  *_test.go               # 400+ tests across 13 packages
   install.sh               # Installer script
   go.mod / go.sum          # Dependencies
 docs/                      # Documentation

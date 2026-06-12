@@ -1,0 +1,65 @@
+metadata:
+  name: Kubernetes Cluster
+  version: "1.0"
+  compliance:
+    - NIST
+    - SOC2
+components:
+  - name: Browser
+    type: client
+    description: User browser
+  - name: Ingress
+    type: load_balancer
+    description: Kubernetes ingress
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: AuthService
+    type: identity_provider
+    description: Identity service
+  - name: WebApp
+    type: web_application
+    description: Web application
+  - name: Database
+    type: database
+    description: Application database
+  - name: Redis
+    type: cache
+    description: Redis cache
+  - name: Vault
+    type: secrets_manager
+    description: Secrets manager
+  - name: AuditLog
+    type: logging_service
+    description: Audit logging
+  - name: Monitoring
+    type: monitoring_service
+    description: Monitoring
+relationships:
+  - source: Browser
+    target: Ingress
+    protocol: HTTPS
+  - source: Ingress
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: AuthService
+    protocol: HTTPS
+  - source: AuthService
+    target: WebApp
+    protocol: HTTPS
+  - source: WebApp
+    target: Database
+    protocol: TLS
+  - source: WebApp
+    target: Redis
+    protocol: TLS
+  - source: WebApp
+    target: Vault
+    protocol: TLS
+  - source: WebApp
+    target: AuditLog
+    protocol: TLS
+  - source: WebApp
+    target: Monitoring
+    protocol: TLS

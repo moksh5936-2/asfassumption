@@ -1,0 +1,89 @@
+{
+  "architecture_id": "arch-009",
+  "name": "energy-Notification Service",
+  "domain": "energy",
+  "analysis_date": "2025-09-09T00:00:00Z",
+  "version": "4.8",
+  "findings": [
+    {
+      "id": "F-arch-009-0",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-009-1",
+      "title": "Unpatched Known Vulnerabilities",
+      "category": "VulnerabilityManagement",
+      "severity": "Critical"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-009-0",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-009-0",
+      "name": "Attack Path 1",
+      "risk_score": 5.247584128283143,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    },
+    {
+      "id": "AP-arch-009-1",
+      "name": "Attack Path 2",
+      "risk_score": 7.540624801431066,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HITRUST",
+    "NIST 800-53",
+    "HIPAA"
+  ],
+  "risk_score": 4.920091065457159,
+  "metadata": {
+    "contact": "owner-energy@company.com",
+    "env": "dev",
+    "region": "us-east",
+    "team": "team-energy"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "architecture_id": "arch-042",
+  "name": "healthcare-Customer Portal",
+  "domain": "healthcare",
+  "analysis_date": "2025-06-14T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-042-0",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-042-1",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-042-0",
+      "name": "DDoS Attack",
+      "severity": "High",
+      "risk_score": 5.5
+    },
+    {
+      "id": "T-arch-042-1",
+      "name": "Ransomware Deployment",
+      "severity": "Critical",
+      "risk_score": 9.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-042-0",
+      "name": "Attack Path 1",
+      "risk_score": 6.022239267012528,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    }
+  ],
+  "compliance": [
+    "GDPR"
+  ],
+  "risk_score": 9.464220429167419,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "dev",
+    "region": "us-west",
+    "team": "team-healthcare"
+  }
+}

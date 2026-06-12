@@ -1,0 +1,87 @@
+{
+  "architecture_id": "arch-012",
+  "name": "healthcare-CI/CD Pipeline",
+  "domain": "healthcare",
+  "analysis_date": "2025-12-12T00:00:00Z",
+  "version": "2.1",
+  "findings": [
+    {
+      "id": "F-arch-012-0",
+      "title": "Unencrypted Data at Rest",
+      "category": "DataProtection",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-012-1",
+      "title": "No Rate Limiting",
+      "category": "ApplicationSecurity",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-012-2",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-012-0",
+      "name": "Privilege Escalation",
+      "severity": "High",
+      "risk_score": 7.5
+    },
+    {
+      "id": "T-arch-012-1",
+      "name": "Credential Stuffing",
+      "severity": "High",
+      "risk_score": 7
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-012-0",
+      "name": "Attack Path 1",
+      "risk_score": 5.445910742805294,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "HIPAA",
+    "GDPR"
+  ],
+  "risk_score": 7.867588137513519,
+  "metadata": {
+    "contact": "owner-healthcare@company.com",
+    "env": "dev",
+    "region": "ap-southeast",
+    "team": "team-healthcare"
+  }
+}

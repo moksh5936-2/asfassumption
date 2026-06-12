@@ -1,0 +1,71 @@
+metadata:
+  name: Auth0 SaaS Application
+  version: "1.0"
+  compliance:
+    - SOC2
+    - ISO27001
+components:
+  - name: Internet
+    type: network
+    description: Public internet
+  - name: Browser
+    type: client
+    description: User browser
+  - name: CDN
+    type: cdn
+    description: Content delivery network
+  - name: Auth0
+    type: identity_provider
+    description: Auth0 identity provider
+  - name: LoadBalancer
+    type: load_balancer
+    description: Load balancer
+  - name: AppServer
+    type: web_application
+    description: Application server
+  - name: CustomerDatabase
+    type: database
+    description: Customer database
+  - name: Cache
+    type: cache
+    description: Redis cache
+  - name: MessageQueue
+    type: message_queue
+    description: Message queue
+  - name: AdminConsole
+    type: admin_tool
+    description: Admin console
+relationships:
+  - source: Internet
+    target: Browser
+    protocol: HTTPS
+  - source: Browser
+    target: CDN
+    protocol: HTTPS
+  - source: CDN
+    target: Auth0
+    protocol: HTTPS
+  - source: CDN
+    target: LoadBalancer
+    protocol: HTTPS
+  - source: Auth0
+    target: LoadBalancer
+    protocol: HTTPS
+  - source: LoadBalancer
+    target: AppServer
+    protocol: HTTPS
+  - source: AppServer
+    target: CustomerDatabase
+    protocol: TLS
+  - source: AppServer
+    target: Cache
+    protocol: TLS
+  - source: AppServer
+    target: MessageQueue
+    protocol: TLS
+  - source: AdminConsole
+    target: LoadBalancer
+    protocol: HTTPS
+  - source: AdminConsole
+    target: AppServer
+    protocol: HTTPS

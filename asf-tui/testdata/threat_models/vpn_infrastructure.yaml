@@ -1,0 +1,69 @@
+metadata:
+  name: VPN Infrastructure
+  version: "1.0"
+  compliance:
+    - NIST
+    - SOC2
+    - PCI DSS
+components:
+  - name: Browser
+    type: client
+    description: User browser
+  - name: VPNGateway
+    type: vpn
+    description: VPN gateway
+  - name: JumpHost
+    type: jump_host
+    description: Jump host for admin access
+  - name: AdminConsole
+    type: admin_tool
+    description: Admin console
+  - name: APIGateway
+    type: api_gateway
+    description: API gateway
+  - name: WebApp
+    type: web_application
+    description: Web application
+  - name: Database
+    type: database
+    description: Application database
+  - name: PaymentGateway
+    type: external_service
+    description: Payment processor
+  - name: AuditLog
+    type: logging_service
+    description: Audit logging
+  - name: KMS
+    type: encryption_service
+    description: Key management
+relationships:
+  - source: Browser
+    target: VPNGateway
+    protocol: HTTPS
+  - source: VPNGateway
+    target: JumpHost
+    protocol: VPN
+  - source: JumpHost
+    target: AdminConsole
+    protocol: HTTPS
+  - source: Browser
+    target: APIGateway
+    protocol: HTTPS
+  - source: APIGateway
+    target: WebApp
+    protocol: HTTPS
+  - source: WebApp
+    target: Database
+    protocol: TLS
+  - source: WebApp
+    target: PaymentGateway
+    protocol: TLS
+  - source: WebApp
+    target: AuditLog
+    protocol: TLS
+  - source: WebApp
+    target: KMS
+    protocol: TLS
+  - source: AdminConsole
+    target: Database
+    protocol: TLS

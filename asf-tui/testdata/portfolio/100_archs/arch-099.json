@@ -1,0 +1,105 @@
+{
+  "architecture_id": "arch-099",
+  "name": "energy-CDN Edge",
+  "domain": "energy",
+  "analysis_date": "2025-03-15T00:00:00Z",
+  "version": "4.8",
+  "findings": [
+    {
+      "id": "F-arch-099-0",
+      "title": "Missing Incident Response Plan",
+      "category": "Governance",
+      "severity": "Medium"
+    },
+    {
+      "id": "F-arch-099-1",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-099-2",
+      "title": "Excessive Privileges",
+      "category": "Authorization",
+      "severity": "High"
+    },
+    {
+      "id": "F-arch-099-3",
+      "title": "Insufficient Session Management",
+      "category": "Authentication",
+      "severity": "Medium"
+    }
+  ],
+  "threats": [
+    {
+      "id": "T-arch-099-0",
+      "name": "Man-in-the-Middle",
+      "severity": "Medium",
+      "risk_score": 4.5
+    },
+    {
+      "id": "T-arch-099-1",
+      "name": "Data Exfiltration via API",
+      "severity": "Critical",
+      "risk_score": 8.5
+    },
+    {
+      "id": "T-arch-099-2",
+      "name": "Man-in-the-Middle",
+      "severity": "Medium",
+      "risk_score": 4.5
+    }
+  ],
+  "attack_paths": [
+    {
+      "id": "AP-arch-099-0",
+      "name": "Attack Path 1",
+      "risk_score": 5.425879311911433,
+      "entry_point": "External Network",
+      "target_asset": "Database"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-MFA",
+      "name": "Multi-Factor Authentication",
+      "category": "AccessControl",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-ENC",
+      "name": "Encryption at Rest",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-TLS",
+      "name": "TLS Encryption",
+      "category": "DataProtection",
+      "control_type": "Preventive"
+    },
+    {
+      "id": "C-AUDIT",
+      "name": "Audit Logging",
+      "category": "Logging",
+      "control_type": "Detective"
+    },
+    {
+      "id": "C-SIEM",
+      "name": "SIEM Integration",
+      "category": "Monitoring",
+      "control_type": "Detective"
+    }
+  ],
+  "compliance": [
+    "PCI DSS",
+    "FedRAMP"
+  ],
+  "risk_score": 3.234186265521079,
+  "metadata": {
+    "contact": "owner-energy@company.com",
+    "env": "dev",
+    "region": "eu-west",
+    "team": "team-energy"
+  }
+}
