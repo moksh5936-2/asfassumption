@@ -62,8 +62,8 @@ func newSettingsModel(cfg *Config) settingsModel {
 			{label: "Default Export", key: "export", value: cfg.Output.Default, values: []string{"json", "markdown", "html", "csv", "pdf"}, valueIdx: exportIdx(cfg.Output.Default)},
 			{label: "Export Directory", key: "export_dir", value: cfg.Output.Directory, values: nil, valueIdx: 0},
 			{label: "AI Enhancement", key: "ai_enabled", value: boolStr(cfg.AI.Enabled), values: []string{"false", "true"}, valueIdx: boolIdx(cfg.AI.Enabled)},
-		{label: "Active Model", key: "active_model", value: cfg.AI.ActiveModel, values: nil, valueIdx: 0},
-	},
+			{label: "Active Model", key: "active_model", value: cfg.AI.ActiveModel, values: nil, valueIdx: 0},
+		},
 	}
 }
 
@@ -183,6 +183,8 @@ func (m *settingsModel) applyChange(idx int) {
 	case "active_model":
 		m.config.AI.ActiveModel = item.value
 	}
+	// Auto-save on any change
+	m.config.Save(ConfigPath())
 }
 
 func (m mainModel) viewSettings() string {

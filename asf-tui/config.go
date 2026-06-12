@@ -63,10 +63,16 @@ func ConfigPath() string {
 	}
 	if _, err := os.Stat(oldPath); err == nil {
 		if _, err := os.Stat(newPath); os.IsNotExist(err) {
-			if err := os.MkdirAll(filepath.Dir(newPath), 0755); err == nil {
-				data, _ := os.ReadFile(oldPath)
-				if data != nil {
-					os.WriteFile(newPath, data, 0644)
+			if err := os.MkdirAll(filepath.Dir(newPath), 0755); err != nil {
+				debugLog.Printf("migrate mkdir: %v", err)
+			} else {
+				data, err := os.ReadFile(oldPath)
+				if err != nil {
+					debugLog.Printf("migrate read: %v", err)
+				} else {
+					if err := os.WriteFile(newPath, data, 0644); err != nil {
+						debugLog.Printf("migrate write: %v", err)
+					}
 				}
 			}
 		}
@@ -81,6 +87,9 @@ func LoadConfig(path string) (*Config, error) {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 				return &c, nil
+			}
+			if writeErr := c.Save(path); writeErr != nil {
+				debugLog.Printf("failed to write default config: %v", writeErr)
 			}
 			return &c, nil
 		}

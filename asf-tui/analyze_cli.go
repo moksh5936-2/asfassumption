@@ -13,24 +13,24 @@ import (
 )
 
 type cliClaim struct {
-	ID                  string    `json:"id"`
-	SourceDocument      string    `json:"source_document"`
-	SourceLocation      string    `json:"source_location,omitempty"`
-	Text                string    `json:"text"`
-	ExtractionConfidence float64  `json:"extraction_confidence"`
-	CreatedAt           time.Time `json:"created_at"`
-	Tags                []string  `json:"tags"`
+	ID                   string    `json:"id"`
+	SourceDocument       string    `json:"source_document"`
+	SourceLocation       string    `json:"source_location,omitempty"`
+	Text                 string    `json:"text"`
+	ExtractionConfidence float64   `json:"extraction_confidence"`
+	CreatedAt            time.Time `json:"created_at"`
+	Tags                 []string  `json:"tags"`
 }
 
 type cliOutput struct {
-	Version       string              `json:"version"`
-	Architecture  string              `json:"architecture"`
-	Summary       cliSummary          `json:"summary"`
-	Claims        []cliClaim          `json:"claims,omitempty"`
-	Assumptions   []cliAssumption     `json:"assumptions"`
-	Verifications []cliVerification   `json:"verifications"`
-	Gaps          []cliGap            `json:"gaps"`
-	Graph         *graph.GraphData    `json:"graph,omitempty"`
+	Version       string            `json:"version"`
+	Architecture  string            `json:"architecture"`
+	Summary       cliSummary        `json:"summary"`
+	Claims        []cliClaim        `json:"claims,omitempty"`
+	Assumptions   []cliAssumption   `json:"assumptions"`
+	Verifications []cliVerification `json:"verifications"`
+	Gaps          []cliGap          `json:"gaps"`
+	Graph         *graph.GraphData  `json:"graph,omitempty"`
 }
 
 type cliSummary struct {
@@ -75,21 +75,23 @@ func runAnalyzeCLI(args []string) {
 
 	for _, a := range args {
 		if a == "--help" || a == "-h" {
-			fmt.Println("Usage: asf analyze <file> [-e evidence ...] [--graph]")
+			fmt.Println("Usage: asf analyze <file> [-e evidence ...] [--json] [--graph]")
 			fmt.Println()
 			fmt.Println("Analyze a policy document or architecture diagram for security assumptions.")
 			fmt.Println()
 			fmt.Println("Arguments:")
 			fmt.Println("  <file>                    Policy file, architecture doc, or directory")
 			fmt.Println("  -e, --evidence <path>     Evidence files/directories (CSV, JSON, YAML)")
+			fmt.Println("  --json                    Output as JSON (default)")
 			fmt.Println("  --graph                   Include dependency graph in JSON output")
 			fmt.Println("  --help, -h                Show this help")
-			os.Exit(0)
+			os.Exit(ExitSuccess)
 		}
 	}
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
+		case "--json":
 		case "--graph":
 			graphFlag = true
 		case "-e", "--evidence":
@@ -106,14 +108,14 @@ func runAnalyzeCLI(args []string) {
 
 	if filePath == "" {
 		fmt.Fprintf(os.Stderr, "Error: no input file specified\n")
-		fmt.Fprintf(os.Stderr, "Usage: asf analyze <file> [-e evidence ...] [--graph]\n")
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Usage: asf analyze <file> [-e evidence ...] [--json] [--graph]\n")
+		os.Exit(ExitInvalidCmd)
 	}
 
 	info, err := os.Stat(filePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		os.Exit(1)
+		os.Exit(ExitAnalysisErr)
 	}
 
 	an := analyzer.New()
@@ -122,7 +124,7 @@ func runAnalyzeCLI(args []string) {
 		entries, err := os.ReadDir(filePath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading directory: %s\n", err)
-			os.Exit(1)
+			os.Exit(ExitAnalysisErr)
 		}
 		docExts := map[string]bool{".txt": true, ".pdf": true, ".docx": true}
 		for _, entry := range entries {
@@ -132,7 +134,7 @@ func runAnalyzeCLI(args []string) {
 		}
 		if len(docs) == 0 {
 			fmt.Fprintf(os.Stderr, "Error: no supported documents (.txt, .pdf, .docx) found in %s\n", filePath)
-			os.Exit(1)
+			os.Exit(ExitAnalysisErr)
 		}
 	} else {
 		docs = []string{filePath}
@@ -159,7 +161,7 @@ func runAnalyzeCLI(args []string) {
 	ar, err := an.Analyze(docs, evs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		os.Exit(ExitAnalysisErr)
 	}
 
 	s := ar.Result.BuildSummary()
@@ -181,13 +183,13 @@ func runAnalyzeCLI(args []string) {
 
 	for _, c := range ar.Result.Claims {
 		out.Claims = append(out.Claims, cliClaim{
-			ID:                  c.ID,
-			SourceDocument:      c.SourceDocument,
-			SourceLocation:      c.SourceLocation,
-			Text:                c.Text,
+			ID:                   c.ID,
+			SourceDocument:       c.SourceDocument,
+			SourceLocation:       c.SourceLocation,
+			Text:                 c.Text,
 			ExtractionConfidence: c.ExtractionConfidence,
-			CreatedAt:           c.CreatedAt,
-			Tags:                c.Tags,
+			CreatedAt:            c.CreatedAt,
+			Tags:                 c.Tags,
 		})
 	}
 
@@ -230,6 +232,6 @@ func runAnalyzeCLI(args []string) {
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(out); err != nil {
 		fmt.Fprintf(os.Stderr, "Error encoding output: %v\n", err)
-		os.Exit(1)
+		os.Exit(ExitExportErr)
 	}
 }

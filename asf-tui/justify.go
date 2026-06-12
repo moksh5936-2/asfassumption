@@ -11,7 +11,7 @@ import (
 
 // EvidenceEngine traces assumptions back to architecture artifacts.
 type EvidenceEngine struct {
-	arch *ArchDescription
+	arch       *ArchDescription
 	sourcePath string
 	sourceType string
 }
@@ -35,13 +35,13 @@ func extractSourceType(path string) string {
 
 // EvidenceResult holds matched evidence for a single assumption.
 type EvidenceResult struct {
-	MatchedComponents      []string
-	MatchedRelationships   []string
-	MatchedTrustBoundaries []string
+	MatchedComponents       []string
+	MatchedRelationships    []string
+	MatchedTrustBoundaries  []string
 	MatchedSecurityConcepts []string
-	PrimarySourceNode      string
-	SourceLine             int
-	EvidenceCount          int
+	PrimarySourceNode       string
+	SourceLine              int
+	EvidenceCount           int
 }
 
 // TraceEvidence matches an assumption against the architecture description.
@@ -115,13 +115,13 @@ func (ee *EvidenceEngine) TraceEvidence(category string, keywords []string, text
 
 	// Match security concepts
 	securityConcepts := map[string][]string{
-		"authentication":    {"auth", "login", "password", "mfa", "sso", "identity", "credential"},
-		"authorization":     {"access", "role", "permission", "rbac", "acl", "policy"},
-		"encryption":        {"tls", "ssl", "https", "encrypt", "cipher", "signing"},
-		"network_security":  {"firewall", "vpn", "segment", "gateway", "proxy"},
-		"data_protection":   {"database", "backup", "storage", "encryption at rest"},
-		"audit_logging":     {"log", "audit", "monitor", "alert"},
-		"dependency":        {"third", "vendor", "supply chain", "external"},
+		"authentication":     {"auth", "login", "password", "mfa", "sso", "identity", "credential"},
+		"authorization":      {"access", "role", "permission", "rbac", "acl", "policy"},
+		"encryption":         {"tls", "ssl", "https", "encrypt", "cipher", "signing"},
+		"network_security":   {"firewall", "vpn", "segment", "gateway", "proxy"},
+		"data_protection":    {"database", "backup", "storage", "encryption at rest"},
+		"audit_logging":      {"log", "audit", "monitor", "alert"},
+		"dependency":         {"third", "vendor", "supply chain", "external"},
 		"session_management": {"session", "token", "cookie", "jwt"},
 	}
 	for concept, patterns := range securityConcepts {

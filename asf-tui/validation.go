@@ -14,9 +14,9 @@ import (
 // quality — no additional functionality.
 
 type validationModel struct {
-	assumptions  []Assumption
-	currentIdx   int
-	mode         string // "browse", "detail"
+	assumptions []Assumption
+	currentIdx  int
+	mode        string // "browse", "detail"
 }
 
 func newValidationModel() validationModel {

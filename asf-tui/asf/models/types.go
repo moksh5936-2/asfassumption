@@ -5,14 +5,14 @@ import "encoding/json"
 type AssumptionType string
 
 const (
-	AssumptionTypeIDENTITY       AssumptionType = "IDENTITY"
-	AssumptionTypeACCESS         AssumptionType = "ACCESS"
-	AssumptionTypeNETWORK        AssumptionType = "NETWORK"
-	AssumptionTypeCONFIGURATION  AssumptionType = "CONFIGURATION"
-	AssumptionTypePROCESS        AssumptionType = "PROCESS"
-	AssumptionTypeDOCUMENTATION  AssumptionType = "DOCUMENTATION"
-	AssumptionTypeDEPENDENCY     AssumptionType = "DEPENDENCY"
-	AssumptionTypeGOVERNANCE     AssumptionType = "GOVERNANCE"
+	AssumptionTypeIDENTITY      AssumptionType = "IDENTITY"
+	AssumptionTypeACCESS        AssumptionType = "ACCESS"
+	AssumptionTypeNETWORK       AssumptionType = "NETWORK"
+	AssumptionTypeCONFIGURATION AssumptionType = "CONFIGURATION"
+	AssumptionTypePROCESS       AssumptionType = "PROCESS"
+	AssumptionTypeDOCUMENTATION AssumptionType = "DOCUMENTATION"
+	AssumptionTypeDEPENDENCY    AssumptionType = "DEPENDENCY"
+	AssumptionTypeGOVERNANCE    AssumptionType = "GOVERNANCE"
 )
 
 type VerificationStatus string
@@ -28,10 +28,10 @@ const (
 type VerificationResult string
 
 const (
-	VerificationResultVERIFIED            VerificationResult = "VERIFIED"
-	VerificationResultPARTIALLY_VERIFIED  VerificationResult = "PARTIALLY_VERIFIED"
-	VerificationResultCONTRADICTED        VerificationResult = "CONTRADICTED"
-	VerificationResultUNKNOWN             VerificationResult = "UNKNOWN"
+	VerificationResultVERIFIED           VerificationResult = "VERIFIED"
+	VerificationResultPARTIALLY_VERIFIED VerificationResult = "PARTIALLY_VERIFIED"
+	VerificationResultCONTRADICTED       VerificationResult = "CONTRADICTED"
+	VerificationResultUNKNOWN            VerificationResult = "UNKNOWN"
 )
 
 type GapSeverity string
@@ -47,37 +47,37 @@ const (
 type GapType string
 
 const (
-	GapTypeACCESS         GapType = "ACCESS_GAP"
-	GapTypeIDENTITY       GapType = "IDENTITY_GAP"
-	GapTypeNETWORK        GapType = "NETWORK_GAP"
-	GapTypeCONFIGURATION  GapType = "CONFIGURATION_GAP"
-	GapTypePROCESS        GapType = "PROCESS_GAP"
-	GapTypeDOCUMENTATION  GapType = "DOCUMENTATION_GAP"
-	GapTypeDEPENDENCY     GapType = "DEPENDENCY_GAP"
-	GapTypeGOVERNANCE     GapType = "GOVERNANCE_GAP"
-	GapTypeEVIDENCE       GapType = "EVIDENCE_GAP"
-	GapTypeVERIFICATION   GapType = "VERIFICATION_GAP"
+	GapTypeACCESS        GapType = "ACCESS_GAP"
+	GapTypeIDENTITY      GapType = "IDENTITY_GAP"
+	GapTypeNETWORK       GapType = "NETWORK_GAP"
+	GapTypeCONFIGURATION GapType = "CONFIGURATION_GAP"
+	GapTypePROCESS       GapType = "PROCESS_GAP"
+	GapTypeDOCUMENTATION GapType = "DOCUMENTATION_GAP"
+	GapTypeDEPENDENCY    GapType = "DEPENDENCY_GAP"
+	GapTypeGOVERNANCE    GapType = "GOVERNANCE_GAP"
+	GapTypeEVIDENCE      GapType = "EVIDENCE_GAP"
+	GapTypeVERIFICATION  GapType = "VERIFICATION_GAP"
 )
 
 type SourceType string
 
 const (
-	SourceTypePDF               SourceType = "PDF"
-	SourceTypeDOCX              SourceType = "DOCX"
-	SourceTypeTXT               SourceType = "TXT"
-	SourceTypeCSV               SourceType = "CSV"
-	SourceTypeJSON              SourceType = "JSON"
-	SourceTypeIAMExport         SourceType = "IAM_EXPORT"
-	SourceTypeACLList           SourceType = "ACL_LIST"
-	SourceTypeFirewallRules     SourceType = "FIREWALL_RULES"
-	SourceTypeRouteTables       SourceType = "ROUTE_TABLES"
-	SourceTypeSecurityGroups    SourceType = "SECURITY_GROUPS"
-	SourceTypeConfigExport      SourceType = "CONFIG_EXPORT"
-	SourceTypeAuditLog          SourceType = "AUDIT_LOG"
-	SourceTypePolicyDocument    SourceType = "POLICY_DOCUMENT"
-	SourceTypeRunbook           SourceType = "RUNBOOK"
-	SourceTypeArchitectureDoc   SourceType = "ARCHITECTURE_DOC"
-	SourceTypeUNKNOWN           SourceType = "UNKNOWN"
+	SourceTypePDF             SourceType = "PDF"
+	SourceTypeDOCX            SourceType = "DOCX"
+	SourceTypeTXT             SourceType = "TXT"
+	SourceTypeCSV             SourceType = "CSV"
+	SourceTypeJSON            SourceType = "JSON"
+	SourceTypeIAMExport       SourceType = "IAM_EXPORT"
+	SourceTypeACLList         SourceType = "ACL_LIST"
+	SourceTypeFirewallRules   SourceType = "FIREWALL_RULES"
+	SourceTypeRouteTables     SourceType = "ROUTE_TABLES"
+	SourceTypeSecurityGroups  SourceType = "SECURITY_GROUPS"
+	SourceTypeConfigExport    SourceType = "CONFIG_EXPORT"
+	SourceTypeAuditLog        SourceType = "AUDIT_LOG"
+	SourceTypePolicyDocument  SourceType = "POLICY_DOCUMENT"
+	SourceTypeRunbook         SourceType = "RUNBOOK"
+	SourceTypeArchitectureDoc SourceType = "ARCHITECTURE_DOC"
+	SourceTypeUNKNOWN         SourceType = "UNKNOWN"
 )
 
 func (st SourceType) MarshalJSON() ([]byte, error) {

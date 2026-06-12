@@ -149,11 +149,11 @@ func checkAccess(assumption models.Assumption, ev models.Evidence) *checkResult 
 	}
 
 	details := map[string]interface{}{
-		"expected_group":     restrictedGroup,
+		"expected_group":      restrictedGroup,
 		"users_outside_group": uniqueOutside,
-		"users_inside_group": uniqueInside,
-		"resources_found":    resourcesList,
-		"total_records":      len(records),
+		"users_inside_group":  uniqueInside,
+		"resources_found":     resourcesList,
+		"total_records":       len(records),
 	}
 
 	if len(uniqueOutside) > 0 && restrictedGroup != "" {
@@ -466,5 +466,3 @@ func unique(strs []string) []string {
 	}
 	return result
 }
-
-

@@ -14,15 +14,17 @@ import (
 // ──────────────────────────────────────────────
 
 type reviewModel struct {
-	assumptions     []Assumption
-	currentIdx      int
-	mode            string // "browse", "detail", "edit"
-	editState       string // "status", "notes"
-	statusOptions   []string
-	selectedStatus  int
-	notesBuffer     string
-	showValidation  bool
-	validationData  []ValidationRecord
+	assumptions    []Assumption
+	currentIdx     int
+	mode           string // "browse", "detail", "edit"
+	editState      string // "status", "notes"
+	statusOptions  []string
+	selectedStatus int
+	notesBuffer    string
+	showValidation bool
+	validationData []ValidationRecord
+	editing        bool
+	note           string
 }
 
 func newReviewModel() reviewModel {
@@ -121,7 +123,9 @@ func (rv *reviewModel) renderDetail(s StyleSet) string {
 	}
 	detail += fmt.Sprintf("Status: %s\n", statusStr)
 
-	if a.ReviewNotes != "" {
+	if rv.editing {
+		detail += fmt.Sprintf("Notes: [EDITING] %s█\n", rv.note)
+	} else if a.ReviewNotes != "" {
 		detail += fmt.Sprintf("Notes: %s\n", a.ReviewNotes)
 	}
 
@@ -145,7 +149,7 @@ func (rv *reviewModel) renderDetail(s StyleSet) string {
 
 	body := s.BorderBox.Render(s.SectionItem.Render(detail))
 
-	help := s.SectionItem.Render("S:Accept | R:Reject | M:Modified | N:Add note | Enter back")
+	help := s.SectionItem.Render("S:Accept | R:Reject | M:Modified | N:Edit note | Enter back | Esc:cancel edit")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header, body, "",
@@ -188,13 +192,27 @@ func (m mainModel) updateReview(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "n":
 			if m.review.mode == "detail" {
-				// Simple toggle — in production this would open a text input
-				current := m.review.assumptions[m.review.currentIdx].ReviewNotes
-				if current == "" {
-					m.review.assumptions[m.review.currentIdx].ReviewNotes = "Review pending"
+				if !m.review.editing {
+					m.review.editing = true
+					m.review.note = m.review.assumptions[m.review.currentIdx].ReviewNotes
 				} else {
-					m.review.assumptions[m.review.currentIdx].ReviewNotes = ""
+					m.review.editing = false
+					if m.review.currentIdx >= 0 && m.review.currentIdx < len(m.review.assumptions) {
+						m.review.assumptions[m.review.currentIdx].ReviewNotes = m.review.note
+					}
 				}
+			}
+		case "backspace":
+			if m.review.mode == "detail" && m.review.editing && len(m.review.note) > 0 {
+				m.review.note = m.review.note[:len(m.review.note)-1]
+			}
+		case "esc":
+			if m.review.editing {
+				m.review.editing = false
+			}
+		default:
+			if m.review.mode == "detail" && m.review.editing && len(msg.String()) == 1 {
+				m.review.note += msg.String()
 			}
 		case "v":
 			if m.review.mode == "browse" {

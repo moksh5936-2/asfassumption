@@ -54,7 +54,7 @@ func (m dashboardModel) Update(msg tea.Msg) (dashboardModel, tea.Cmd) {
 func (m mainModel) viewDashboard() string {
 	s := m.styles
 
-	version := "v0.1.0"
+	version := "v" + ASFVersion
 	mode := m.config.Analysis.Depth
 	aiStatus := "Offline"
 	if m.config.AI.Enabled {

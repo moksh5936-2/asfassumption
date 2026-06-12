@@ -26,12 +26,12 @@ type analyzeModel struct {
 	inputMode string
 	inputBuf  string
 
-	mode     string
-	running  bool
-	progress float64
-	stage    string
-	result   *AnalysisResult
-	engine   *Engine
+	mode      string
+	running   bool
+	progress  float64
+	stage     string
+	result    *AnalysisResult
+	engine    *Engine
 	statusMsg string
 }
 
@@ -53,11 +53,11 @@ func newAnalyzeModel(engine *Engine) analyzeModel {
 
 type progressTickMsg struct{}
 
-func (m analyzeModel) Update(msg tea.Msg) (analyzeModel, tea.Cmd) {
+func (m *analyzeModel) Update(msg tea.Msg) (analyzeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if m.running {
-			return m, nil
+			return *m, nil
 		}
 
 		if m.inputMode != "" {
@@ -75,25 +75,21 @@ func (m analyzeModel) Update(msg tea.Msg) (analyzeModel, tea.Cmd) {
 
 	case progressTickMsg:
 		if !m.running {
-			return m, nil
+			return *m, nil
 		}
-		if m.progress < 100 {
+		if m.progress < 99 {
 			m.progress += 10
 			m.stage = analyzeStage(int(m.progress))
 		}
-		if m.progress >= 100 {
-			m.progress = 90
-			m.stage = "Finalizing Results..."
-		}
-		return m, m.progressCmd()
+		return *m, m.progressCmd()
 
 	case errorMsg:
 		m.running = false
 		m.statusMsg = fmt.Sprintf("Error: %s", string(msg))
-		return m, nil
+		return *m, nil
 	}
 
-	return m, nil
+	return *m, nil
 }
 
 func (m *analyzeModel) moveSel(dir int) {
@@ -106,7 +102,7 @@ func (m *analyzeModel) moveSel(dir int) {
 	}
 }
 
-func (m analyzeModel) handleTextInput(msg tea.KeyMsg) (analyzeModel, tea.Cmd) {
+func (m *analyzeModel) handleTextInput(msg tea.KeyMsg) (analyzeModel, tea.Cmd) {
 	switch msg.String() {
 	case "enter":
 		for i := range m.items {
@@ -134,10 +130,10 @@ func (m analyzeModel) handleTextInput(msg tea.KeyMsg) (analyzeModel, tea.Cmd) {
 			m.inputBuf += msg.String()
 		}
 	}
-	return m, nil
+	return *m, nil
 }
 
-func (m analyzeModel) docPath() string {
+func (m *analyzeModel) docPath() string {
 	for _, it := range m.items {
 		if it.typ == "path" && it.label == "Document Path" {
 			return it.value
@@ -146,7 +142,7 @@ func (m analyzeModel) docPath() string {
 	return ""
 }
 
-func (m analyzeModel) evPath() string {
+func (m *analyzeModel) evPath() string {
 	for _, it := range m.items {
 		if it.typ == "path" && it.label == "Evidence Path" {
 			return it.value
@@ -155,7 +151,7 @@ func (m analyzeModel) evPath() string {
 	return ""
 }
 
-func (m analyzeModel) handleEnter() (analyzeModel, tea.Cmd) {
+func (m *analyzeModel) handleEnter() (analyzeModel, tea.Cmd) {
 	item := m.items[m.selected]
 	switch item.typ {
 	case "path":
@@ -166,35 +162,40 @@ func (m analyzeModel) handleEnter() (analyzeModel, tea.Cmd) {
 	case "action":
 		return m.startAnalysis()
 	}
-	return m, nil
+	return *m, nil
 }
 
-func (m analyzeModel) startAnalysis() (analyzeModel, tea.Cmd) {
+func (m *analyzeModel) startAnalysis() (analyzeModel, tea.Cmd) {
 	path := m.docPath()
 	if path == "" {
 		m.statusMsg = "Please set a document path first (select Document Path, press Enter)"
-		return m, nil
+		return *m, nil
 	}
 	m.running = true
 	m.progress = 0
 	m.stage = "Initializing..."
 	m.statusMsg = ""
-	return m, tea.Batch(m.progressCmd(), m.runAnalysisCmd())
+	m.result = nil
+	return *m, tea.Batch(m.progressCmd(), m.runAnalysisCmd())
 }
 
-func (m analyzeModel) progressCmd() tea.Cmd {
+func (m *analyzeModel) progressCmd() tea.Cmd {
 	return tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
 		return progressTickMsg{}
 	})
 }
 
-func (m analyzeModel) runAnalysisCmd() tea.Cmd {
+func (m *analyzeModel) runAnalysisCmd() tea.Cmd {
 	return func() tea.Msg {
 		progress := make(chan AnalysisProgress, 10)
 		go func() {
 			for range progress {
 			}
 		}()
+		if m.engine == nil {
+			close(progress)
+			return errorMsg("engine not initialized")
+		}
 		result, err := m.engine.RunAnalysis(m.docPath(), m.evPath(), m.mode, progress)
 		if err != nil {
 			return errorMsg(err.Error())

@@ -16,6 +16,12 @@ import (
 var debugLog = log.New(os.Stderr, "[asf-debug] ", log.Ltime|log.Lshortfile)
 
 const (
+	MaxFileSize             = 50 * 1024 * 1024
+	MaxAIDisplayAssumptions = 50
+	MaxTUIAssumptions       = 500
+)
+
+const (
 	ModeASFOnly  = "ASF Engine Only"
 	ModeASFAndAI = "ASF Engine + Local AI"
 )
@@ -41,16 +47,16 @@ const (
 )
 
 type Assumption struct {
-	ID           string
-	Description  string
-	Component    string
-	Category     string
-	Risk         RiskLevel
-	Stride       []StrideCategory
-	Likelihood   int
-	Impact       int
-	Confidence   float64
-	Keywords     []string
+	ID          string
+	Description string
+	Component   string
+	Category    string
+	Risk        RiskLevel
+	Stride      []StrideCategory
+	Likelihood  int
+	Impact      int
+	Confidence  float64
+	Keywords    []string
 
 	// Evidence Traceability
 	SourceNode string `json:"source_node"`
@@ -87,9 +93,9 @@ type AnalysisResult struct {
 	CriticalGaps       int
 
 	// Explainability fields
-	EvidenceSummary      EvidenceSummary `json:"evidence_summary"`
-	RiskModelVersion     string          `json:"risk_model_version"`
-	ConfidenceSummary    string          `json:"confidence_summary"`
+	EvidenceSummary   EvidenceSummary `json:"evidence_summary"`
+	RiskModelVersion  string          `json:"risk_model_version"`
+	ConfidenceSummary string          `json:"confidence_summary"`
 }
 
 type AnalysisProgress struct {
@@ -115,10 +121,21 @@ func NewEngine(cfg *Config) *Engine {
 	}
 }
 
-
-
 func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- AnalysisProgress) (*AnalysisResult, error) {
 	progress <- AnalysisProgress{Percent: 5, Stage: "Parsing Architecture..."}
+	defer close(progress)
+
+	fi, err := os.Stat(archPath)
+	if err != nil {
+		asfLog.Printf("analysis error: access arch file: %v", err)
+		return nil, fmt.Errorf("access arch file: %w", err)
+	}
+	if fi.Size() > MaxFileSize {
+		asfLog.Printf("analysis error: file too large (%d bytes, max %d)", fi.Size(), MaxFileSize)
+		return nil, fmt.Errorf("file too large (%d bytes, max %d bytes)", fi.Size(), MaxFileSize)
+	}
+
+	asfLog.Printf("analysis start: %s (mode=%s, size=%d)", archPath, mode, fi.Size())
 
 	inputPath := archPath
 	ext := strings.ToLower(filepath.Ext(archPath))
@@ -127,21 +144,18 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 	if needsTemp {
 		desc, err := ParseArchitecture(archPath)
 		if err != nil {
+			asfLog.Printf("analysis error: parse architecture: %v", err)
 			return nil, fmt.Errorf("parse architecture: %w", err)
 		}
 		e.archDesc = desc
-		tmpFile, err := os.CreateTemp("", "asf-*.txt")
-		if err != nil {
-			return nil, fmt.Errorf("create temp file: %w", err)
+		// Write parsed text to a fixed path in the cache directory for the native analyzer.
+		// A file path is required because the native analyzer accepts file paths, not raw text.
+		// Eliminating this entirely would require changing the analyzer API (engine change).
+		inputPath = filepath.Join(asfCacheDir(), "analysis_input.txt")
+		if err := os.WriteFile(inputPath, []byte(desc.RawText), 0644); err != nil {
+			asfLog.Printf("analysis error: write input file: %v", err)
+			return nil, fmt.Errorf("write input file: %w", err)
 		}
-		if _, err := tmpFile.WriteString(desc.RawText); err != nil {
-			tmpFile.Close()
-			os.Remove(tmpFile.Name())
-			return nil, fmt.Errorf("write temp file: %w", err)
-		}
-		tmpFile.Close()
-		inputPath = tmpFile.Name()
-		defer os.Remove(inputPath)
 	} else {
 		desc, err := ParseArchitecture(archPath)
 		if err == nil {
@@ -154,6 +168,7 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 	debugLog.Printf("using native Go engine")
 	asfResult, err := e.runNativeAnalysis(inputPath, evPath)
 	if err != nil {
+		asfLog.Printf("analysis error: ASF engine: %v", err)
 		return nil, fmt.Errorf("ASF engine error: %w", err)
 	}
 
@@ -171,11 +186,18 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		if err == nil && aiResult != nil {
 			result = mergeAIResults(result, aiResult)
 			result.StrideDistribution = e.mapStrideDistribution(result.Assumptions)
+		} else if err != nil {
+			// AI failed — keep base results, add warning
+			warning := fmt.Sprintf("Base ASF analysis completed. Local AI enhancement failed: %s", err.Error())
+			result.AnalysisMode = ModeASFOnly
+			// Prepend warning to summary so user sees it
+			result.Summary = warning + "\n" + result.Summary
 		}
 	}
 
 	progress <- AnalysisProgress{Percent: 100, Stage: "Complete", Complete: true}
 
+	asfLog.Printf("analysis complete: %d assumptions, %d critical, %d high", result.TotalAssumptions, result.CriticalCount, result.HighCount)
 	return result, nil
 }
 
@@ -183,9 +205,24 @@ func (e *Engine) runNativeAnalysis(docPath, evPath string) (*asfJSONResult, erro
 	docs := []string{docPath}
 	var evs []string
 	if evPath != "" {
-		if _, err := os.Stat(evPath); err == nil {
+		if fi, err := os.Stat(evPath); err != nil {
+			debugLog.Printf("evidence path inaccessible: %s: %v", evPath, err)
+		} else if fi.IsDir() {
+			entries, err := os.ReadDir(evPath)
+			if err != nil {
+				debugLog.Printf("cannot read evidence dir: %s: %v", evPath, err)
+			} else {
+				evs = append(evs, evPath)
+				if len(entries) == 0 {
+					debugLog.Printf("warning: evidence directory is empty: %s", evPath)
+				}
+			}
+		} else {
 			evs = append(evs, evPath)
 		}
+	}
+	if _, err := os.Stat(docPath); err != nil {
+		debugLog.Printf("document path inaccessible: %s: %v", docPath, err)
 	}
 
 	an := analyzer.New()
@@ -269,11 +306,11 @@ type asfJSONResult struct {
 		CriticalGaps int `json:"critical_gaps"`
 	} `json:"summary"`
 	Assumptions []struct {
-		ID                 string  `json:"id"`
-		Text               string  `json:"text"`
-		AssumptionType     string  `json:"assumption_type"`
-		VerificationStatus string  `json:"verification_status"`
-		Confidence         float64 `json:"confidence"`
+		ID                 string   `json:"id"`
+		Text               string   `json:"text"`
+		AssumptionType     string   `json:"assumption_type"`
+		VerificationStatus string   `json:"verification_status"`
+		Confidence         float64  `json:"confidence"`
 		Keywords           []string `json:"keywords"`
 	} `json:"assumptions"`
 	Verifications []struct {
@@ -294,15 +331,15 @@ type asfJSONResult struct {
 
 func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisResult {
 	result := &AnalysisResult{
-		ArchitectureName: fileBase(archPath),
-		AnalysisDate:     time.Now(),
-		AnalysisMode:     mode,
-		TotalAssumptions: r.Summary.Assumptions,
-		TrueAssumptions:  r.Summary.Verified,
-		FalseAssumptions: r.Summary.Contradicted,
-		CriticalGaps:     r.Summary.CriticalGaps,
+		ArchitectureName:   fileBase(archPath),
+		AnalysisDate:       time.Now(),
+		AnalysisMode:       mode,
+		TotalAssumptions:   r.Summary.Assumptions,
+		TrueAssumptions:    r.Summary.Verified,
+		FalseAssumptions:   r.Summary.Contradicted,
+		CriticalGaps:       r.Summary.CriticalGaps,
 		StrideDistribution: make(map[StrideCategory]int),
-		RiskModelVersion:  "asf-risk-model-1.0",
+		RiskModelVersion:   "asf-risk-model-1.0",
 		Summary: fmt.Sprintf("ASF processed %s and found %d assumptions (%d verified, %d contradicted, %d unknown). %d critical gaps identified.",
 			fileBase(archPath), r.Summary.Assumptions, r.Summary.Verified, r.Summary.Contradicted, r.Summary.Unknown, r.Summary.CriticalGaps),
 	}
@@ -449,63 +486,63 @@ func (e *Engine) mapStrideDistribution(assumptions []Assumption) map[StrideCateg
 }
 
 type controlTemplate struct {
-	Category   string
-	BaseDesc   string
-	Rationale  string
-	STRIDE     []StrideCategory
-	Priority   int
+	Category  string
+	BaseDesc  string
+	Rationale string
+	STRIDE    []StrideCategory
+	Priority  int
 }
 
 func controlTemplates() []controlTemplate {
 	return []controlTemplate{
 		{Category: "IDENTITY", BaseDesc: "Implement strong identity verification with MFA",
 			Rationale: "Identity-related assumptions require robust authentication to prevent spoofing and unauthorized access.",
-			STRIDE: []StrideCategory{StrideSpoofing, StrideElevationPriv}, Priority: 1},
+			STRIDE:    []StrideCategory{StrideSpoofing, StrideElevationPriv}, Priority: 1},
 		{Category: "AUTHENTICATION", BaseDesc: "Enforce multi-factor authentication for all access",
 			Rationale: "Authentication assumptions require verified identity to prevent credential-based attacks.",
-			STRIDE: []StrideCategory{StrideSpoofing, StrideElevationPriv}, Priority: 1},
+			STRIDE:    []StrideCategory{StrideSpoofing, StrideElevationPriv}, Priority: 1},
 		{Category: "AUTHORIZATION", BaseDesc: "Implement role-based access control with principle of least privilege",
 			Rationale: "Authorization assumptions require strict access boundaries to prevent privilege escalation.",
-			STRIDE: []StrideCategory{StrideElevationPriv, StrideInfoDisclosure}, Priority: 1},
+			STRIDE:    []StrideCategory{StrideElevationPriv, StrideInfoDisclosure}, Priority: 1},
 		{Category: "ACCESS", BaseDesc: "Enforce least-privilege access controls across all components",
 			Rationale: "Access control assumptions limit blast radius and prevent lateral movement.",
-			STRIDE: []StrideCategory{StrideElevationPriv, StrideInfoDisclosure}, Priority: 1},
+			STRIDE:    []StrideCategory{StrideElevationPriv, StrideInfoDisclosure}, Priority: 1},
 		{Category: "NETWORK", BaseDesc: "Implement network segmentation and encryption in transit",
 			Rationale: "Network assumptions require boundary protection to prevent data exposure and DoS.",
-			STRIDE: []StrideCategory{StrideInfoDisclosure, StrideDenialOfService, StrideTampering}, Priority: 1},
+			STRIDE:    []StrideCategory{StrideInfoDisclosure, StrideDenialOfService, StrideTampering}, Priority: 1},
 		{Category: "ENCRYPTION", BaseDesc: "Implement encryption at rest and in transit for all sensitive data",
 			Rationale: "Encryption assumptions protect confidentiality against data disclosure attacks.",
-			STRIDE: []StrideCategory{StrideInfoDisclosure}, Priority: 1},
+			STRIDE:    []StrideCategory{StrideInfoDisclosure}, Priority: 1},
 		{Category: "CONFIGURATION", BaseDesc: "Use infrastructure-as-code with automated configuration validation",
 			Rationale: "Configuration assumptions prevent tampering through misconfiguration and drift.",
-			STRIDE: []StrideCategory{StrideTampering}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideTampering}, Priority: 2},
 		{Category: "DEPENDENCY", BaseDesc: "Implement dependency verification and supply chain security",
 			Rationale: "Dependency assumptions protect against supply chain attacks and third-party compromise.",
-			STRIDE: []StrideCategory{StrideDenialOfService, StrideTampering}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideDenialOfService, StrideTampering}, Priority: 2},
 		{Category: "PROCESS", BaseDesc: "Implement audit logging and process verification",
 			Rationale: "Process assumptions ensure accountability and non-repudiation of security-relevant actions.",
-			STRIDE: []StrideCategory{StrideRepudiation, StrideTampering}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideRepudiation, StrideTampering}, Priority: 2},
 		{Category: "DATABASE", BaseDesc: "Implement database access controls and encryption",
 			Rationale: "Database assumptions protect the confidentiality and integrity of stored data.",
-			STRIDE: []StrideCategory{StrideTampering, StrideInfoDisclosure}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideTampering, StrideInfoDisclosure}, Priority: 2},
 		{Category: "LOGGING", BaseDesc: "Implement immutable audit logging with tamper detection",
 			Rationale: "Logging assumptions prevent repudiation and enable forensic investigation.",
-			STRIDE: []StrideCategory{StrideRepudiation, StrideTampering}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideRepudiation, StrideTampering}, Priority: 2},
 		{Category: "BACKUP", BaseDesc: "Implement encrypted backup with tested restore procedures",
 			Rationale: "Backup assumptions ensure data availability and recovery against ransomware and data loss.",
-			STRIDE: []StrideCategory{StrideInfoDisclosure, StrideDenialOfService}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideInfoDisclosure, StrideDenialOfService}, Priority: 2},
 		{Category: "SESSION", BaseDesc: "Implement secure session management with rotation and timeout",
 			Rationale: "Session assumptions prevent session hijacking and credential reuse attacks.",
-			STRIDE: []StrideCategory{StrideSpoofing, StrideElevationPriv}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideSpoofing, StrideElevationPriv}, Priority: 2},
 		{Category: "THIRD_PARTY", BaseDesc: "Implement third-party security assessment and monitoring",
 			Rationale: "Third-party assumptions require vendor risk management to prevent supply chain attacks.",
-			STRIDE: []StrideCategory{StrideTampering, StrideInfoDisclosure}, Priority: 2},
+			STRIDE:    []StrideCategory{StrideTampering, StrideInfoDisclosure}, Priority: 2},
 		{Category: "DOCUMENTATION", BaseDesc: "Maintain accurate and version-controlled architecture documentation",
 			Rationale: "Documentation assumptions ensure knowledge continuity and accurate threat modeling.",
-			STRIDE: []StrideCategory{StrideRepudiation}, Priority: 3},
+			STRIDE:    []StrideCategory{StrideRepudiation}, Priority: 3},
 		{Category: "GOVERNANCE", BaseDesc: "Establish security governance framework with regular reviews",
 			Rationale: "Governance assumptions require oversight to maintain security posture over time.",
-			STRIDE: []StrideCategory{StrideRepudiation, StrideTampering}, Priority: 3},
+			STRIDE:    []StrideCategory{StrideRepudiation, StrideTampering}, Priority: 3},
 	}
 }
 

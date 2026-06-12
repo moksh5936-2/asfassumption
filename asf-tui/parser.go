@@ -1,17 +1,20 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/ledongthuc/pdf"
 	"gopkg.in/yaml.v3"
 )
 
@@ -36,10 +39,10 @@ type ArchDescription struct {
 	// Structured fields (populated from YAML/JSON definitions)
 	ExplicitAssumptions []string
 	SecurityControls    map[string][]string
-	Compliance         []string
-	ExpectedResults    map[string]interface{}
-	ValidationCriteria []string
-	Notes              []string
+	Compliance          []string
+	ExpectedResults     map[string]interface{}
+	ValidationCriteria  []string
+	Notes               []string
 }
 
 func ParseArchitecture(path string) (*ArchDescription, error) {
@@ -58,7 +61,11 @@ func ParseArchitecture(path string) (*ArchDescription, error) {
 		return parseSVG(path)
 	case ".png", ".jpg", ".jpeg":
 		return parseImageOCR(path)
-	case ".txt", ".md", ".pdf", ".docx":
+	case ".pdf":
+		return parsePDF(path)
+	case ".docx":
+		return parseDOCX(path)
+	case ".txt", ".md":
 		return parseTextFile(path)
 	default:
 		return parseTextFile(path)
@@ -73,12 +80,16 @@ func parseDrawio(path string) (*ArchDescription, error) {
 
 	if isGzipped(data) {
 		reader, err := gzip.NewReader(bytes.NewReader(data))
-		if err == nil {
-			var buf bytes.Buffer
-			_, _ = buf.ReadFrom(reader)
-			data = buf.Bytes()
-			reader.Close()
+		if err != nil {
+			return nil, fmt.Errorf("decompress drawio (corrupt gzip): %w", err)
 		}
+		var buf bytes.Buffer
+		_, err = buf.ReadFrom(reader)
+		reader.Close()
+		if err != nil {
+			return nil, fmt.Errorf("decompress drawio: %w", err)
+		}
+		data = buf.Bytes()
 	}
 
 	var mxfile mxFile
@@ -139,8 +150,8 @@ func parseDrawio(path string) (*ArchDescription, error) {
 }
 
 type mxFile struct {
-	XMLName   xml.Name    `xml:"mxfile"`
-	Diagrams  []mxDiagram `xml:"diagram"`
+	XMLName  xml.Name    `xml:"mxfile"`
+	Diagrams []mxDiagram `xml:"diagram"`
 }
 
 type mxDiagram struct {
@@ -252,15 +263,107 @@ func extractMermaidEdgeLabel(line string) string {
 	return ""
 }
 
+func parsePDF(path string) (*ArchDescription, error) {
+	f, r, err := pdf.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open pdf: %w", err)
+	}
+	defer f.Close()
+
+	reader, err := r.GetPlainText()
+	if err != nil {
+		return nil, fmt.Errorf("extract pdf text: %w", err)
+	}
+	text, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("read pdf text: %w", err)
+	}
+
+	return &ArchDescription{
+		Name:    fileBase(path),
+		RawText: string(text),
+	}, nil
+}
+
+func parseDOCX(path string) (*ArchDescription, error) {
+	r, err := zip.OpenReader(path)
+	if err != nil {
+		return nil, fmt.Errorf("open docx: %w", err)
+	}
+	defer r.Close()
+
+	var documentXML []byte
+	for _, f := range r.File {
+		if f.Name == "word/document.xml" {
+			rc, err := f.Open()
+			if err != nil {
+				return nil, fmt.Errorf("read word/document.xml: %w", err)
+			}
+			documentXML, err = io.ReadAll(rc)
+			rc.Close()
+			if err != nil {
+				return nil, fmt.Errorf("read word/document.xml content: %w", err)
+			}
+			break
+		}
+	}
+	if documentXML == nil {
+		return nil, fmt.Errorf("word/document.xml not found in docx archive")
+	}
+
+	type wDoc struct {
+		Body struct {
+			Paragraphs []struct {
+				Runs []struct {
+					Text string `xml:"t"`
+				} `xml:"r"`
+			} `xml:"p"`
+		} `xml:"body"`
+	}
+
+	var doc wDoc
+	if err := xml.Unmarshal(documentXML, &doc); err != nil {
+		return nil, fmt.Errorf("parse word/document.xml: %w", err)
+	}
+
+	var lines []string
+	for _, p := range doc.Body.Paragraphs {
+		var line []string
+		for _, run := range p.Runs {
+			line = append(line, run.Text)
+		}
+		lines = append(lines, strings.Join(line, ""))
+	}
+
+	return &ArchDescription{
+		Name:    fileBase(path),
+		RawText: strings.Join(lines, "\n"),
+	}, nil
+}
+
 func parseTextFile(path string) (*ArchDescription, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
+	rawText := string(data)
 	return &ArchDescription{
 		Name:    fileBase(path),
-		RawText: string(data),
+		RawText: rawText,
 	}, nil
+}
+
+func isPrintableText(data []byte) bool {
+	if len(data) == 0 {
+		return true
+	}
+	printable := 0
+	for _, b := range data {
+		if b >= 0x20 && b <= 0x7e || b == '\n' || b == '\r' || b == '\t' {
+			printable++
+		}
+	}
+	return float64(printable)/float64(len(data)) > 0.5
 }
 
 func buildTextFromDiagram(name string, components []Component, relations []Relation) string {
@@ -418,10 +521,10 @@ type archDefinition struct {
 
 	// Structured YAML/JSON fields (populated from architecture definitions)
 	Metadata *struct {
-		Name        string   `yaml:"name" json:"name"`
-		Version     string   `yaml:"version" json:"version"`
-		Purpose     string   `yaml:"purpose" json:"purpose"`
-		Compliance  []string `yaml:"compliance" json:"compliance"`
+		Name       string   `yaml:"name" json:"name"`
+		Version    string   `yaml:"version" json:"version"`
+		Purpose    string   `yaml:"purpose" json:"purpose"`
+		Compliance []string `yaml:"compliance" json:"compliance"`
 	} `yaml:"metadata" json:"metadata"`
 	System *struct {
 		Name        string `yaml:"name" json:"name"`

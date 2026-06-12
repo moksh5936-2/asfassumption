@@ -48,12 +48,7 @@ func (m resultsModel) Update(msg tea.Msg) (resultsModel, tea.Cmd) {
 			m.expanded[m.selected] = !m.expanded[m.selected]
 		case "e":
 			if m.result != nil {
-				exportDir := "./reports"
-				path, err := ExportResult(m.result, m.exportFormat, exportDir)
-				if err == nil {
-					m.exportComplete = true
-					m.exportPath = path
-				}
+				return m, func() tea.Msg { return navigateMsg{to: exportView} }
 			}
 		case "r":
 			// Navigate to review mode (handled by mainModel)
@@ -128,14 +123,14 @@ func (m mainModel) viewResults() string {
 		}
 	}
 
-	body := lipgloss.JoinVertical(lipgloss.Left, sectionViews...)
-
 	if result.AnalysisMode == ModeASFAndAI {
 		aiAssumptions := renderAIAssumptions(s, result.Assumptions)
 		if aiAssumptions != "" {
 			sectionViews = append(sectionViews, "", s.Section.Render("AI-Enhanced Findings"), s.BorderBox.Render(aiAssumptions))
 		}
 	}
+
+	body := lipgloss.JoinVertical(lipgloss.Left, sectionViews...)
 
 	return lipgloss.JoinVertical(lipgloss.Left, header, body)
 }
@@ -422,11 +417,14 @@ func exportFormatFromConfig(cfg *Config) ExportFormat {
 
 func (m mainModel) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	if m.analyze.result != nil && m.results.result == nil {
+	if m.analyze.result != nil {
 		m.results.result = m.analyze.result
 		m.results.exportFormat = exportFormatFromConfig(m.config)
+		m.results.exportComplete = false
+		m.results.exportPath = ""
+		m.results.expanded = map[int]bool{}
+		m.analyze.result = nil
 	}
 	m.results, cmd = m.results.Update(msg)
-	m.analyze.result = nil
 	return m, cmd
 }

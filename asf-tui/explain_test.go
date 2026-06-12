@@ -13,9 +13,9 @@ func TestRiskMatrixCalculate(t *testing.T) {
 	rm := &RiskMatrix{}
 
 	tests := []struct {
-		lh, im     int
-		wantScore  int
-		wantLevel  RiskLevel
+		lh, im    int
+		wantScore int
+		wantLevel RiskLevel
 	}{
 		{5, 5, 25, RiskCritical},
 		{5, 4, 20, RiskCritical},
@@ -91,9 +91,9 @@ func TestConfidenceEngine(t *testing.T) {
 	ce := &ConfidenceEngine{}
 
 	tests := []struct {
-		name                  string
+		name                                  string
 		evCount, stCount, compCount, relCount int
-		wantMin               float64
+		wantMin                               float64
 	}{
 		{"no evidence", 0, 0, 0, 0, 0.09},
 		{"single evidence", 1, 0, 0, 0, 0.15},
@@ -139,9 +139,9 @@ func TestJustifyAssumption(t *testing.T) {
 			name:     "with components",
 			category: "ACCESS",
 			evidence: &EvidenceResult{
-				MatchedComponents:      []string{"Database", "API Gateway"},
-				MatchedRelationships:   []string{"API → DB"},
-				MatchedTrustBoundaries: []string{"network boundary"},
+				MatchedComponents:       []string{"Database", "API Gateway"},
+				MatchedRelationships:    []string{"API → DB"},
+				MatchedTrustBoundaries:  []string{"network boundary"},
 				MatchedSecurityConcepts: []string{"authentication"},
 			},
 			want: []string{"detected", "components", "Database", "API Gateway"},
@@ -503,13 +503,13 @@ func TestExplainabilityPipelineNoArch(t *testing.T) {
 func TestCollectValidationData(t *testing.T) {
 	assumptions := []Assumption{
 		{
-			ID:          "ASM-001",
-			Description: "test",
-			Risk:        RiskHigh,
-			Confidence:  0.85,
-			Stride:      []StrideCategory{StrideTampering},
+			ID:           "ASM-001",
+			Description:  "test",
+			Risk:         RiskHigh,
+			Confidence:   0.85,
+			Stride:       []StrideCategory{StrideTampering},
 			ReviewStatus: "Accepted",
-			ReviewNotes: "Looks correct",
+			ReviewNotes:  "Looks correct",
 		},
 	}
 

@@ -914,7 +914,7 @@ func TestExplicitAssumptionsDeterministic(t *testing.T) {
 	e.explainPipe = NewExplainabilityPipeline(e.archDesc, "test.yaml", e.strideEngine)
 
 	r1 := e.processExplicitAssumptions(nil)
-		r2 := e.processExplicitAssumptions(nil)
+	r2 := e.processExplicitAssumptions(nil)
 
 	if len(r1) != len(r2) {
 		t.Fatalf("non-deterministic count: %d vs %d", len(r1), len(r2))

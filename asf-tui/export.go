@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-pdf/fpdf"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/go-pdf/fpdf"
 )
 
 type ExportFormat string
@@ -741,6 +741,9 @@ type exportModel struct {
 	done             bool
 	exportPath       string
 	showConfirmation bool
+	result           *AnalysisResult
+	outputDir        string
+	err              error
 }
 
 func newExportModel() exportModel {
@@ -768,9 +771,18 @@ func (m exportModel) Update(msg tea.Msg) (exportModel, tea.Cmd) {
 		case "esc":
 			m.showConfirmation = false
 			m.done = false
+			m.err = nil
 		case "y":
 			if m.showConfirmation && !m.done {
-				m.done = true
+				if m.result != nil {
+					path, err := ExportResult(m.result, m.format, m.outputDir)
+					if err != nil {
+						m.err = err
+					} else {
+						m.done = true
+						m.exportPath = path
+					}
+				}
 			}
 		}
 	}
@@ -780,6 +792,19 @@ func (m exportModel) Update(msg tea.Msg) (exportModel, tea.Cmd) {
 func (m mainModel) viewExport() string {
 	s := m.styles
 	ex := m.exportV
+
+	if ex.err != nil {
+		return lipgloss.JoinVertical(lipgloss.Left,
+			s.Title.Render("Export Error"),
+			s.BorderBox.Render(
+				lipgloss.JoinVertical(lipgloss.Center,
+					s.StatusBad.Render("✗ Export Failed"),
+					s.SectionItem.Render(ex.err.Error()),
+					s.SectionItem.Render("Press Esc to return."),
+				),
+			),
+		)
+	}
 
 	if ex.done {
 		return lipgloss.JoinVertical(lipgloss.Left,

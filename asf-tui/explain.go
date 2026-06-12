@@ -6,11 +6,11 @@ import (
 
 // EvidenceSource tracks where evidence for an assumption came from.
 type EvidenceSource struct {
-	FilePath               string   `json:"file_path"`
-	FileType               string   `json:"file_type"`
-	MatchedComponents      []string `json:"matched_components"`
-	MatchedRelationships   []string `json:"matched_relationships"`
-	MatchedTrustBoundaries []string `json:"matched_trust_boundaries"`
+	FilePath                string   `json:"file_path"`
+	FileType                string   `json:"file_type"`
+	MatchedComponents       []string `json:"matched_components"`
+	MatchedRelationships    []string `json:"matched_relationships"`
+	MatchedTrustBoundaries  []string `json:"matched_trust_boundaries"`
 	MatchedSecurityConcepts []string `json:"matched_security_concepts"`
 }
 
@@ -24,27 +24,27 @@ type EvidenceSummary struct {
 
 // StrideJustification explains why a STRIDE category was assigned.
 type StrideJustification struct {
-	Category          StrideCategory `json:"category"`
-	Reason            string         `json:"reason"`
+	Category           StrideCategory `json:"category"`
+	Reason             string         `json:"reason"`
 	MatchedRuleIndexes []int          `json:"matched_rule_indexes"`
-	MatchedKeywords   []string       `json:"matched_keywords"`
-	MatchedComponents []string       `json:"matched_components"`
-	Confidence        float64        `json:"confidence"`
-	ConfidenceReason  string         `json:"confidence_reason"`
+	MatchedKeywords    []string       `json:"matched_keywords"`
+	MatchedComponents  []string       `json:"matched_components"`
+	Confidence         float64        `json:"confidence"`
+	ConfidenceReason   string         `json:"confidence_reason"`
 }
 
 // LikelihoodFactor describes a factor that contributes to likelihood.
 type LikelihoodFactor struct {
-	Factor  string `json:"factor"`
-	Value   int    `json:"value"`
-	Reason  string `json:"reason"`
+	Factor string `json:"factor"`
+	Value  int    `json:"value"`
+	Reason string `json:"reason"`
 }
 
 // ImpactFactor describes a factor that contributes to impact.
 type ImpactFactor struct {
-	Factor  string `json:"factor"`
-	Value   int    `json:"value"`
-	Reason  string `json:"reason"`
+	Factor string `json:"factor"`
+	Value  int    `json:"value"`
+	Reason string `json:"reason"`
 }
 
 // RiskJustification explains how risk was calculated.
@@ -72,16 +72,16 @@ type ReviewRecord struct {
 
 // ValidationRecord stores data needed for future precision/recall studies.
 type ValidationRecord struct {
-	AssumptionID     string    `json:"assumption_id"`
-	Description      string    `json:"description"`
-	GeneratedEvidence []string `json:"generated_evidence"`
-	AssignedRisk     RiskLevel `json:"assigned_risk"`
-	RiskScore        int       `json:"risk_score"`
-	Confidence       float64   `json:"confidence"`
-	STRIDECategories []StrideCategory `json:"stride_categories"`
-	ArchReviewResult string    `json:"arch_review_result"` // Accepted, Rejected, Modified
-	ArchNotes        string    `json:"arch_notes"`
-	ReviewTimestamp  time.Time `json:"review_timestamp"`
+	AssumptionID      string           `json:"assumption_id"`
+	Description       string           `json:"description"`
+	GeneratedEvidence []string         `json:"generated_evidence"`
+	AssignedRisk      RiskLevel        `json:"assigned_risk"`
+	RiskScore         int              `json:"risk_score"`
+	Confidence        float64          `json:"confidence"`
+	STRIDECategories  []StrideCategory `json:"stride_categories"`
+	ArchReviewResult  string           `json:"arch_review_result"` // Accepted, Rejected, Modified
+	ArchNotes         string           `json:"arch_notes"`
+	ReviewTimestamp   time.Time        `json:"review_timestamp"`
 }
 
 // The following fields are added to the existing Assumption struct via a helper
@@ -104,13 +104,13 @@ type ExplainabilityExtension struct {
 // by setting the extra fields that exist on the struct.
 // ControlDetail links a control to the specific assumptions and threats it mitigates.
 type ControlDetail struct {
-	ID                 string           `json:"id"`
-	Description        string           `json:"description"`
-	Rationale          string           `json:"rationale"`
-	Category           string           `json:"category"`
-	MitigatedAssumptionIDs []string      `json:"mitigated_assumption_ids"`
-	MitigatedSTRIDE    []StrideCategory `json:"mitigated_stride"`
-	Priority           int              `json:"priority"` // 1=highest
+	ID                     string           `json:"id"`
+	Description            string           `json:"description"`
+	Rationale              string           `json:"rationale"`
+	Category               string           `json:"category"`
+	MitigatedAssumptionIDs []string         `json:"mitigated_assumption_ids"`
+	MitigatedSTRIDE        []StrideCategory `json:"mitigated_stride"`
+	Priority               int              `json:"priority"` // 1=highest
 }
 
 func attachExplainability(a *Assumption, ext *ExplainabilityExtension) {

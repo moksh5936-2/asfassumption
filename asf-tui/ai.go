@@ -6,7 +6,8 @@ import (
 )
 
 type AIEnhancer struct {
-	model *ModelManager
+	model     *ModelManager
+	modelName string
 }
 
 func NewAIEnhancer() *AIEnhancer {
@@ -15,10 +16,10 @@ func NewAIEnhancer() *AIEnhancer {
 
 type AIEnhancedResult struct {
 	AdditionalAssumptions []AIAssumption
-	RefinedRisks         []AIRiskRefinement
-	MissingThreats       []string
-	Recommendations      []string
-	RawResponse          string
+	RefinedRisks          []AIRiskRefinement
+	MissingThreats        []string
+	Recommendations       []string
+	RawResponse           string
 }
 
 type AIAssumption struct {
@@ -29,21 +30,31 @@ type AIAssumption struct {
 }
 
 type AIRiskRefinement struct {
-	AssumptionID string
-	OriginalRisk RiskLevel
+	AssumptionID  string
+	OriginalRisk  RiskLevel
 	SuggestedRisk RiskLevel
-	Reasoning    string
+	Reasoning     string
 }
 
 func (ae *AIEnhancer) Enhance(result *AnalysisResult, modelName string) (*AIEnhancedResult, error) {
+	ae.modelName = modelName
+
 	if !ae.model.CheckAvailable() {
-		return nil, fmt.Errorf("Ollama not available")
+		return nil, fmt.Errorf("Ollama binary not found")
+	}
+
+	if !ae.model.CheckRunning() {
+		return nil, fmt.Errorf("Ollama is not running. Start it with: ollama serve")
+	}
+
+	if !ae.model.IsModelInstalled(modelName) {
+		return nil, fmt.Errorf("Model %q is not installed. Download it in AI Settings or choose another installed model", modelName)
 	}
 
 	prompt := ae.buildPrompt(result)
 	response, err := ae.model.Generate(prompt, modelName)
 	if err != nil {
-		return nil, fmt.Errorf("AI generation: %w", err)
+		return nil, fmt.Errorf("AI generation failed: %w", err)
 	}
 
 	return ae.parseResponse(response, result), nil
@@ -78,7 +89,8 @@ func (ae *AIEnhancer) buildPrompt(result *AnalysisResult) string {
 
 1. ADDITIONAL_SECURITY_ASSUMPTIONS: Security assumptions that ASF may have missed. List each with category and risk level.
 
-2. RISK_REFINEMENTS: Any assumptions where the risk level seems incorrect.
+2. RISK_REFINEMENTS: For any assumptions whose risk level seems incorrect, suggest a correction. Format each as:
+   Assumption <ID> current=<risk> suggested=<risk> reason=<brief explanation>
 
 3. MISSING_THREAT_SCENARIOS: Attack scenarios not covered by the existing assumptions.
 
@@ -147,7 +159,49 @@ func parseBulletList(text string) []string {
 }
 
 func parseRiskRefinements(text string) []AIRiskRefinement {
-	return nil
+	var refinements []AIRiskRefinement
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Match: Assumption <ID> current=<risk> suggested=<risk> reason=<...>
+		var id, current, suggested, reason string
+		parts := strings.Fields(line)
+		for i, p := range parts {
+			switch {
+			case p == "current=" && i+1 < len(parts):
+				current = parts[i+1]
+			case strings.HasPrefix(p, "current="):
+				current = strings.TrimPrefix(p, "current=")
+			case p == "suggested=" && i+1 < len(parts):
+				suggested = parts[i+1]
+			case strings.HasPrefix(p, "suggested="):
+				suggested = strings.TrimPrefix(p, "suggested=")
+			case p == "reason=" && i+1 < len(parts):
+				// Collect rest of line as reason
+				rest := strings.Join(parts[i+1:], " ")
+				reason = strings.TrimRight(rest, ".")
+			case strings.HasPrefix(p, "reason="):
+				reason = strings.TrimPrefix(p, "reason=")
+				reason = strings.TrimRight(reason, ".")
+			case i == 0 && p == "Assumption" && i+1 < len(parts):
+				id = parts[i+1]
+			case i > 0 && p != "Assumption" && id == "" && !strings.Contains(p, "="):
+				id = p
+			}
+		}
+		if id != "" && current != "" && suggested != "" {
+			refinements = append(refinements, AIRiskRefinement{
+				AssumptionID:  id,
+				OriginalRisk:  RiskLevel(current),
+				SuggestedRisk: RiskLevel(suggested),
+				Reasoning:     reason,
+			})
+		}
+	}
+	return refinements
 }
 
 func inferCategory(text string) string {
@@ -208,6 +262,34 @@ func mergeAIResults(original *AnalysisResult, ai *AIEnhancedResult) *AnalysisRes
 		})
 		original.TotalAssumptions++
 		switch risk {
+		case RiskCritical:
+			original.CriticalCount++
+		case RiskHigh:
+			original.HighCount++
+		case RiskMedium:
+			original.MediumCount++
+		case RiskLow:
+			original.LowCount++
+		}
+	}
+
+	for _, rr := range ai.RefinedRisks {
+		for i := range original.Assumptions {
+			if original.Assumptions[i].ID == rr.AssumptionID && original.Assumptions[i].Risk != rr.SuggestedRisk {
+				original.Assumptions[i].Risk = rr.SuggestedRisk
+				original.Assumptions[i].Rationale = fmt.Sprintf("Risk refined by AI: was %s, now %s. Reason: %s",
+					rr.OriginalRisk, rr.SuggestedRisk, rr.Reasoning)
+			}
+		}
+	}
+
+	// Recompute risk counts after refinements
+	original.CriticalCount = 0
+	original.HighCount = 0
+	original.MediumCount = 0
+	original.LowCount = 0
+	for _, a := range original.Assumptions {
+		switch a.Risk {
 		case RiskCritical:
 			original.CriticalCount++
 		case RiskHigh:

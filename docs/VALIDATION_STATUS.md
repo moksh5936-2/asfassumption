@@ -17,7 +17,7 @@ This document is a brutally honest assessment of what is validated and what is n
 | Unit tests | ✅ Passed | 20 tests covering risk matrix, confidence, evidence, STRIDE, pipeline |
 | Risk matrix calculation | ✅ Validated | All 25 score combinations tested, boundaries verified |
 | Confidence calculation | ✅ Validated | Deterministic, capped at 0.95, all inputs tested |
-| STRIDE mapping | ✅ Validated | 17 category rules + 33 keyword patterns, deterministic |
+| STRIDE mapping | ✅ Validated | 17 category rules + 34 keyword patterns, deterministic |
 | Evidence engine | ✅ Validated | Component/relationship/concept matching tested |
 | Assumption justification | ✅ Validated | Component/relationship/fallback rationale tested |
 | Export format output | ✅ Validated | All 5 formats produce valid output |
@@ -111,7 +111,7 @@ These are assumptions built into ASF that have not been validated:
 1. **Component labels in diagrams correspond to security-relevant entities** — A component named "Database" is assumed to be a real database. Could be a logical grouping or mislabeled.
 2. **Relationships imply trust boundaries** — A line between "Internet" and "API Gateway" is assumed to be a trust boundary. May not be true in all architectures.
 3. **STRIDE category rules are correct** — Category → STRIDE mappings are based on threat modeling literature but not validated against expert judgments.
-4. **33 keyword patterns are comprehensive** — The keyword set may miss important security concepts.
+4. **34 keyword patterns are comprehensive** — The keyword set may miss important security concepts.
 5. **Likelihood factors are appropriate** — Exposure, authentication dependency, and attack complexity may not capture all relevant factors.
 6. **Impact factors are appropriate** — Data classification, regulatory exposure, and business criticality may miss other impact dimensions.
 7. **5×5 risk matrix thresholds are correct** — The 20/12/5 boundaries for Critical/High/Medium/Low are conventional but untested for this domain.
@@ -123,7 +123,7 @@ These are assumptions built into ASF that have not been validated:
 
 ## Known Limitations
 
-1. **Python dependency** — Requires Python 3.8+ with ASF package installed. This is a significant distribution barrier.
+1. ~~**Python dependency** — Requires Python 3.8+ with ASF package installed.~~ **Resolved in v2.0.0** — ASF is now a pure Go binary with no Python dependency.
 2. **No CI/CD** — No automated testing pipeline. Changes may regress without detection.
 3. **No code signing** — Binaries are not signed or notarized. Users must trust the download source.
 4. **Tesseract dependency** — Image OCR requires external Tesseract installation. Not bundled.

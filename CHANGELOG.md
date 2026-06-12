@@ -5,6 +5,26 @@ All notable changes to ASF are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] — 2026-06-12
+
+### Changed
+
+- Invalid commands now print error and exit 1 instead of silently launching TUI
+- `asf doctor --verbose` dead code path removed
+- `asf analyze --json` now explicitly accepted as a no-op flag
+- Installer now auto-configures PATH in `~/.zshrc` / `~/.bashrc` after install
+- `--purge` flag added (must be used with `--clean`): removes config/cache/data too
+- `--repair` mode now also fixes PATH, not just symlink
+- `install.ps1` now supports `-Repair`, `-Clean`, `-Purge` modes with PATH verification
+
+### Fixed
+
+- `asf` command guaranteed after install on macOS zsh without manual PATH edit
+- Installer detects shell correctly (zsh → `~/.zshrc`, bash → `~/.bashrc`) and avoids cross-shell advice
+- `verify_install` function definition order: no longer referenced before definition
+- `--purge` without `--clean` now prints error and exits 1
+- Default version fallback updated from 2.0.0 to 2.1.1
+
 ## [2.1.0] — 2026-06-12
 
 ### Added
@@ -16,9 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Expected results validation — compares actual analysis against declared benchmarks
 - Low and Medium risk tracking separated from Critical/High for accurate distribution
 - `processExplicitAssumptions`, `classifyExplicitAssumption`, `assessExplicitRisk`, `buildComplianceOutput`, `buildValidationSummary`, `enhanceControlsWithSecurityControls` methods
-- `ingestion_test.go` with 40 tests covering all new parsing, classification, risk, compliance, and validation paths
+- `ingestion_test.go` with 37 tests covering all new parsing, classification, risk, compliance, and validation paths
 - `testdata/asftest.yaml` — comprehensive healthcare architecture test file with 30 assumptions, 9 components, 7 control categories, 3 compliance frameworks
 - `docs/STRUCTURED_YAML_INGESTION_IMPROVEMENT_REPORT.md`
+- `claims[]` array in native Go JSON output matching Python schema
+- Cross-platform release assets at ~33% smaller due to stripped debug symbols
 
 ### Changed
 
@@ -29,16 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - All export formats (Markdown, HTML, PDF, CSV) include Medium/Low risk distribution
 - TUI results header shows Medium and Low risk counts
 - `mergeAIResults` tracks Medium/Low for AI-generated assumptions
-
-### Fixed
-
-- `normalizeText` now correctly strips trailing periods from individual tokens
-- `toFloat` handles `int32` and `uint` types
-- `buildValidationSummary` reports "all expected criteria met" for empty expected results
-- `buildResult` computes TotalAssumptions from actual deduplicated count
-
-### Changed
-
 - Removed Python ASF engine bridge entirely — ASF is now a true Go-native single-binary
 - All analysis now uses native Go engine (no `python3`, `pip`, `venv`, or `PYTHONPATH` required)
 - Replaced Python-based install with pure Go binary downloads
@@ -57,14 +69,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `normalizeText` now correctly strips trailing periods from individual tokens
+- `toFloat` handles `int32` and `uint` types
+- `buildValidationSummary` reports "all expected criteria met" for empty expected results
+- `buildResult` computes TotalAssumptions from actual deduplicated count
 - Directory input crash: `asf analyze <directory>` now expands supported files
 - Help text: `asf doctor --fix` no longer mentions "install Python engine"
 - 5 certification blockers resolved for Go-native single-binary certification
-
-### Added
-
-- `claims[]` array in native Go JSON output matching Python schema
-- Cross-platform release assets at ~33% smaller due to stripped debug symbols
 
 ## [1.0.0] — 2026-06-10
 

@@ -2,7 +2,7 @@
 
 ## Version
 
-**v2.0.0** — June 2026
+**v2.1.1** — June 2026
 
 > Go-native single binary — no Python runtime required.
 
@@ -10,11 +10,11 @@
 
 | File | Platform | Architecture | Size |
 |------|----------|-------------|------|
-| `ASF-v2.0.0-linux-amd64` | Linux | AMD64 | 8.9MB |
-| `ASF-v2.0.0-linux-arm64` | Linux | ARM64 | 8.3MB |
-| `ASF-v2.0.0-darwin-amd64` | macOS | Intel | 9.1MB |
-| `ASF-v2.0.0-darwin-arm64` | macOS | Apple Silicon | 8.6MB |
-| `ASF-v2.0.0-windows-amd64.exe` | Windows | AMD64 | 9.2MB |
+| `ASF-v2.1.1-linux-amd64` | Linux | AMD64 | 9.0MB |
+| `ASF-v2.1.1-linux-arm64` | Linux | ARM64 | 8.4MB |
+| `ASF-v2.1.1-darwin-amd64` | macOS | Intel | 9.2MB |
+| `ASF-v2.1.1-darwin-arm64` | macOS | Apple Silicon | 8.7MB |
+| `ASF-v2.1.1-windows-amd64.exe` | Windows | AMD64 | 9.4MB |
 | `checksums.txt` | All | All | SHA-256 checksums |
 
 ## Verification
@@ -27,18 +27,18 @@ shasum -a 256 -c checksums.txt
 
 Expected output:
 ```
-ASF-v2.0.0-darwin-amd64: OK
-ASF-v2.0.0-darwin-arm64: OK
-ASF-v2.0.0-linux-amd64: OK
-ASF-v2.0.0-linux-arm64: OK
-ASF-v2.0.0-windows-amd64.exe: OK
+ASF-v2.1.1-darwin-amd64: OK
+ASF-v2.1.1-darwin-arm64: OK
+ASF-v2.1.1-linux-amd64: OK
+ASF-v2.1.1-linux-arm64: OK
+ASF-v2.1.1-windows-amd64.exe: OK
 ```
 
 ### Verify binary
 
 ```bash
-./ASF-v2.0.0-darwin-arm64 --version
-# Expected: ASF v2.0.0
+./ASF-v2.1.1-darwin-arm64 --version
+# Expected: ASF v2.1.1
 ```
 
 ## Installation
@@ -51,16 +51,16 @@ chmod +x install.sh
 ./install.sh
 
 # Manual installation
-chmod +x ASF-v2.0.0-darwin-arm64
+chmod +x ASF-v2.1.1-darwin-arm64
 mkdir -p ~/.local/bin ~/.asf
-cp ASF-v2.0.0-darwin-arm64 ~/.asf/asf
+cp ASF-v2.1.1-darwin-arm64 ~/.asf/asf
 ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
 ### Windows
 
 ```powershell
-# See install.ps1 or download ASF-v2.0.0-windows-amd64.exe directly
+# See install.ps1 or download ASF-v2.1.1-windows-amd64.exe directly
 ```
 
 ### Optional Dependencies
@@ -92,20 +92,21 @@ go build -o asf-tui .
 
 | Capability | Status |
 |------------|--------|
-| Architecture diagram analysis | ✅ Full support |
-| STRIDE threat mapping | ✅ 17 category rules + 30 keyword rules |
-| Risk assessment | ✅ 5×5 deterministic risk matrix |
-| Explainability | ✅ Evidence, justification, confidence |
-| Export (JSON, MD, CSV, PDF, HTML) | ✅ All 5 formats |
-| Architect review mode | ✅ Accept/Reject/Modified workflow |
-| Validation mode | ✅ TUI-based precision/recall tracking |
-| Local AI enhancement | ✅ Optional Ollama integration |
-| Enterprise licensing | ✅ HMAC-signed license keys |
+| Architecture diagram analysis | Full support |
+| STRIDE threat mapping | 17 category rules + 34 keyword rules |
+| Risk assessment | 5×5 deterministic risk matrix |
+| Explainability | Evidence, justification, confidence |
+| Export (JSON, MD, CSV, PDF, HTML) | All 5 formats |
+| Architect review mode | Accept/Reject/Modified workflow |
+| Local AI enhancement | Optional Ollama integration |
+| Demo licensing | HMAC + Ed25519 (demo-grade, not cryptographically secure) |
 
 ## Known Limitations
 
 1. **No code signing** — Binary is not notarized for macOS
 2. **No validation study** — Precision/recall metrics not yet established
+3. **License key is extractable from binary** — Demo keys are derived from compile-time constants
+4. **PDF/DOCX parsing** — Text extraction works but layout/formatting is not preserved
 
 ## Support
 

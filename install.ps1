@@ -5,10 +5,13 @@
 #   powershell -c "irm https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.ps1 | iex"
 #
 # Environment:
-#   $env:ASF_VERSION="2.0.0"    — pin a specific version
+#   $env:ASF_VERSION="2.0.1"    — pin a specific version
 
 param(
     [switch]$Upgrade,
+    [switch]$Repair,
+    [switch]$Clean,
+    [switch]$Purge,
     [switch]$Help,
     [string]$Token = ""
 )
@@ -27,6 +30,12 @@ $InstallDir = "$env:LOCALAPPDATA\ASF"
 $BinDir = "$env:LOCALAPPDATA\ASF\bin"
 $ConfigDir = "$env:APPDATA\ASF"
 
+# Validate --purge requires --clean
+if ($Purge -and -not $Clean) {
+    Write-Host "Error: -Purge must be used with -Clean" -ForegroundColor Red
+    exit 1
+}
+
 # ─── Help ──────────────────────────────────────────────────
 if ($Help) {
     Write-Host "ASF Windows Installer" -ForegroundColor Cyan
@@ -34,9 +43,15 @@ if ($Help) {
     Write-Host "Usage:"
     Write-Host "  powershell -c `"irm https://raw.githubusercontent.com/${Repo}/main/install.ps1 | iex`""
     Write-Host "  powershell -c `"... | iex`" -Upgrade"
+    Write-Host "  powershell -c `"... | iex`" -Repair"
+    Write-Host "  powershell -c `"... | iex`" -Clean"
+    Write-Host "  powershell -c `"... | iex`" -Clean -Purge"
     Write-Host ""
     Write-Host "Options:"
-    Write-Host "  -Upgrade         Upgrade an existing installation"
+    Write-Host "  -Upgrade         Upgrade existing installation (backs up config)"
+    Write-Host "  -Repair          Fix PATH without re-downloading"
+    Write-Host "  -Clean           Remove binary, keep config, reinstall"
+    Write-Host "  -Purge           Only with -Clean: removes config/cache/data too"
     Write-Host "  -Help            Show this help"
     Write-Host ""
     Write-Host "Environment:"
@@ -64,7 +79,7 @@ if (-not $Version) {
         $Version = $response.tag_name -replace "^v", ""
         Write-Host "  ✓ Latest: v${Version}" -ForegroundColor Green
     } catch {
-        $Version = "2.0.0"
+        $Version = "2.1.1"
         Write-Host "  ⚠  Could not detect version, defaulting to v${Version}" -ForegroundColor Yellow
         if (-not $Token) { Write-Host "  ⚠  Set GITHUB_TOKEN env var for private repos" -ForegroundColor Yellow }
     }
@@ -76,15 +91,73 @@ $ChecksumsUrl = "https://github.com/${Repo}/releases/download/v${Version}/checks
 
 # ─── Check existing ───────────────────────────────────────
 $InstalledBin = "${InstallDir}\asf.exe"
-if (Test-Path $InstalledBin -PathType Leaf) {
-    if (-not $Upgrade) {
-        $installedVer = "unknown"
-        try { $installedVer = & $InstalledBin --version } catch {}
-        Write-Host "  ✓ ASF is already installed (${installedVer})" -ForegroundColor Green
-        Write-Host ""
-        Write-Host "  Run: asf" -ForegroundColor Cyan
-        Write-Host "  To upgrade: add -Upgrade flag" -ForegroundColor Yellow
-        exit 0
+$HasExisting = Test-Path $InstalledBin -PathType Leaf
+
+# ─── Clean mode ───────────────────────────────────────────
+if ($Clean) {
+    Write-Host "  Cleaning old ASF installation..." -ForegroundColor Cyan
+    if (Test-Path $InstalledBin) { Remove-Item $InstalledBin -Force -ErrorAction SilentlyContinue }
+    if (Test-Path "${BinDir}\asf.exe") { Remove-Item "${BinDir}\asf.exe" -Force -ErrorAction SilentlyContinue }
+    if ($Purge) {
+        if (Test-Path $ConfigDir) { Remove-Item $ConfigDir -Recurse -Force -ErrorAction SilentlyContinue }
+        Write-Host "  ✓ Config, cache, data removed" -ForegroundColor Green
+    } else {
+        Write-Host "  ✓ Old binaries removed (config kept)" -ForegroundColor Green
+    }
+}
+
+# ─── Repair mode ───────────────────────────────────────────
+if ($Repair) {
+    if (-not $HasExisting) {
+        Write-Host "  ✗ No ASF binary found. Run installer without -Repair." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  Repairing ASF installation..." -ForegroundColor Cyan
+
+    # Fix PATH
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if ($userPath -notlike "*${BinDir}*") {
+        $newPath = "${BinDir};${userPath}"
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        Write-Host "  ✓ Added ${BinDir} to PATH" -ForegroundColor Green
+    } else {
+        Write-Host "  ✓ ${BinDir} already in PATH" -ForegroundColor Green
+    }
+
+    # Verify
+    $verOut = & $InstalledBin --version 2>$null
+    Write-Host "  ✓ ${verOut}" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  Repair complete. If 'asf' is not recognized, open a new PowerShell window." -ForegroundColor Cyan
+    exit 0
+}
+
+# ─── Existing install detection ───────────────────────────
+if ($HasExisting -and -not $Upgrade -and -not $Clean) {
+    $installedVer = "unknown"
+    try { $installedVer = & $InstalledBin --version } catch {}
+    Write-Host "  ✓ ASF v${Version} is already installed (${installedVer})" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  Run: asf" -ForegroundColor Cyan
+    Write-Host "  To upgrade: add -Upgrade flag" -ForegroundColor Yellow
+    exit 0
+}
+
+# ─── Backup existing config on upgrade ────────────────────
+if ($Upgrade -and $HasExisting) {
+    $BackupDir = "${InstallDir}\backups"
+    New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
+    $ConfigFile = "${ConfigDir}\config.yaml"
+    if (Test-Path $ConfigFile) {
+        $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        Copy-Item $ConfigFile -Destination "${BackupDir}\config.yaml.bak.${stamp}" -Force
+        Write-Host "  ✓ Config backed up" -ForegroundColor Green
+    }
+    $LicenseFile = "${ConfigDir}\license.key"
+    if (Test-Path $LicenseFile) {
+        $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        Copy-Item $LicenseFile -Destination "${BackupDir}\license.key.bak.${stamp}" -Force
+        Write-Host "  ✓ License backed up" -ForegroundColor Green
     }
 }
 
@@ -99,7 +172,6 @@ Write-Host "  ${DownloadUrl}" -ForegroundColor Cyan
 Write-Host ""
 
 try {
-    # For private repos, download via API if token is available
     if ($Token) {
         $releaseUrl = "https://api.github.com/repos/${Repo}/releases/tags/v${Version}"
         $release = Invoke-RestMethod -Uri $releaseUrl -Headers $AuthHeader -ErrorAction Stop
@@ -180,6 +252,8 @@ if ($userPath -notlike "*${BinDir}*") {
     [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
     $env:Path = "${BinDir};${env:Path}"
     Write-Host "  ✓ Added ${BinDir} to PATH" -ForegroundColor Green
+} else {
+    Write-Host "  ✓ ${BinDir} already in PATH" -ForegroundColor Green
 }
 
 # ─── Config ────────────────────────────────────────────────
@@ -213,15 +287,43 @@ engine:
 # ─── Cleanup ──────────────────────────────────────────────
 Remove-Item -Recurse -Force $TmpDir -ErrorAction SilentlyContinue
 
-# ─── Create alias convenience ─────────────────────────────
-$AsfExe = "${InstalledBin}\asf.exe"
+# ─── Verify ──────────────────────────────────────────────
+Write-Host ""
+Write-Host "  Verifying installation..." -ForegroundColor Cyan
+$allOk = $true
+if (Test-Path $InstalledBin) {
+    Write-Host "  ✓ Binary: ${InstalledBin}" -ForegroundColor Green
+} else {
+    Write-Host "  ⚠  Binary not found" -ForegroundColor Yellow
+    $allOk = $false
+}
+if (Test-Path "${BinDir}\asf.exe") {
+    Write-Host "  ✓ Command: ${BinDir}\asf.exe" -ForegroundColor Green
+} else {
+    Write-Host "  ⚠  Command not in bin dir" -ForegroundColor Yellow
+    $allOk = $false
+}
+$verOut = & $InstalledBin --version 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "  ✓ ${verOut}" -ForegroundColor Green
+} else {
+    Write-Host "  ⚠  Version check failed" -ForegroundColor Yellow
+    $allOk = $false
+}
+if ($allOk) {
+    Write-Host "  ✓ All checks passed." -ForegroundColor Green
+} else {
+    Write-Host "  ⚠  Some checks failed" -ForegroundColor Yellow
+}
 
 # ─── Success ──────────────────────────────────────────────
-$BinSize = "{0:N1}MB" -f ((Get-Item $AsfExe).Length / 1MB)
+$BinSize = "{0:N1}MB" -f ((Get-Item $InstalledBin).Length / 1MB)
 Write-Host ""
 Write-Host "  ✓ ASF v${Version} installed  (${BinSize})" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Run: asf" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  If 'asf' is not recognized, open a new PowerShell window." -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Prerequisites (full functionality):" -ForegroundColor Cyan
 Write-Host "    Tesseract (OCR): choco install tesseract" -ForegroundColor Cyan

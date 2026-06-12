@@ -11,9 +11,9 @@ type Node struct {
 }
 
 type Edge struct {
-	Source string `json:"source"`
-	Target string `json:"target"`
-	Key    int    `json:"key"`
+	Source string                 `json:"source"`
+	Target string                 `json:"target"`
+	Key    int                    `json:"key"`
 	Attrs  map[string]interface{} `json:"-"`
 }
 
@@ -26,10 +26,10 @@ type GraphData struct {
 
 type Model struct {
 	edges []struct {
-		src    string
-		dst    string
-		key    int
-		attrs  map[string]interface{}
+		src   string
+		dst   string
+		key   int
+		attrs map[string]interface{}
 	}
 	nodes map[string]map[string]interface{}
 }
@@ -50,10 +50,10 @@ func (m *Model) Build(result models.AnalysisResult) {
 			label = label[:60] + "..."
 		}
 		m.nodes[claim.ID] = map[string]interface{}{
-			"type":                "Claim",
-			"label":               label,
-			"full_text":           claim.Text,
-			"source_document":     claim.SourceDocument,
+			"type":                  "Claim",
+			"label":                 label,
+			"full_text":             claim.Text,
+			"source_document":       claim.SourceDocument,
 			"extraction_confidence": claim.ExtractionConfidence,
 		}
 	}
@@ -77,9 +77,9 @@ func (m *Model) Build(result models.AnalysisResult) {
 			key   int
 			attrs map[string]interface{}
 		}{
-			src: assumption.ClaimID,
-			dst: assumption.ID,
-			key: len(m.edges),
+			src:   assumption.ClaimID,
+			dst:   assumption.ID,
+			key:   len(m.edges),
 			attrs: map[string]interface{}{"relationship": "GENERATES"},
 		})
 	}
@@ -100,9 +100,9 @@ func (m *Model) Build(result models.AnalysisResult) {
 
 	for _, verification := range result.Verifications {
 		m.nodes[verification.ID] = map[string]interface{}{
-			"type":   "Verification",
-			"label":  "Verification: " + string(verification.Result),
-			"result": string(verification.Result),
+			"type":       "Verification",
+			"label":      "Verification: " + string(verification.Result),
+			"result":     string(verification.Result),
 			"confidence": verification.Confidence,
 		}
 		m.edges = append(m.edges, struct {
@@ -111,9 +111,9 @@ func (m *Model) Build(result models.AnalysisResult) {
 			key   int
 			attrs map[string]interface{}
 		}{
-			src: verification.AssumptionID,
-			dst: verification.ID,
-			key: len(m.edges),
+			src:   verification.AssumptionID,
+			dst:   verification.ID,
+			key:   len(m.edges),
 			attrs: map[string]interface{}{"relationship": "VERIFIES"},
 		})
 		for _, evID := range verification.EvidenceUsed {
@@ -123,9 +123,9 @@ func (m *Model) Build(result models.AnalysisResult) {
 				key   int
 				attrs map[string]interface{}
 			}{
-				src: evID,
-				dst: verification.ID,
-				key: len(m.edges),
+				src:   evID,
+				dst:   verification.ID,
+				key:   len(m.edges),
 				attrs: map[string]interface{}{"relationship": "SUPPORTS"},
 			})
 		}
@@ -154,9 +154,9 @@ func (m *Model) Build(result models.AnalysisResult) {
 				key   int
 				attrs map[string]interface{}
 			}{
-				src: verification.ID,
-				dst: verification.AssumptionID,
-				key: len(m.edges),
+				src:   verification.ID,
+				dst:   verification.AssumptionID,
+				key:   len(m.edges),
 				attrs: map[string]interface{}{"relationship": rel},
 			})
 		}
@@ -176,9 +176,9 @@ func (m *Model) Build(result models.AnalysisResult) {
 			key   int
 			attrs map[string]interface{}
 		}{
-			src: gap.AssumptionID,
-			dst: gap.ID,
-			key: len(m.edges),
+			src:   gap.AssumptionID,
+			dst:   gap.ID,
+			key:   len(m.edges),
 			attrs: map[string]interface{}{"relationship": "IDENTIFIES"},
 		})
 	}

@@ -202,7 +202,7 @@ func parseDOCX(path string) (string, error) {
 	}
 	defer r.Close()
 
-		var xmlData []byte
+	var xmlData []byte
 	for _, f := range r.File {
 		if f.Name == "word/document.xml" {
 			rc, err := f.Open()

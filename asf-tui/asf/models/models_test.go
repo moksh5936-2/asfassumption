@@ -61,11 +61,11 @@ func TestNewVerification(t *testing.T) {
 }
 
 func TestNewGap(t *testing.T) {
-	g := NewGap("asm_abc", GapSeverityCRITICAL, 	GapTypeACCESS, "Critical gap found", "Evidence shows contradiction")
+	g := NewGap("asm_abc", GapSeverityCRITICAL, GapTypeACCESS, "Critical gap found", "Evidence shows contradiction")
 	if g.Severity != GapSeverityCRITICAL {
 		t.Error("Wrong severity")
 	}
-	if g.Type != 	GapTypeACCESS {
+	if g.Type != GapTypeACCESS {
 		t.Error("Wrong type")
 	}
 }
@@ -90,12 +90,24 @@ func TestAnalysisResult(t *testing.T) {
 		},
 	}
 
-	if r.ClaimsFound() != 1 { t.Errorf("Expected 1 claim, got %d", r.ClaimsFound()) }
-	if r.AssumptionsFound() != 1 { t.Errorf("Expected 1 assumption, got %d", r.AssumptionsFound()) }
-	if r.VerifiedCount() != 1 { t.Errorf("Expected 1 verified, got %d", r.VerifiedCount()) }
-	if r.ContradictedCount() != 1 { t.Errorf("Expected 1 contradicted, got %d", r.ContradictedCount()) }
-	if r.UnknownCount() != 1 { t.Errorf("Expected 1 unknown, got %d", r.UnknownCount()) }
-	if r.CriticalGaps() != 2 { t.Errorf("Expected 2 critical, got %d", r.CriticalGaps()) }
+	if r.ClaimsFound() != 1 {
+		t.Errorf("Expected 1 claim, got %d", r.ClaimsFound())
+	}
+	if r.AssumptionsFound() != 1 {
+		t.Errorf("Expected 1 assumption, got %d", r.AssumptionsFound())
+	}
+	if r.VerifiedCount() != 1 {
+		t.Errorf("Expected 1 verified, got %d", r.VerifiedCount())
+	}
+	if r.ContradictedCount() != 1 {
+		t.Errorf("Expected 1 contradicted, got %d", r.ContradictedCount())
+	}
+	if r.UnknownCount() != 1 {
+		t.Errorf("Expected 1 unknown, got %d", r.UnknownCount())
+	}
+	if r.CriticalGaps() != 2 {
+		t.Errorf("Expected 2 critical, got %d", r.CriticalGaps())
+	}
 
 	s := r.BuildSummary()
 	if s.ClaimsFound != 1 || s.CriticalGaps != 2 {
@@ -129,13 +141,23 @@ func TestModelIDs(t *testing.T) {
 	a := NewAssumption(c.ID, "text", AssumptionTypeACCESS, nil)
 	e := NewEvidence("src", SourceTypeCSV, nil)
 	v := NewVerification(a.ID, nil, VerificationResultUNKNOWN, 0, "", nil)
-	g := NewGap(a.ID, GapSeverityLOW, 	GapTypeEVIDENCE, "desc", "detail")
+	g := NewGap(a.ID, GapSeverityLOW, GapTypeEVIDENCE, "desc", "detail")
 
-	if !hasPrefix(c.ID, "clm_") { t.Errorf("Claim ID should start with clm_: %s", c.ID) }
-	if !hasPrefix(a.ID, "asm_") { t.Errorf("Assumption ID should start with asm_: %s", a.ID) }
-	if !hasPrefix(e.ID, "evd_") { t.Errorf("Evidence ID should start with evd_: %s", e.ID) }
-	if !hasPrefix(v.ID, "vrf_") { t.Errorf("Verification ID should start with vrf_: %s", v.ID) }
-	if !hasPrefix(g.ID, "gap_") { t.Errorf("Gap ID should start with gap_: %s", g.ID) }
+	if !hasPrefix(c.ID, "clm_") {
+		t.Errorf("Claim ID should start with clm_: %s", c.ID)
+	}
+	if !hasPrefix(a.ID, "asm_") {
+		t.Errorf("Assumption ID should start with asm_: %s", a.ID)
+	}
+	if !hasPrefix(e.ID, "evd_") {
+		t.Errorf("Evidence ID should start with evd_: %s", e.ID)
+	}
+	if !hasPrefix(v.ID, "vrf_") {
+		t.Errorf("Verification ID should start with vrf_: %s", v.ID)
+	}
+	if !hasPrefix(g.ID, "gap_") {
+		t.Errorf("Gap ID should start with gap_: %s", g.ID)
+	}
 }
 
 func hasPrefix(s, prefix string) bool {

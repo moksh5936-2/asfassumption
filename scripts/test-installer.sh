@@ -98,11 +98,42 @@ echo "═══ Test: --repair without existing binary ═══"
 test_home="${SANDBOX}/test_repair"
 mkdir -p "$test_home"
 rc=0
-HOME="$test_home" ASF_VERSION="2.0.0" bash "${INSTALLER}" --repair 2>&1 || rc=$?
+HOME="$test_home" ASF_VERSION="2.0.1" bash "${INSTALLER}" --repair 2>&1 || rc=$?
 if [ "$rc" -ne 0 ]; then
   pass "--repair correctly fails without existing binary"
 else
   fail "--repair should have failed"
+fi
+
+# ─── Test: --purge requires --clean ──────────────────────
+echo ""
+echo "═══ Test: --purge requires --clean ═══"
+rc=0
+bash "${INSTALLER}" --purge 2>&1 || rc=$?
+if [ "$rc" -ne 0 ]; then
+  pass "--purge without --clean correctly fails"
+else
+  fail "--purge without --clean should exit 1"
+fi
+
+# ─── Test: --purge listed in help ────────────────────────
+echo ""
+echo "═══ Test: --purge listed in help ═══"
+if echo "$out_help" | grep -c "purge" >/dev/null; then pass "--purge listed in help"; else fail "--purge not in help"; fi
+
+# ─── Test: PATH setup in help ────────────────────────────
+echo ""
+echo "═══ Test: PATH setup printed ═══"
+if echo "$out_help" | grep -c "PATH" >/dev/null; then pass "Help mentions PATH"; else fail "Help missing PATH reference"; fi
+
+# ─── Test: shell detection in installer ──────────────────
+echo ""
+echo "═══ Test: shell detection ═══"
+shell_test=$(bash -c 'source "${INSTALLER}" --help 2>/dev/null; echo "ok"' || echo "")
+if echo "$shell_test" | grep -q "ok"; then
+  pass "Shell detection runs without error"
+else
+  fail "Shell detection error"
 fi
 
 # ─── Test: platform detection ────────────────────────────

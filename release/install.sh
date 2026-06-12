@@ -7,9 +7,10 @@
 #   curl ... | bash -s -- --upgrade
 #   curl ... | bash -s -- --repair
 #   curl ... | bash -s -- --clean
+#   curl ... | bash -s -- --clean --purge
 #
 # Environment:
-#   ASF_VERSION=2.0.0       — pin a specific version
+#   ASF_VERSION=2.0.1       — pin a specific version
 #   GITHUB_TOKEN=ghp_xxx    — for private repos (set via gh auth token)
 #   ASF_INSTALL_DIR=        — custom install directory (default: ~/.local/bin)
 
@@ -27,14 +28,22 @@ SHOW_HELP=false
 UPGRADE=false
 REPAIR=false
 CLEAN=false
+PURGE=false
 for arg in "$@"; do
   case "$arg" in
     --help|-h) SHOW_HELP=true ;;
     --upgrade|-u) UPGRADE=true ;;
     --repair) REPAIR=true ;;
     --clean) CLEAN=true ;;
+    --purge) PURGE=true ;;
   esac
 done
+
+if [ "$PURGE" = true ] && [ "$CLEAN" = false ]; then
+  echo "Error: --purge must be used with --clean" >&2
+  echo "Usage: curl ... | bash -s -- --clean --purge" >&2
+  exit 1
+fi
 
 # ─── Platform detection ────────────────────────────────────
 OS="$(uname -s)"
@@ -107,11 +116,13 @@ if [ "$SHOW_HELP" = true ]; then
   echo "  curl ... | bash -s -- --upgrade"
   echo "  curl ... | bash -s -- --repair"
   echo "  curl ... | bash -s -- --clean"
+  echo "  curl ... | bash -s -- --clean --purge"
   echo ""
   echo "Options:"
   echo "  --upgrade, -u    Upgrade existing installation (backs up config)"
-  echo "  --repair         Fix broken symlink/install without re-downloading"
+  echo "  --repair         Fix broken symlink/PATH without re-downloading"
   echo "  --clean          Force clean reinstall (removes binary, keeps config)"
+  echo "  --purge          Only with --clean: removes config/cache/data too"
   echo "  --help, -h       Show this help"
   echo ""
   echo "Environment:"
@@ -142,6 +153,50 @@ curl_get() {
   fi
 }
 
+# ─── Shell detection ───────────────────────────────────────
+detect_shell() {
+  CURRENT_SHELL="$(basename "${SHELL:-}" 2>/dev/null || echo "")"
+  case "$CURRENT_SHELL" in
+    zsh) SHELL_CONFIG="${HOME}/.zshrc" ;;
+    bash) SHELL_CONFIG="${HOME}/.bashrc" ;;
+    fish) SHELL_CONFIG="${HOME}/.config/fish/config.fish" ;;
+    *) SHELL_CONFIG="" ;;
+  esac
+}
+
+# ─── PATH setup ────────────────────────────────────────────
+setup_path() {
+  local dir="${INSTALL_DIR}"
+  local rc_file="$1"
+
+  # Normalize dir for grep
+  local escaped_dir
+  escaped_dir="$(printf '%s' "$dir" | sed 's/[][\.^$*]/\\&/g')"
+
+  if echo ":$PATH:" | grep -q ":${dir}:"; then
+    ok "${dir} is already in PATH"
+    return 0
+  fi
+
+  if [ -z "$rc_file" ]; then
+    warn "Could not detect shell config. Add the following to your shell config:"
+    echo "  export PATH=\"\$PATH:${dir}\""
+    return 1
+  fi
+
+  # Check if already in rc file
+  if grep -q "export PATH=.*${escaped_dir}" "$rc_file" 2>/dev/null; then
+    ok "${dir} already configured in ${rc_file}"
+    return 0
+  fi
+
+  echo "" >> "$rc_file"
+  echo "# ASF" >> "$rc_file"
+  echo "export PATH=\"\$PATH:${dir}\"" >> "$rc_file"
+  ok "Added ${dir} to PATH in ${rc_file}"
+  return 0
+}
+
 # ─── Detect existing installation ─────────────────────────
 detect_install() {
   EXISTING_BIN=""
@@ -167,6 +222,7 @@ detect_install() {
 }
 
 detect_install
+detect_shell
 
 # ─── Repair mode: no download, just fix symlink/PATH ──────
 if [ "$REPAIR" = true ]; then
@@ -184,6 +240,12 @@ if [ "$REPAIR" = true ]; then
   chmod +x "${INSTALL_DIR}/asf" 2>/dev/null || true
   ok "Symlink created: ${INSTALL_DIR}/asf → ${EXISTING_BIN}"
 
+  # Fix PATH
+  echo ""
+  info "Checking PATH..."
+  setup_path "$SHELL_CONFIG"
+
+  # Verify
   echo ""
   info "Verifying installation..."
   verify_install
@@ -201,11 +263,22 @@ if [ "$CLEAN" = true ]; then
   fi
   rm -f "${HOME}/.local/bin/asf" 2>/dev/null || true
   rm -f "/usr/local/bin/asf" 2>/dev/null || true
-  ok "Old binaries removed (config kept)"
+
+  if [ "$PURGE" = true ]; then
+    rm -rf "${ASF_CONFIG_DIR}" 2>/dev/null || true
+    rm -rf "${ASF_CACHE_DIR}" 2>/dev/null || true
+    rm -rf "${ASF_DATA_DIR}" 2>/dev/null || true
+    rm -rf "${ASF_HOME}" 2>/dev/null || true
+    ok "Config, cache, data removed"
+  else
+    ok "Old binaries removed (config kept)"
+  fi
+
   EXISTING_BIN=""
   EXISTING_VER=""
   ASF_IN_PATH=""
   ASF_SYMLINK=""
+  # Fall through to normal install
 fi
 
 # ─── Backup existing config on upgrade ─────────────────────
@@ -236,11 +309,15 @@ if [ -n "$EXISTING_BIN" ] && [ "$UPGRADE" = false ] && [ "$CLEAN" = false ]; the
       if [ -n "$ASF_SYMLINK" ]; then
         ok "Symlink: ${ASF_SYMLINK}"
       fi
+      # Ensure PATH is configured
+      setup_path "$SHELL_CONFIG"
       exit 0
     else
       warn "ASF v${VERSION} binary exists at ${EXISTING_BIN} but 'asf' is not in PATH."
       echo ""
       info "Repairing automatically..."
+      # Fall through to repair
+      REPAIR=true
     fi
   else
     if [ -n "$ASF_IN_PATH" ]; then
@@ -261,13 +338,30 @@ if [ -n "$EXISTING_BIN" ] && [ "$UPGRADE" = false ] && [ "$CLEAN" = false ]; the
   fi
 fi
 
+# If REPAIR was set during detection, handle it before downloading
+if [ "$REPAIR" = true ] && [ "$UPGRADE" = false ]; then
+  if [ -z "$EXISTING_BIN" ]; then
+    err "No ASF binary found at ${ASF_HOME}/asf. Run installer without --repair."
+  fi
+  mkdir -p "${INSTALL_DIR}"
+  rm -f "${INSTALL_DIR}/asf" 2>/dev/null || true
+  ln -sf "${EXISTING_BIN}" "${INSTALL_DIR}/asf" 2>/dev/null || cp "${EXISTING_BIN}" "${INSTALL_DIR}/asf"
+  chmod +x "${INSTALL_DIR}/asf" 2>/dev/null || true
+  ok "Symlink created: ${INSTALL_DIR}/asf → ${EXISTING_BIN}"
+  setup_path "$SHELL_CONFIG"
+  echo ""
+  info "Verifying installation..."
+  verify_install
+  exit 0
+fi
+
 # ─── Determine version ─────────────────────────────────────
 if [ -z "$VERSION" ]; then
   info "Detecting latest version..."
   API_URL="https://api.github.com/repos/${REPO}/releases/latest"
   VERSION="$(curl_get "$API_URL" | grep '"tag_name":' | sed 's/.*"tag_name": "v\(.*\)",.*/\1/' || echo "")"
   if [ -z "$VERSION" ]; then
-    VERSION="2.0.0"
+    VERSION="2.1.1"
     warn "Could not detect latest version; defaulting to ${VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi
@@ -370,6 +464,11 @@ fi
 rm -f "${INSTALL_DIR}/asf" 2>/dev/null || true
 ln -sf "${ASF_HOME}/asf" "${INSTALL_DIR}/asf" 2>/dev/null || cp "${ASF_HOME}/asf" "${INSTALL_DIR}/asf"
 
+# ─── Configure PATH ────────────────────────────────────────
+echo ""
+info "Configuring PATH..."
+setup_path "$SHELL_CONFIG"
+
 # ─── Default config ────────────────────────────────────────
 if [ ! -f "${ASF_CONFIG_DIR}/config.yaml" ]; then
   cat > "${ASF_CONFIG_DIR}/config.yaml" << 'CONFEOF'
@@ -427,15 +526,12 @@ verify_install() {
 
   echo ""
   if ! command -v asf &>/dev/null; then
-    warn "Add ${INSTALL_DIR} to your PATH:"
-    echo ""
-    echo "  For zsh:"
-    echo "    echo 'export PATH=\"\$PATH:${INSTALL_DIR}\"' >> ~/.zshrc"
-    echo "    source ~/.zshrc"
-    echo ""
-    echo "  For bash:"
-    echo "    echo 'export PATH=\"\$PATH:${INSTALL_DIR}\"' >> ~/.bashrc"
-    echo "    source ~/.bashrc"
+    warn "To use 'asf' in the current terminal, run:"
+    if [ -n "$SHELL_CONFIG" ]; then
+      echo "    source ${SHELL_CONFIG}"
+    else
+      echo "    export PATH=\"\$PATH:${INSTALL_DIR}\""
+    fi
     echo ""
   fi
 
@@ -480,6 +576,13 @@ echo ""
 info "Prerequisites (optional):"
 info "  Tesseract (OCR):   apt install tesseract-ocr / brew install tesseract"
 info "  Ollama (AI):       brew install ollama / curl -fsSL https://ollama.com/install.sh | sh"
+echo ""
+info "If 'asf' is not available, open a new terminal or run:"
+if [ -n "$SHELL_CONFIG" ]; then
+  info "  source ${SHELL_CONFIG}"
+else
+  info "  export PATH=\"\$PATH:${INSTALL_DIR}\""
+fi
 echo ""
 info "Documentation: https://github.com/${REPO}"
 info "Issues:        https://github.com/${REPO}/issues"

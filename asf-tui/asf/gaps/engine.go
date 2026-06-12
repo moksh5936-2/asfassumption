@@ -88,14 +88,14 @@ func determineSeverity(atype models.AssumptionType, v models.Verification) model
 
 func assumptionTypeToGapType(atype models.AssumptionType) models.GapType {
 	mapping := map[models.AssumptionType]models.GapType{
-		models.AssumptionTypeACCESS:       models.GapTypeACCESS,
-		models.AssumptionTypeIDENTITY:     models.GapTypeIDENTITY,
-		models.AssumptionTypeNETWORK:      models.GapTypeNETWORK,
+		models.AssumptionTypeACCESS:        models.GapTypeACCESS,
+		models.AssumptionTypeIDENTITY:      models.GapTypeIDENTITY,
+		models.AssumptionTypeNETWORK:       models.GapTypeNETWORK,
 		models.AssumptionTypeCONFIGURATION: models.GapTypeCONFIGURATION,
-		models.AssumptionTypePROCESS:      models.GapTypePROCESS,
+		models.AssumptionTypePROCESS:       models.GapTypePROCESS,
 		models.AssumptionTypeDOCUMENTATION: models.GapTypeDOCUMENTATION,
-		models.AssumptionTypeDEPENDENCY:   models.GapTypeDEPENDENCY,
-		models.AssumptionTypeGOVERNANCE:   models.GapTypeGOVERNANCE,
+		models.AssumptionTypeDEPENDENCY:    models.GapTypeDEPENDENCY,
+		models.AssumptionTypeGOVERNANCE:    models.GapTypeGOVERNANCE,
 	}
 	if gt, ok := mapping[atype]; ok {
 		return gt

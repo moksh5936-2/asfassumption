@@ -95,6 +95,49 @@ func runDoctor(verbose bool) {
 	checkDep("tesseract", "tesseract --version")
 	checkDep("ollama", "ollama --version")
 
+	printSection("Local AI")
+	mm := NewModelManager()
+	if mm.CheckAvailable() {
+		if mm.CheckRunning() {
+			ver := mm.GetVersion()
+			if ver != "" {
+				printField("Ollama version", ver)
+			}
+			printField("Ollama running", "yes")
+			models, err := mm.ListInstalledAPI()
+			if err != nil {
+				printField("Installed models", fmt.Sprintf("error: %v", err))
+			} else {
+				printField("Installed models count", fmt.Sprintf("%d", len(models)))
+				if len(models) > 0 {
+					names := make([]string, len(models))
+					for i, m := range models {
+						names[i] = m.Name
+					}
+					printField("Models", strings.Join(names, ", "))
+				}
+			}
+		} else {
+			printField("Ollama running", "no — start with: ollama serve")
+		}
+	} else {
+		printField("Ollama running", "no (binary not found)")
+	}
+
+	if err == nil {
+		printField("AI enabled", fmt.Sprintf("%v", cfg.AI.Enabled))
+		active := cfg.AI.ActiveModel
+		if active != "" {
+			if mm.IsModelInstalled(active) {
+				printField("Active model", fmt.Sprintf("%s (installed)", active))
+			} else {
+				printField("Active model", fmt.Sprintf("%s (not installed)", active))
+			}
+		} else {
+			printField("Active model", "none set")
+		}
+	}
+
 	if verbose {
 		printSection("Runtime Diagnostics")
 		printField("CWD", mustGetwd())

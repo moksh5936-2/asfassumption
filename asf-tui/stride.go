@@ -65,7 +65,7 @@ func (se *StrideEngine) MapAssumption(category string, text string, keywords []s
 
 func buildCategoryRules() map[string][]StrideCategory {
 	return map[string][]StrideCategory{
-		"IDENTITY":      {StrideSpoofing, StrideElevationPriv},
+		"IDENTITY":       {StrideSpoofing, StrideElevationPriv},
 		"AUTHENTICATION": {StrideSpoofing, StrideElevationPriv},
 		"AUTHORIZATION":  {StrideElevationPriv, StrideInfoDisclosure},
 		"ACCESS":         {StrideElevationPriv, StrideInfoDisclosure},

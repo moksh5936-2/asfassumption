@@ -37,7 +37,7 @@
                 \ | /
                  \|/
 
-               ASF v2.0.0
+               ASF v2.1.1
    Architecture Security Framework
    Security Assumption Discovery Engine
 ```
@@ -48,9 +48,9 @@
 
 ## Features
 
-- **🔍 Multi-format input** — Draw.io, Mermaid, YAML, JSON, SVG, images (OCR), TXT, PDF, DOCX
+- **🔍 Multi-format input** — Draw.io, Mermaid, YAML, JSON, SVG, images (OCR), TXT, MD, PDF, DOCX
 - **🧠 Deterministic analysis** — No AI for core analysis. Every result is reproducible and auditable.
-- **⚠️ STRIDE threat mapping** — Proprietary rule engine: 17 category rules + 33 keyword patterns
+- **⚠️ STRIDE threat mapping** — Rule engine: 17 category rules + 34 keyword patterns
 - **📊 5×5 risk matrix** — Deterministic likelihood × impact scoring with full decomposition
 - **🎯 Confidence scoring** — 4-metric calculation from evidence, rules, components, relationships
 - **🔗 Evidence traceability** — Every assumption traced back to source components and relationships
@@ -58,8 +58,8 @@
 - **📤 5 export formats** — JSON, Markdown, CSV, PDF, HTML with full explainability data
 - **🎨 4 themes** — Dark, Midnight, Cyber, Minimal
 - **🤖 Optional local AI** — Ollama integration for enhanced analysis (fully offline)
-- **🔑 Enterprise licensing** — HMAC-signed license keys
-- **📦 ~9MB binary** — Single-file distribution, no runtime dependencies
+- **🔑 Demo licensing** — HMAC + Ed25519 license keys (demo-grade, cryptographically extractable)
+- **📦 ~8–10MB binary** — Single-file distribution, no runtime dependencies
 
 ---
 
@@ -128,8 +128,8 @@
 | SVG diagrams | `.svg` | XML text extraction |
 | Images | `.png`, `.jpg`, `.jpeg` | Tesseract OCR |
 | Text documents | `.txt`, `.md` | Raw text analysis |
-| PDF documents | `.pdf` | Raw text analysis |
-| Word documents | `.docx` | Raw text analysis |
+| PDF documents | `.pdf` | Text extraction via pdftxt library |
+| Word documents | `.docx` | Text extraction via docx XML parsing |
 
 ## Supported Outputs
 
@@ -187,21 +187,19 @@ powershell -c "irm https://raw.githubusercontent.com/moksh5936-2/asfassumption/m
 Download the binary for your platform from the [latest release](https://github.com/moksh5936-2/asfassumption/releases/latest):
 
 | Platform | Download |
-|----------|----------|
-| Platform | Download |
-|----------|----------|
-| macOS Apple Silicon | `ASF-v2.0.0-darwin-arm64` |
-| macOS Intel | `ASF-v2.0.0-darwin-amd64` |
-| Linux AMD64 | `ASF-v2.0.0-linux-amd64` |
-| Linux ARM64 | `ASF-v2.0.0-linux-arm64` |
-| Windows AMD64 | `ASF-v2.0.0-windows-amd64.exe` |
+|----------|---------|
+| macOS Apple Silicon | `ASF-v2.1.1-darwin-arm64` |
+| macOS Intel | `ASF-v2.1.1-darwin-amd64` |
+| Linux AMD64 | `ASF-v2.1.1-linux-amd64` |
+| Linux ARM64 | `ASF-v2.1.1-linux-arm64` |
+| Windows AMD64 | `ASF-v2.1.1-windows-amd64.exe` |
 
 ```bash
 # Example: macOS Apple Silicon
-curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v2.0.0/ASF-v2.0.0-darwin-arm64
-chmod +x ASF-v2.0.0-darwin-arm64
+curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v2.1.1/ASF-v2.1.1-darwin-arm64
+chmod +x ASF-v2.1.1-darwin-arm64
 mkdir -p ~/.local/bin ~/.asf
-cp ASF-v2.0.0-darwin-arm64 ~/.asf/asf
+cp ASF-v2.1.1-darwin-arm64 ~/.asf/asf
 ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
@@ -209,7 +207,7 @@ ln -sf ~/.asf/asf ~/.local/bin/asf
 
 ```bash
 asf --version
-# Expected: ASF v2.0.0
+# Expected: ASF v2.1.1
 ```
 
 ### Uninstall
@@ -291,7 +289,7 @@ ollama serve
 When AI is enabled, after the deterministic analysis completes:
 1. ASF builds a structured prompt from the analysis results
 2. Calls `http://localhost:11434/api/generate`
-3. Parses the response for additional assumptions, risk refinements, and recommendations
+3. Parses the response for additional assumptions and recommendations
 4. Merges AI findings (prefixed with `AI-`) into the results
 
 ---
@@ -325,17 +323,23 @@ appearance:
 
 ## Licensing
 
-ASF supports enterprise licensing with HMAC-signed keys.
+ASF supports demo licensing with HMAC and Ed25519 signing. Both are demo-grade — keys are derived from compile-time constants and are extractable from the binary. Not suitable for production security.
 
 ```bash
-# Activate a license
+# Activate an HMAC license
 echo 'ASF-XXXX-XXXX-XXXX-XXXX' > ~/.asf/license.key
+
+# Activate an Ed25519 license
+echo 'ASF-ED25519-identifier-<hex_signature>' > ~/.asf/license.key
 
 # Check license
 asf --license
 ```
 
-License format: `ASF-XXXX-XXXX-XXXX-XXXX` (16 hex characters + 8-char HMAC signature)
+Legacy format: `ASF-XXXX-XXXX-XXXX-XXXX` (12 hex chars + 8-char HMAC signature)  
+Ed25519 format: `ASF-ED25519-<identifier>-<128-char-hex-signature>` (Ed25519 signed)
+
+Use `ReplacePublicKey()` in production deployments to swap the compile-time public key with a securely generated one.
 
 ---
 
@@ -366,8 +370,8 @@ License format: `ASF-XXXX-XXXX-XXXX-XXXX` (16 hex characters + 8-char HMAC signa
 
 | Metric | Status |
 |--------|--------|
-| Unit tests | ✅ 20 passing |
-| Code quality | ✅ `go vet` clean (unverifiable — Go not on this machine) |
+| Unit tests | ✅ 168 passing across 10 packages |
+| Code quality | ✅ `go vet` clean |
 | Benchmark run | ✅ 2158 assumptions processed |
 | Precision | ❌ Not measured |
 | Recall | ❌ Not measured |
@@ -405,7 +409,7 @@ asf-tui/                   # Go TUI application
   results.go               # Results display
   settings.go              # Settings editor
   about.go                 # About screen
-  explain_test.go          # 20 unit tests
+  *_test.go               # 168 tests across all packages
   install.sh               # Installer script
   go.mod / go.sum          # Dependencies
 docs/                      # Documentation
@@ -437,7 +441,7 @@ scripts/                    # Build automation scripts
   build-release.sh
   build-release.ps1
 benchmark/                  # Research validation
-asf/                        # Python ASF engine (v1)
+asf/                        # Python ASF engine (v1, archived)
 PROJECT_AUDIT_REPORT.md     # Comprehensive codebase audit
 RELEASE_CHECKLIST.md        # Release verification checklist
 EXECUTIVE_RELEASE_REPORT.md # Executive release report
@@ -460,13 +464,13 @@ A: No. The core analysis is fully offline. Only model downloads and AI enhanceme
 A: No. AI is optional and purely additive. The core analysis is deterministic rule-based Go code.
 
 **Q: What file formats are supported?**  
-A: Draw.io (.drawio), Mermaid (.mmd), YAML (.yaml/.yml), JSON (.json), SVG (.svg), images (.png/.jpg/.jpeg via OCR), and text documents (.txt/.md/.pdf/.docx).
+A: Draw.io (.drawio), Mermaid (.mmd), YAML (.yaml/.yml), JSON (.json), SVG (.svg), images (.png/.jpg/.jpeg via OCR), and text documents (.txt/.md/.pdf/.docx). All formats have structured text extraction.
 
 **Q: How is this different from a vulnerability scanner?**  
 A: ASF finds implicit security assumptions, not known vulnerabilities. It answers "what did my team assume about the system?" not "what CVEs exist?"
 
 **Q: Can I use ASF without Python?**  
-A: Yes. ASF v2.0.0+ is a self-contained Go binary with no Python dependency. The analysis engine is fully native.
+A: Yes. ASF v2.1.1+ is a self-contained Go binary with no Python dependency. The analysis engine is fully native.
 
 **Q: How accurate is ASF?**  
 A: We don't know yet. Precision, recall, and false positive rate have not been measured. See [VALIDATION_STATUS.md](docs/VALIDATION_STATUS.md).
@@ -477,14 +481,18 @@ A: We don't know yet. Precision, recall, and false positive rate have not been m
 
 ASF processes architecture documents entirely locally. No data is sent to external services. AI enhancement uses a local Ollama instance — no data leaves your machine.
 
-License validation uses HMAC and is performed locally. No phone-home mechanism exists.
+License validation uses HMAC + Ed25519 and is performed locally. No phone-home mechanism exists. Demo keys are extractable from the binary (compile-time constants).
 
 ## Limitations
 
-- Image OCR requires Tesseract
-- AI features require Ollama
-- No human validation study yet
+- Image OCR requires external Tesseract installation
+- AI features require external Ollama installation
 - Windows TUI not thoroughly tested
+- Precision, recall, and false positive rate not measured
+- No external validation study completed
+- License system is demo-grade (HMAC + Ed25519 keys are derived from compile-time constants, extractable from binary)
+- No CI/CD pipeline — releases must be built manually
+- No code signing or macOS notarization
 
 ---
 
@@ -498,7 +506,7 @@ License validation uses HMAC and is performed locally. No phone-home mechanism e
 
 ## License
 
-Research and educational use. Enterprise licensing available.
+Demo use only. Not for production or commercial use.
 
 ```
 © 2026 ASF Project

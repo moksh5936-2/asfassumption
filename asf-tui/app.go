@@ -151,6 +151,19 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case navigateMsg:
+		if msg.to == exportView {
+			m.exportV.selected = 0
+			m.exportV.done = false
+			m.exportV.exportPath = ""
+			m.exportV.showConfirmation = false
+			m.exportV.err = nil
+			m.exportV.result = m.results.result
+			m.exportV.outputDir = m.config.Output.Directory
+			if m.exportV.outputDir == "" {
+				m.exportV.outputDir = "./reports"
+			}
+			m.exportV.format = exportFormatFromConfig(m.config)
+		}
 		m.history.push(m.currentView)
 		m.currentView = msg.to
 		return m, nil
@@ -194,6 +207,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m mainModel) handleBack() (tea.Model, tea.Cmd) {
+	if prev, ok := m.history.pop(); ok {
+		m.currentView = prev
+		return m, nil
+	}
 	switch m.currentView {
 	case dashboardView:
 		m.currentView = startupView
@@ -257,16 +274,16 @@ func (m mainModel) renderHelp() string {
 		return ""
 	}
 	helpKeys := map[view][]string{
-		startupView: {"↑↓: Navigate", "Enter: Select", "q: Quit"},
-		dashboardView: {"↑↓: Navigate", "Enter: Select", "Esc: Back", "q: Quit"},
-		analyzeView:   {"↑↓: Navigate", "Enter: Edit/Select", "Esc: Back"},
-		resultsView:   {"↑↓: Scroll", "Enter: Toggle section", "e: Export", "r: Review", "v: Validate", "Esc: Back"},
-		reviewView:    {"↑↓: Navigate", "Enter: Toggle detail", "s: Accept", "r: Reject", "m: Modified", "n: Note", "v: Validate", "Esc: Back"},
+		startupView:    {"↑↓: Navigate", "Enter: Select", "q: Quit"},
+		dashboardView:  {"↑↓: Navigate", "Enter: Select", "Esc: Back", "q: Quit"},
+		analyzeView:    {"↑↓: Navigate", "Enter: Edit/Select", "Esc: Back"},
+		resultsView:    {"↑↓: Scroll", "Enter: Toggle section", "e: Export", "r: Review", "v: Validate", "Esc: Back"},
+		reviewView:     {"↑↓: Navigate", "Enter: Toggle detail", "s: Accept", "r: Reject", "m: Modified", "n: Note", "v: Validate", "Esc: Back"},
 		validationView: {"↑↓: Navigate", "Enter: Detail", "Esc: Back"},
-		localaiView:   {"↑↓: Navigate", "Enter: Select action", "Esc: Back"},
-		settingsView:  {"↑↓: Navigate", "Enter: Change value", "Esc: Back"},
-		aboutView:     {"Esc: Back"},
-		exportView:    {"↑↓: Navigate", "Enter: Select format", "Esc: Back"},
+		localaiView:    {"↑↓: Navigate", "Enter: Select action", "Esc: Back"},
+		settingsView:   {"↑↓: Navigate", "Enter: Change value", "Esc: Back"},
+		aboutView:      {"Esc: Back"},
+		exportView:     {"↑↓: Navigate", "Enter: Select format", "y: Confirm export", "Esc: Back"},
 	}
 
 	keys := helpKeys[m.currentView]

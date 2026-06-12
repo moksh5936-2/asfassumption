@@ -2,9 +2,21 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	tea "github.com/charmbracelet/bubbletea"
+)
+
+const (
+	ExitSuccess      = 0
+	ExitGeneralError = 1
+	ExitInvalidCmd   = 2
+	ExitAnalysisErr  = 4
+	ExitExportErr    = 6
+	ExitLicenseErr   = 7
 )
 
 func printUsage() {
@@ -21,6 +33,7 @@ func printUsage() {
 	fmt.Println("  asf doctor --verbose       Detailed diagnostics")
 	fmt.Println("  asf doctor --fix           Clean stale binaries")
 	fmt.Println("  asf --help, -h             Show this help")
+	fmt.Println("  asf --version-check       Check for newer version")
 	fmt.Println()
 	fmt.Println("Configuration:")
 	fmt.Printf("  Config:  %s\n", asfConfigPath())
@@ -31,22 +44,37 @@ func printUsage() {
 }
 
 func main() {
+	if err := initLogger(); err != nil {
+		asfLog = log.New(os.Stderr, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
+	}
+	asfLog.Printf("ASF v%s starting", ASFVersion)
+
 	args := os.Args[1:]
 
 	if len(args) > 0 {
 		switch args[0] {
 		case "--version", "-v":
 			fmt.Printf("ASF v%s\n", ASFVersion)
-			os.Exit(0)
+			if msg := VersionCheckMessage(); msg != "" {
+				fmt.Println(msg)
+			}
+			os.Exit(ExitSuccess)
+		case "--version-check":
+			if msg := VersionCheckMessage(); msg != "" {
+				fmt.Println(msg)
+			} else {
+				fmt.Printf("ASF v%s is up to date.\n", ASFVersion)
+			}
+			os.Exit(ExitSuccess)
 		case "--license":
 			l := LoadLicense()
 			if l != nil && l.Valid {
 				fmt.Printf("License: %s\n", l.Message)
-				os.Exit(0)
+				os.Exit(ExitSuccess)
 			}
 			fmt.Println("No valid license found.")
 			fmt.Printf("Place your license key in %s\n", asfLicensePath())
-			os.Exit(1)
+			os.Exit(ExitLicenseErr)
 		case "doctor", "--doctor", "diagnose":
 			verbose := false
 			fix := false
@@ -63,25 +91,18 @@ func main() {
 			} else {
 				runDoctor(verbose)
 			}
-			os.Exit(0)
+			os.Exit(ExitSuccess)
 		case "analyze":
 			runAnalyzeCLI(args[1:])
-			os.Exit(0)
+			os.Exit(ExitSuccess)
 		case "--help", "-h":
 			printUsage()
-			os.Exit(0)
-		case "doctor--verbose":
-			runDoctor(true)
-			os.Exit(0)
+			os.Exit(ExitSuccess)
+		default:
+			fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", args[0])
+			fmt.Fprintf(os.Stderr, "Run 'asf --help' for usage.\n")
+			os.Exit(ExitInvalidCmd)
 		}
-	}
-
-	helpFlags := map[string]bool{"--help": true, "-h": true}
-	if len(args) > 1 && !helpFlags[args[1]] {
-		fmt.Printf("ASF v%s — Architecture Security Framework\n", ASFVersion)
-		fmt.Println()
-		printUsage()
-		os.Exit(0)
 	}
 
 	cfg, err := LoadConfig(asfConfigPath())
@@ -89,17 +110,31 @@ func main() {
 		def := DefaultConfig()
 		cfg = &def
 	}
+	asfLog.Printf("config path: %s", asfConfigPath())
 
-	_ = ensureRuntimeDirs()
+	if err := ensureRuntimeDirs(); err != nil {
+		debugLog.Printf("runtime dirs: %v", err)
+	}
 
 	m := newMainModel(cfg)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
-	if _, err := p.Run(); err != nil {
-		os.Exit(1)
-	}
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM)
+	go func() {
+		<-sigCh
+		p.Quit()
+	}()
 
-	if cfg != nil {
-		cfg.Save(asfConfigPath())
+	defer func() {
+		if cfg != nil {
+			if err := cfg.Save(asfConfigPath()); err != nil {
+				debugLog.Printf("config save on exit: %v", err)
+			}
+		}
+	}()
+
+	if _, err := p.Run(); err != nil {
+		os.Exit(ExitGeneralError)
 	}
 }

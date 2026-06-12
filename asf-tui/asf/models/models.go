@@ -13,36 +13,36 @@ func generateID(prefix string) string {
 }
 
 type Claim struct {
-	ID                  string    `json:"id"`
-	SourceDocument      string    `json:"source_document"`
-	SourceLocation      string    `json:"source_location,omitempty"`
-	Text                string    `json:"text"`
-	ExtractionConfidence float64  `json:"extraction_confidence"`
-	CreatedAt           time.Time `json:"created_at"`
-	Tags                []string  `json:"tags"`
+	ID                   string    `json:"id"`
+	SourceDocument       string    `json:"source_document"`
+	SourceLocation       string    `json:"source_location,omitempty"`
+	Text                 string    `json:"text"`
+	ExtractionConfidence float64   `json:"extraction_confidence"`
+	CreatedAt            time.Time `json:"created_at"`
+	Tags                 []string  `json:"tags"`
 }
 
 func NewClaim(sourceDocument, sourceLocation, text string, confidence float64, tags []string) Claim {
 	return Claim{
-		ID:                  generateID("clm"),
-		SourceDocument:      sourceDocument,
-		SourceLocation:      sourceLocation,
-		Text:                text,
+		ID:                   generateID("clm"),
+		SourceDocument:       sourceDocument,
+		SourceLocation:       sourceLocation,
+		Text:                 text,
 		ExtractionConfidence: confidence,
-		CreatedAt:           time.Now().UTC(),
-		Tags:                tags,
+		CreatedAt:            time.Now().UTC(),
+		Tags:                 tags,
 	}
 }
 
 type Assumption struct {
-	ID                 string            `json:"id"`
-	ClaimID            string            `json:"claim_id"`
-	Text               string            `json:"text"`
-	AssumptionType     AssumptionType    `json:"assumption_type"`
+	ID                 string             `json:"id"`
+	ClaimID            string             `json:"claim_id"`
+	Text               string             `json:"text"`
+	AssumptionType     AssumptionType     `json:"assumption_type"`
 	VerificationStatus VerificationStatus `json:"verification_status"`
-	Confidence         float64           `json:"confidence"`
-	CreatedAt          time.Time         `json:"created_at"`
-	Keywords           []string          `json:"keywords"`
+	Confidence         float64            `json:"confidence"`
+	CreatedAt          time.Time          `json:"created_at"`
+	Keywords           []string           `json:"keywords"`
 }
 
 func NewAssumption(claimID, text string, atype AssumptionType, keywords []string) Assumption {
@@ -59,13 +59,13 @@ func NewAssumption(claimID, text string, atype AssumptionType, keywords []string
 }
 
 type Evidence struct {
-	ID         string            `json:"id"`
-	Source     string            `json:"source"`
-	SourceType SourceType        `json:"source_type"`
-	Timestamp  time.Time         `json:"timestamp,omitempty"`
-	Content    interface{}       `json:"content,omitempty"`
-	Confidence float64           `json:"confidence"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	ID         string                   `json:"id"`
+	Source     string                   `json:"source"`
+	SourceType SourceType               `json:"source_type"`
+	Timestamp  time.Time                `json:"timestamp,omitempty"`
+	Content    interface{}              `json:"content,omitempty"`
+	Confidence float64                  `json:"confidence"`
+	Metadata   map[string]interface{}   `json:"metadata,omitempty"`
 	Records    []map[string]interface{} `json:"records"`
 }
 
@@ -82,14 +82,14 @@ func NewEvidence(source string, sourceType SourceType, records []map[string]inte
 }
 
 type Verification struct {
-	ID            string            `json:"id"`
-	AssumptionID  string            `json:"assumption_id"`
-	EvidenceUsed  []string          `json:"evidence_used"`
-	Result        VerificationResult `json:"result"`
-	Confidence    float64           `json:"confidence"`
-	Reasoning     string            `json:"reasoning"`
-	CreatedAt     time.Time         `json:"created_at"`
-	Details       map[string]interface{} `json:"details,omitempty"`
+	ID           string                 `json:"id"`
+	AssumptionID string                 `json:"assumption_id"`
+	EvidenceUsed []string               `json:"evidence_used"`
+	Result       VerificationResult     `json:"result"`
+	Confidence   float64                `json:"confidence"`
+	Reasoning    string                 `json:"reasoning"`
+	CreatedAt    time.Time              `json:"created_at"`
+	Details      map[string]interface{} `json:"details,omitempty"`
 }
 
 func NewVerification(assumptionID string, evidenceUsed []string, result VerificationResult, confidence float64, reasoning string, details map[string]interface{}) Verification {
@@ -106,13 +106,13 @@ func NewVerification(assumptionID string, evidenceUsed []string, result Verifica
 }
 
 type Gap struct {
-	ID             string     `json:"id"`
-	AssumptionID   string     `json:"assumption_id"`
+	ID             string      `json:"id"`
+	AssumptionID   string      `json:"assumption_id"`
 	Severity       GapSeverity `json:"severity"`
 	Type           GapType     `json:"type"`
-	Description    string     `json:"description"`
-	EvidenceDetail string     `json:"evidence_detail"`
-	CreatedAt      time.Time  `json:"created_at"`
+	Description    string      `json:"description"`
+	EvidenceDetail string      `json:"evidence_detail"`
+	CreatedAt      time.Time   `json:"created_at"`
 }
 
 func NewGap(assumptionID string, severity GapSeverity, gtype GapType, description, evidenceDetail string) Gap {

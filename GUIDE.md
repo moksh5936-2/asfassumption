@@ -1,5 +1,10 @@
 # ASF Validator v0.1 User Guide
 
+> **LEGACY DOCUMENT** — This guide describes the Python ASF Validator (v0.1),
+> which is archived and not part of the ASF v2.x production runtime.
+> The production system is the Go-native single binary (`asf`).
+> See [LEGACY_PYTHON_REFERENCE.md](docs/LEGACY_PYTHON_REFERENCE.md) for details.
+
 ASF Validator tests security **assumptions** against **evidence** to detect gaps between what an organization *believes* and what *actually exists*.
 
 ---

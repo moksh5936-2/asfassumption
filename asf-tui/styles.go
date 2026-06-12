@@ -5,7 +5,7 @@ import (
 )
 
 type Theme struct {
-	Name   string
+	Name      string
 	Primary   lipgloss.Color
 	Secondary lipgloss.Color
 	Accent    lipgloss.Color
@@ -84,29 +84,29 @@ var Themes = map[string]Theme{
 }
 
 type StyleSet struct {
-	t  Theme
+	t Theme
 
-	App         lipgloss.Style
-	Title       lipgloss.Style
-	Subtitle    lipgloss.Style
-	MenuItem    lipgloss.Style
+	App          lipgloss.Style
+	Title        lipgloss.Style
+	Subtitle     lipgloss.Style
+	MenuItem     lipgloss.Style
 	MenuSelected lipgloss.Style
-	Label       lipgloss.Style
-	Value       lipgloss.Style
-	StatusGood  lipgloss.Style
-	StatusWarn  lipgloss.Style
-	StatusBad   lipgloss.Style
-	BorderBox   lipgloss.Style
-	Help        lipgloss.Style
-	ErrorText   lipgloss.Style
-	Button      lipgloss.Style
-	ButtonFocus lipgloss.Style
-	Progress    lipgloss.Style
-	ProgressBar lipgloss.Style
-	Section     lipgloss.Style
-	SectionItem lipgloss.Style
-	Header      lipgloss.Style
-	Fox         lipgloss.Style
+	Label        lipgloss.Style
+	Value        lipgloss.Style
+	StatusGood   lipgloss.Style
+	StatusWarn   lipgloss.Style
+	StatusBad    lipgloss.Style
+	BorderBox    lipgloss.Style
+	Help         lipgloss.Style
+	ErrorText    lipgloss.Style
+	Button       lipgloss.Style
+	ButtonFocus  lipgloss.Style
+	Progress     lipgloss.Style
+	ProgressBar  lipgloss.Style
+	Section      lipgloss.Style
+	SectionItem  lipgloss.Style
+	Header       lipgloss.Style
+	Fox          lipgloss.Style
 }
 
 func NewStyles(t Theme) StyleSet {
