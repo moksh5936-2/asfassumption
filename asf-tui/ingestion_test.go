@@ -969,3 +969,217 @@ func TestParseASFTestYAML(t *testing.T) {
 		t.Error("expected RawText to contain explicit assumptions")
 	}
 }
+
+// ──────────────────────────────────────────────
+// Phase 8: Deep Deduplication with Source Merging
+// ──────────────────────────────────────────────
+
+func TestMergeSourceMetadata(t *testing.T) {
+	a := Assumption{
+		ID:          "ASM-001",
+		Description: "MFA is enforced",
+		SourceType:  "explicit",
+		SourceFile:  "test.yaml",
+	}
+	merged := mergeSourceMetadata(a, "MFA is enforced.", "assumptions", 1, "test.yaml")
+	if merged.SourceType != "explicit" {
+		t.Errorf("expected source type preserved, got %s", merged.SourceType)
+	}
+	if merged.SourceFile != "test.yaml" {
+		t.Errorf("expected source file test.yaml, got %s", merged.SourceFile)
+	}
+
+	// Cross-file merge
+	a2 := Assumption{ID: "ASM-002", Description: "MFA is enforced"}
+	merged2 := mergeSourceMetadata(a2, "MFA is enforced", "assumptions", 0, "other.yaml")
+	if merged2.SourceType != "merged" {
+		t.Errorf("expected source type merged, got %s", merged2.SourceType)
+	}
+	if !strings.Contains(merged2.SourceFile, "other.yaml") {
+		t.Errorf("expected source file to contain other.yaml, got %s", merged2.SourceFile)
+	}
+}
+
+func TestNormalizeTextBulletPrefix(t *testing.T) {
+	a := normalizeText("- MFA is enforced")
+	b := normalizeText("MFA is enforced")
+	if a != b {
+		t.Errorf("bullet prefix should be stripped for dedup: %q vs %q", a, b)
+	}
+
+	c := normalizeText("* MFA is enforced")
+	if c != b {
+		t.Errorf("asterisk bullet should be stripped for dedup: %q vs %q", c, b)
+	}
+}
+
+// ──────────────────────────────────────────────
+// Phase 9: Security Controls Verification Wiring
+// ──────────────────────────────────────────────
+
+func TestApplySecurityControlVerification(t *testing.T) {
+	securityControls := map[string][]string{
+		"authentication": {"MFA", "Password_Policy"},
+		"encryption":     {"AES256", "TLS_1.3"},
+	}
+
+	a := Assumption{
+		Description: "MFA is enforced for all user authentication",
+		Category:    "IDENTITY",
+		Confidence:  0.75,
+	}
+	result := applySecurityControlVerification(a, securityControls)
+	if result.VerificationStatus != "PARTIALLY_VERIFIED" {
+		t.Errorf("expected PARTIALLY_VERIFIED, got %s", result.VerificationStatus)
+	}
+	if result.Confidence < 0.80 {
+		t.Errorf("expected confidence >= 0.80 after control match, got %.2f", result.Confidence)
+	}
+}
+
+func TestApplySecurityControlVerificationNoMatch(t *testing.T) {
+	securityControls := map[string][]string{
+		"authentication": {"MFA"},
+	}
+
+	a := Assumption{
+		Description: "Network segmentation isolates the database",
+		Category:    "NETWORK",
+		Confidence:  0.75,
+	}
+	result := applySecurityControlVerification(a, securityControls)
+	if result.VerificationStatus != "" {
+		t.Errorf("expected empty status when no control match, got %s", result.VerificationStatus)
+	}
+}
+
+// ──────────────────────────────────────────────
+// Phase 10: Dynamic Confidence for Explicit Assumptions
+// ──────────────────────────────────────────────
+
+func TestComputeExplicitConfidenceBase(t *testing.T) {
+	conf := computeExplicitConfidence("simple text", models.AssumptionTypeGOVERNANCE, nil)
+	if conf != 0.75 {
+		t.Errorf("expected base confidence 0.75, got %.2f", conf)
+	}
+}
+
+func TestComputeExplicitConfidenceBoosted(t *testing.T) {
+	securityControls := map[string][]string{
+		"authentication": {"MFA", "Password_Policy"},
+	}
+	conf := computeExplicitConfidence("MFA is enforced for all users", models.AssumptionTypeIDENTITY, securityControls)
+	if conf < 0.80 {
+		t.Errorf("expected boosted confidence >= 0.80, got %.2f", conf)
+	}
+	if conf > 0.95 {
+		t.Errorf("confidence should not exceed 0.95, got %.2f", conf)
+	}
+}
+
+func TestComputeExplicitConfidenceEncryption(t *testing.T) {
+	securityControls := map[string][]string{
+		"encryption": {"AES256", "TLS_1.3"},
+	}
+	conf := computeExplicitConfidence("PHI data is encrypted using AES256", models.AssumptionTypeCONFIGURATION, securityControls)
+	if conf < 0.80 {
+		t.Errorf("expected boosted confidence for encryption match, got %.2f", conf)
+	}
+}
+
+// ──────────────────────────────────────────────
+// Phase 11: Architecture-Specific Controls
+// ──────────────────────────────────────────────
+
+func TestGenerateArchitectureSpecificControls(t *testing.T) {
+	assumptions := []Assumption{
+		{ID: "ASM-001", Category: "IDENTITY", Risk: RiskHigh},
+		{ID: "ASM-002", Category: "CONFIGURATION", Risk: RiskHigh},
+	}
+	components := []Component{
+		{ID: "Auth0", Label: "Auth0"},
+		{ID: "DB", Label: "PHIDatabase"},
+	}
+	controls := generateControls(assumptions, components)
+	if len(controls) == 0 {
+		t.Fatal("expected controls")
+	}
+
+	foundDB := false
+	foundAuth := false
+	for _, c := range controls {
+		if strings.Contains(c.Description, "PHIDatabase") || strings.Contains(c.Category, "DATABASE") {
+			foundDB = true
+		}
+		if strings.Contains(c.Description, "Auth0") || strings.Contains(c.Category, "IDENTITY") {
+			foundAuth = true
+		}
+	}
+	if !foundDB {
+		t.Error("expected database-specific control for PHIDatabase")
+	}
+	if !foundAuth {
+		t.Error("expected identity-specific control for Auth0")
+	}
+}
+
+func TestGenerateArchitectureSpecificControlsEmpty(t *testing.T) {
+	assumptions := []Assumption{
+		{ID: "ASM-001", Category: "ACCESS", Risk: RiskMedium},
+	}
+	controls := generateControls(assumptions, nil)
+	if len(controls) == 0 {
+		t.Error("expected controls even with nil components")
+	}
+}
+
+// ──────────────────────────────────────────────
+// Phase 12: Expected Results Validation Summary
+// ──────────────────────────────────────────────
+
+func TestBuildResultValidationSummary(t *testing.T) {
+	e := &Engine{
+		strideEngine: NewStrideEngine(),
+		archDesc: &ArchDescription{
+			Name: "test",
+			ExplicitAssumptions: []string{
+				"MFA is enforced for all Auth0 user authentication",
+			},
+			ExpectedResults: map[string]interface{}{
+				"minimum_assumptions": float64(1),
+			},
+		},
+	}
+
+	r := &asfJSONResult{}
+	r.Summary.Assumptions = 0
+
+	result := e.buildResult(r, "test.yaml", ModeASFOnly)
+	if !strings.Contains(result.Summary, "criteria met") {
+		t.Errorf("expected validation summary with 'criteria met', got: %s", result.Summary)
+	}
+	if result.TotalAssumptions < 1 {
+		t.Errorf("expected at least 1 assumption, got %d", result.TotalAssumptions)
+	}
+}
+
+func TestBuildResultValidationSummaryViolation(t *testing.T) {
+	e := &Engine{
+		strideEngine: NewStrideEngine(),
+		archDesc: &ArchDescription{
+			Name: "test",
+			ExplicitAssumptions: []string{
+				"MFA is enforced for all Auth0 user authentication",
+			},
+			ExpectedResults: map[string]interface{}{
+				"minimum_assumptions": float64(100),
+			},
+		},
+	}
+
+	r := &asfJSONResult{}
+	result := e.buildResult(r, "test.yaml", ModeASFOnly)
+	if !strings.Contains(result.Summary, "violation") {
+		t.Errorf("expected violation in summary, got: %s", result.Summary)
+	}
+}

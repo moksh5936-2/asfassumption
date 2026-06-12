@@ -5,6 +5,38 @@ All notable changes to ASF are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] — 2026-06-12
+
+### Added
+
+- Structured YAML/Markdown architecture analysis with explicit assumption extraction
+- Security controls verification — assumptions matched against declared controls for partial verification
+- Compliance framework output — HIPAA, SOC2, ISO27001, PCI DSS, GDPR, FedRAMP specific areas
+- Architecture-specific controls — 7 component-specific control categories generated
+- Deduplication engine — normalizes and merges explicit/native assumptions (63 → 48 assumptions)
+- Source metadata tracking — assumptions carry source_type, source_section, source_index, source_file
+- Dynamic confidence scoring — explicit assumptions base 0.75, boosted to 0.85 with control support
+- STRIDE distribution timing fixed — mapping now occurs before validation summary
+- PHI risk calibration — healthcare-specific risk scoring with +4/+3 boosts
+- Markdown parser with structured section extraction (assumptions, controls, compliance, notes)
+- `baseline_test.go` — comprehensive baseline tests for YAML and Markdown parsing
+- Zero-trust release certification documentation (10 audit phases)
+
+### Changed
+
+- CLI `analyze` command routes structured files (.yaml, .md, .json) through full Engine pipeline
+- `Assumption` struct extended with SourceType, SourceSection, SourceIndex, SourceFile, VerificationStatus
+- `AnalysisResult` includes validation summary and compliance output
+- All 5 export formats include structured controls and compliance data
+- TUI scrolling implemented with PgUp/PgDn/Ctrl+U/Ctrl+D
+- README version updated to 2.1.2
+
+### Fixed
+
+- Version fallback in all 4 installer files: 2.1.1 → 2.1.2
+- STRIDE mapping timing bug — distribution now populated before validation
+- Duplicate installer file maintenance risk documented
+
 ## [2.1.1] — 2026-06-12
 
 ### Changed

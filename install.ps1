@@ -79,7 +79,7 @@ if (-not $Version) {
         $Version = $response.tag_name -replace "^v", ""
         Write-Host "  ✓ Latest: v${Version}" -ForegroundColor Green
     } catch {
-        $Version = "2.1.1"
+        $Version = "2.1.2"
         Write-Host "  ⚠  Could not detect version, defaulting to v${Version}" -ForegroundColor Yellow
         if (-not $Token) { Write-Host "  ⚠  Set GITHUB_TOKEN env var for private repos" -ForegroundColor Yellow }
     }

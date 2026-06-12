@@ -37,7 +37,7 @@
                 \ | /
                  \|/
 
-               ASF v2.1.1
+               ASF v2.1.2
    Architecture Security Framework
    Security Assumption Discovery Engine
 ```

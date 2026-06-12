@@ -13,6 +13,7 @@ import (
 
 	"asf-tui/asf/models"
 	"github.com/ledongthuc/pdf"
+	"gopkg.in/yaml.v3"
 )
 
 type Pipeline struct{}
@@ -34,6 +35,8 @@ func (p *Pipeline) DetectType(filepathStr string) models.SourceType {
 		return models.SourceTypeCSV
 	case ".json":
 		return models.SourceTypeJSON
+	case ".yaml", ".yml":
+		return models.SourceTypeYAML
 	default:
 		return models.SourceTypeUNKNOWN
 	}
@@ -52,6 +55,8 @@ func (p *Pipeline) ParseText(filepathStr string) (string, error) {
 		return parseCSVToText(filepathStr)
 	case models.SourceTypeJSON:
 		return parseJSONToText(filepathStr)
+	case models.SourceTypeYAML:
+		return parseYAMLToText(filepathStr)
 	default:
 		return parseTXT(filepathStr)
 	}
@@ -64,6 +69,8 @@ func (p *Pipeline) ParseToRecords(filepathStr string) ([]map[string]interface{},
 		return parseCSVToRecords(filepathStr)
 	case models.SourceTypeJSON:
 		return parseJSONToRecords(filepathStr)
+	case models.SourceTypeYAML:
+		return parseYAMLToRecords(filepathStr)
 	default:
 		return nil, nil
 	}
@@ -157,6 +164,33 @@ func parseJSONToRecords(path string) ([]map[string]interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("cannot parse JSON: not an array or object")
+}
+
+func parseYAMLToText(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func parseYAMLToRecords(path string) ([]map[string]interface{}, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []map[string]interface{}
+	if err := yaml.Unmarshal(data, &result); err == nil {
+		return result, nil
+	}
+
+	var single map[string]interface{}
+	if err := yaml.Unmarshal(data, &single); err == nil {
+		return []map[string]interface{}{single}, nil
+	}
+
+	return nil, fmt.Errorf("cannot parse YAML: not an array or object")
 }
 
 func parsePDF(path string) (string, error) {

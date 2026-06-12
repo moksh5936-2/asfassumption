@@ -361,7 +361,7 @@ if [ -z "$VERSION" ]; then
   API_URL="https://api.github.com/repos/${REPO}/releases/latest"
   VERSION="$(curl_get "$API_URL" | grep '"tag_name":' | sed 's/.*"tag_name": "v\(.*\)",.*/\1/' || echo "")"
   if [ -z "$VERSION" ]; then
-    VERSION="2.1.1"
+    VERSION="2.1.2"
     warn "Could not detect latest version; defaulting to ${VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi

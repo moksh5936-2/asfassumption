@@ -1,0 +1,1120 @@
+{
+  "version": "2.1.2",
+  "architecture": "asftest.md",
+  "summary": {
+    "claims_found": 38,
+    "assumptions": 38,
+    "verified": 0,
+    "partially_verified": 4,
+    "contradicted": 0,
+    "unknown": 34,
+    "critical_gaps": 0,
+    "high": 2,
+    "medium": 4,
+    "low": 32
+  },
+  "claims": [
+    {
+      "id": "clm_analysis",
+      "source_document": "asftest.md",
+      "text": "ASF processed asftest.md and found 23 assumptions (0 verified, 0 contradicted, 23 unknown). 0 critical gaps identified.",
+      "extraction_confidence": 0.95,
+      "created_at": "2026-06-12T17:50:05.368433+05:30",
+      "tags": [
+        "analysis",
+        "summary"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "asm_3c748467d692",
+      "text": "## Components",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.65,
+      "keywords": [
+        "components",
+        "component",
+        "type",
+        "description",
+        "oidc",
+        "identity",
+        "provider",
+        "authentication",
+        "webapp",
+        "react",
+        "based",
+        "healthcare",
+        "provider",
+        "portal",
+        "apigateway",
+        "aws",
+        "api",
+        "gateway",
+        "request",
+        "routing",
+        "throttling",
+        "phidatabase",
+        "database",
+        "postgresql",
+        "database",
+        "storing",
+        "patient",
+        "health",
+        "records",
+        "kms",
+        "aws",
+        "kms",
+        "encryption",
+        "key",
+        "management",
+        "auditlog",
+        "immutable",
+        "audit",
+        "log",
+        "phi",
+        "access",
+        "events",
+        "backupservice",
+        "encrypted",
+        "backup",
+        "service",
+        "phi",
+        "data",
+        "thirdpartyanalytics",
+        "third",
+        "party",
+        "analytics",
+        "provider",
+        "phi",
+        "access",
+        "adminconsole",
+        "internal",
+        "admin",
+        "console",
+        "system",
+        "management",
+        "relationships",
+        "webapp",
+        "webapp",
+        "https",
+        "apigateway",
+        "apigateway",
+        "tls",
+        "phidatabase",
+        "apigateway",
+        "tls",
+        "kms",
+        "phidatabase",
+        "tls",
+        "backupservice",
+        "phidatabase",
+        "tls",
+        "auditlog",
+        "adminconsole",
+        "tls",
+        "phidatabase",
+        "adminconsole",
+        "https",
+        "thirdpartyanalytics",
+        "tls",
+        "phidatabase",
+        "assumptions"
+      ],
+      "risk": "High"
+    },
+    {
+      "id": "asm_761a13e8ef3a",
+      "text": "Auth0 administrative access is restricted to authorized admins only.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "administrative",
+        "access",
+        "restricted",
+        "authorized",
+        "admins",
+        "only"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_35738d3b9dc0",
+      "text": "PHI data is encrypted at rest in PHIDatabase.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.44,
+      "keywords": [
+        "phi",
+        "data",
+        "encrypted",
+        "rest",
+        "phidatabase"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_a73708d2dd54",
+      "text": "PHI data is encrypted in transit between all components.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "phi",
+        "data",
+        "encrypted",
+        "transit",
+        "between",
+        "components"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_0d3e7e321b9f",
+      "text": "Encryption keys are stored and managed in KMS with automatic rotation.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "encryption",
+        "keys",
+        "stored",
+        "managed",
+        "kms",
+        "automatic",
+        "rotation"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_413c30f18bd6",
+      "text": "KMS access is restricted to authorized services only.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "kms",
+        "access",
+        "restricted",
+        "authorized",
+        "services",
+        "only"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_60c6490eb0a0",
+      "text": "Audit logging is immutable and tamper-proof.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "audit",
+        "logging",
+        "immutable",
+        "tamper",
+        "proof"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_c77dc06c7483",
+      "text": "All PHI access events are logged with user and timestamp.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "phi",
+        "access",
+        "events",
+        "logged",
+        "user",
+        "timestamp"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_ba2710c4f342",
+      "text": "Backup data is encrypted at rest and in transit.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.45,
+      "keywords": [
+        "backup",
+        "data",
+        "encrypted",
+        "rest",
+        "transit"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_9e50ae490f2a",
+      "text": "Backup restore procedures are tested regularly.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "backup",
+        "restore",
+        "procedures",
+        "tested",
+        "regularly"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_c4bbfcd1b9ca",
+      "text": "AdminConsole requires MFA for all administrative access.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "keywords": [
+        "adminconsole",
+        "requires",
+        "mfa",
+        "administrative",
+        "access"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_e1966537bfc3",
+      "text": "TLS certificates are monitored and renewed before expiry.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.45,
+      "keywords": [
+        "tls",
+        "certificates",
+        "monitored",
+        "renewed",
+        "before",
+        "expiry"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_fcf98e9e69d8",
+      "text": "Auth0 tenant is configured with breach detection and anomaly alerts.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "tenant",
+        "configured",
+        "breach",
+        "detection",
+        "anomaly",
+        "alerts"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_ad38bf5ac7c9",
+      "text": "Audit log storage has sufficient retention for compliance.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.44,
+      "keywords": [
+        "audit",
+        "log",
+        "storage",
+        "sufficient",
+        "retention",
+        "compliance"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_79e96091fbb8",
+      "text": "API Gateway logs are monitored for anomalous access patterns.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.5,
+      "keywords": [
+        "api",
+        "gateway",
+        "logs",
+        "monitored",
+        "anomalous",
+        "access",
+        "patterns"
+      ],
+      "risk": "Medium"
+    },
+    {
+      "id": "asm_e6cd576fe355",
+      "text": "System health and availability monitoring covers all components.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.31000000000000005,
+      "keywords": [
+        "system",
+        "health",
+        "availability",
+        "monitoring",
+        "covers",
+        "components"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_40e4de86ebf8",
+      "text": "## Security Controls",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.65,
+      "keywords": [
+        "security",
+        "controls",
+        "authentication",
+        "mfa",
+        "authorization",
+        "rbac",
+        "encryption",
+        "logging",
+        "backup",
+        "network",
+        "monitoring",
+        "third",
+        "party",
+        "expected",
+        "results",
+        "minimum",
+        "assumptions",
+        "minimum",
+        "critical",
+        "minimum",
+        "high",
+        "expected",
+        "stride",
+        "categories",
+        "spoofing",
+        "tampering",
+        "repudiation",
+        "information",
+        "disclosure",
+        "denial",
+        "service",
+        "elevation",
+        "privilege",
+        "expected",
+        "high",
+        "risk",
+        "themes",
+        "phi",
+        "data",
+        "exposure",
+        "unauthorized",
+        "access",
+        "key",
+        "compromise",
+        "third",
+        "party",
+        "risk",
+        "audit",
+        "integrity",
+        "validation",
+        "criteria",
+        "phi",
+        "access",
+        "authenticated",
+        "authorized"
+      ],
+      "risk": "Medium"
+    },
+    {
+      "id": "asm_e4a177c5e642",
+      "text": "- All data at rest must use AES-256 encryption.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "data",
+        "rest",
+        "use",
+        "aes",
+        "encryption"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_17f5c4cc32cf",
+      "text": "- Encryption keys must be managed by KMS.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "encryption",
+        "keys",
+        "managed",
+        "kms"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_119496077f13",
+      "text": "- Audit logs must be immutable with tamper detection.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.4,
+      "keywords": [
+        "audit",
+        "logs",
+        "immutable",
+        "tamper",
+        "detection"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_fc4fab9a1c1e",
+      "text": "- Backup must be encrypted and geographically redundant.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.45,
+      "keywords": [
+        "backup",
+        "encrypted",
+        "geographically",
+        "redundant"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_24150174417d",
+      "text": "- Administrative access must require MFA.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "keywords": [
+        "administrative",
+        "access",
+        "require",
+        "mfa"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "asm_f987ba72c0c9",
+      "text": "- SOC2 Type II audit is in progress.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.23000000000000004,
+      "keywords": [
+        "type",
+        "audit",
+        "progress"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-001",
+      "text": "MFA is enforced for all Auth0 user authentication.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "keywords": [
+        "mfa",
+        "enforced",
+        "user",
+        "authentication"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-002",
+      "text": "All API requests pass through APIGateway for authentication validation.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "api",
+        "requests",
+        "pass",
+        "through",
+        "apigateway",
+        "authentication",
+        "validation"
+      ],
+      "risk": "Medium"
+    },
+    {
+      "id": "ASM-003",
+      "text": "ThirdPartyAnalytics has access only to de-identified PHI.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "thirdpartyanalytics",
+        "access",
+        "only",
+        "identified",
+        "phi"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-004",
+      "text": "Third-party provider maintains equivalent security controls.",
+      "assumption_type": "DEPENDENCY",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.31000000000000005,
+      "keywords": [
+        "third",
+        "party",
+        "provider",
+        "maintains",
+        "equivalent",
+        "security",
+        "controls"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-005",
+      "text": "Object-level authorization is enforced for PHI record access.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.36,
+      "keywords": [
+        "object",
+        "level",
+        "authorization",
+        "enforced",
+        "phi",
+        "record",
+        "access"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-006",
+      "text": "Database connection pooling does not leak data between sessions.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.41000000000000003,
+      "keywords": [
+        "database",
+        "connection",
+        "pooling",
+        "does",
+        "leak",
+        "data",
+        "between",
+        "sessions"
+      ],
+      "risk": "Medium"
+    },
+    {
+      "id": "ASM-007",
+      "text": "API rate limiting prevents abuse of PHI endpoints.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.33999999999999997,
+      "keywords": [
+        "api",
+        "rate",
+        "limiting",
+        "prevents",
+        "abuse",
+        "phi",
+        "endpoints"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-008",
+      "text": "Network segmentation isolates the PHI database in a private subnet.",
+      "assumption_type": "NETWORK",
+      "verification_status": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "keywords": [
+        "network",
+        "segmentation",
+        "isolates",
+        "phi",
+        "database",
+        "private",
+        "subnet"
+      ],
+      "risk": "High"
+    },
+    {
+      "id": "ASM-009",
+      "text": "Unauthorized PHI export is detected and alerted.",
+      "assumption_type": "ACCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.49,
+      "keywords": [
+        "unauthorized",
+        "phi",
+        "export",
+        "detected",
+        "alerted"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-010",
+      "text": "Session tokens expire and are rotated periodically.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.45,
+      "keywords": [
+        "session",
+        "tokens",
+        "expire",
+        "rotated",
+        "periodically"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-011",
+      "text": "PHI data minimization policies are enforced at application layer.",
+      "assumption_type": "GOVERNANCE",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.26,
+      "keywords": [
+        "phi",
+        "data",
+        "minimization",
+        "policies",
+        "enforced",
+        "application",
+        "layer"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-012",
+      "text": "Incident response plan includes PHI breach notification.",
+      "assumption_type": "PROCESS",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.26,
+      "keywords": [
+        "incident",
+        "response",
+        "plan",
+        "includes",
+        "phi",
+        "breach",
+        "notification"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-013",
+      "text": "Vendor risk assessments are conducted for ThirdPartyAnalytics.",
+      "assumption_type": "DEPENDENCY",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.31000000000000005,
+      "keywords": [
+        "vendor",
+        "risk",
+        "assessments",
+        "conducted",
+        "thirdpartyanalytics"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-014",
+      "text": "Database backups are stored in a separate geographic region.",
+      "assumption_type": "CONFIGURATION",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "database",
+        "backups",
+        "stored",
+        "separate",
+        "geographic",
+        "region"
+      ],
+      "risk": "Low"
+    },
+    {
+      "id": "ASM-015",
+      "text": "KMS key deletion is protected with multi-factor authorization.",
+      "assumption_type": "IDENTITY",
+      "verification_status": "UNKNOWN",
+      "confidence": 0.39,
+      "keywords": [
+        "kms",
+        "key",
+        "deletion",
+        "protected",
+        "multi",
+        "factor",
+        "authorization"
+      ],
+      "risk": "Low"
+    }
+  ],
+  "verifications": [
+    {
+      "assumption_id": "asm_c4bbfcd1b9ca",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): authentication, authorization."
+    },
+    {
+      "assumption_id": "asm_24150174417d",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): authentication, authorization."
+    },
+    {
+      "assumption_id": "ASM-001",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): authentication."
+    },
+    {
+      "assumption_id": "ASM-002",
+      "result": "UNKNOWN",
+      "confidence": 0.36,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): network_security, authentication."
+    },
+    {
+      "assumption_id": "ASM-003",
+      "result": "UNKNOWN",
+      "confidence": 0.36,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): dependency, authorization."
+    },
+    {
+      "assumption_id": "ASM-004",
+      "result": "UNKNOWN",
+      "confidence": 0.31000000000000005,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): dependency."
+    },
+    {
+      "assumption_id": "ASM-005",
+      "result": "UNKNOWN",
+      "confidence": 0.36,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): authorization, authentication."
+    },
+    {
+      "assumption_id": "ASM-006",
+      "result": "UNKNOWN",
+      "confidence": 0.41000000000000003,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): session_management, authentication, data_protection."
+    },
+    {
+      "assumption_id": "ASM-007",
+      "result": "UNKNOWN",
+      "confidence": 0.33999999999999997,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because generated from category GOVERNANCE with 0 keyword match(es)."
+    },
+    {
+      "assumption_id": "ASM-008",
+      "result": "PARTIALLY_VERIFIED",
+      "confidence": 0.8,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): network_security, data_protection."
+    },
+    {
+      "assumption_id": "ASM-009",
+      "result": "UNKNOWN",
+      "confidence": 0.49,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): audit_logging, authentication, authorization."
+    },
+    {
+      "assumption_id": "ASM-010",
+      "result": "UNKNOWN",
+      "confidence": 0.45,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): session_management, authentication."
+    },
+    {
+      "assumption_id": "ASM-011",
+      "result": "UNKNOWN",
+      "confidence": 0.26,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because generated from category GOVERNANCE with 0 keyword match(es)."
+    },
+    {
+      "assumption_id": "ASM-012",
+      "result": "UNKNOWN",
+      "confidence": 0.26,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because generated from category PROCESS with 0 keyword match(es)."
+    },
+    {
+      "assumption_id": "ASM-013",
+      "result": "UNKNOWN",
+      "confidence": 0.31000000000000005,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): dependency."
+    },
+    {
+      "assumption_id": "ASM-014",
+      "result": "UNKNOWN",
+      "confidence": 0.39,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): data_protection."
+    },
+    {
+      "assumption_id": "ASM-015",
+      "result": "UNKNOWN",
+      "confidence": 0.39,
+      "evidence_used": null,
+      "reasoning": "ASF identified this assumption because relates to security concept(s): authentication."
+    }
+  ],
+  "gaps": [
+    {
+      "assumption_id": "asm_3c748467d692",
+      "type": "EVIDENCE_GAP",
+      "severity": "HIGH",
+      "description": "## Components",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_761a13e8ef3a",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Auth0 administrative access is restricted to authorized admins only.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_35738d3b9dc0",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "PHI data is encrypted at rest in PHIDatabase.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_a73708d2dd54",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "PHI data is encrypted in transit between all components.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_0d3e7e321b9f",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Encryption keys are stored and managed in KMS with automatic rotation.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_413c30f18bd6",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "KMS access is restricted to authorized services only.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_60c6490eb0a0",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Audit logging is immutable and tamper-proof.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_c77dc06c7483",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "All PHI access events are logged with user and timestamp.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_ba2710c4f342",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Backup data is encrypted at rest and in transit.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_9e50ae490f2a",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Backup restore procedures are tested regularly.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_e1966537bfc3",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "TLS certificates are monitored and renewed before expiry.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_fcf98e9e69d8",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Auth0 tenant is configured with breach detection and anomaly alerts.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_ad38bf5ac7c9",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Audit log storage has sufficient retention for compliance.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_79e96091fbb8",
+      "type": "EVIDENCE_GAP",
+      "severity": "MEDIUM",
+      "description": "API Gateway logs are monitored for anomalous access patterns.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_e6cd576fe355",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "System health and availability monitoring covers all components.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_40e4de86ebf8",
+      "type": "EVIDENCE_GAP",
+      "severity": "MEDIUM",
+      "description": "## Security Controls",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_e4a177c5e642",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "- All data at rest must use AES-256 encryption.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_17f5c4cc32cf",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "- Encryption keys must be managed by KMS.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_119496077f13",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "- Audit logs must be immutable with tamper detection.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_fc4fab9a1c1e",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "- Backup must be encrypted and geographically redundant.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "asm_f987ba72c0c9",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "- SOC2 Type II audit is in progress.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-002",
+      "type": "EVIDENCE_GAP",
+      "severity": "MEDIUM",
+      "description": "All API requests pass through APIGateway for authentication validation.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-003",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "ThirdPartyAnalytics has access only to de-identified PHI.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-004",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Third-party provider maintains equivalent security controls.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-005",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Object-level authorization is enforced for PHI record access.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-006",
+      "type": "EVIDENCE_GAP",
+      "severity": "MEDIUM",
+      "description": "Database connection pooling does not leak data between sessions.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-007",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "API rate limiting prevents abuse of PHI endpoints.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-009",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Unauthorized PHI export is detected and alerted.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-010",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Session tokens expire and are rotated periodically.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-011",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "PHI data minimization policies are enforced at application layer.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-012",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Incident response plan includes PHI breach notification.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-013",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Vendor risk assessments are conducted for ThirdPartyAnalytics.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-014",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "Database backups are stored in a separate geographic region.",
+      "evidence_detail": "No matching evidence available for verification"
+    },
+    {
+      "assumption_id": "ASM-015",
+      "type": "EVIDENCE_GAP",
+      "severity": "LOW",
+      "description": "KMS key deletion is protected with multi-factor authorization.",
+      "evidence_detail": "No matching evidence available for verification"
+    }
+  ]
+}

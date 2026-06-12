@@ -62,6 +62,15 @@ type Assumption struct {
 	SourceNode string `json:"source_node"`
 	SourceLine int    `json:"source_line"`
 
+	// Source metadata (populated for explicit YAML/JSON assumptions)
+	SourceType    string `json:"source_type"`    // "explicit", "inferred", "generated"
+	SourceSection string `json:"source_section"` // "assumptions", "security_controls", "diagram"
+	SourceIndex   int    `json:"source_index"`   // index within that section
+	SourceFile    string `json:"source_file"`    // original architecture file
+
+	// Verification status (wired from security controls / evidence)
+	VerificationStatus string `json:"verification_status"` // "VERIFIED", "PARTIALLY_VERIFIED", "CONTRADICTED", "UNKNOWN"
+
 	// Explainability fields (added by the explainability engine)
 	EvidenceSources      []string              `json:"evidence_sources"`
 	SourceComponents     []string              `json:"source_components"`
@@ -178,6 +187,11 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 
 	progress <- AnalysisProgress{Percent: 80, Stage: "Generating STRIDE Mapping..."}
 	result.StrideDistribution = e.mapStrideDistribution(result.Assumptions)
+
+	// Validate expected results now that StrideDistribution is populated
+	if len(e.archDesc.ExpectedResults) > 0 {
+		result.Summary = e.buildValidationSummary(result)
+	}
 
 	if mode == ModeASFAndAI && e.config != nil && e.config.AI.Enabled && e.config.AI.ActiveModel != "" {
 		progress <- AnalysisProgress{Percent: 85, Stage: "Running AI Enhancement..."}
@@ -426,12 +440,15 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 	// Populate compliance from architecture description
 	result.Compliance = e.buildComplianceOutput()
 
-	// Validate expected results if present
-	if len(e.archDesc.ExpectedResults) > 0 {
-		result.Summary = e.buildValidationSummary(result)
+	// Apply security controls to all assumptions (native + explicit)
+	if e.archDesc.SecurityControls != nil {
+		for i := range result.Assumptions {
+			result.Assumptions[i] = applySecurityControlVerification(result.Assumptions[i], e.archDesc.SecurityControls)
+		}
 	}
 
-	result.Controls = generateControls(result.Assumptions)
+	// Generate architecture-specific controls (not just generic templates)
+	result.Controls = generateControls(result.Assumptions, e.archDesc.Components)
 	if len(e.archDesc.SecurityControls) > 0 {
 		result.Controls = enhanceControlsWithSecurityControls(result.Controls, e.archDesc.SecurityControls)
 	}
@@ -441,6 +458,11 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 		result.EvidenceSummary = e.explainPipe.BuildEvidenceSummary(result.Assumptions)
 		confSummary := buildConfidenceSummary(result.Assumptions)
 		result.ConfidenceSummary = confSummary
+	}
+
+	// Build validation summary if expected results are defined
+	if e.archDesc != nil && len(e.archDesc.ExpectedResults) > 0 {
+		result.Summary = e.buildValidationSummary(result)
 	}
 
 	return result
@@ -546,7 +568,7 @@ func controlTemplates() []controlTemplate {
 	}
 }
 
-func generateControls(assumptions []Assumption) []ControlDetail {
+func generateControls(assumptions []Assumption, components []Component) []ControlDetail {
 	templates := controlTemplates()
 	tmplMap := make(map[string]*controlTemplate)
 	for i := range templates {
@@ -614,6 +636,113 @@ func generateControls(assumptions []Assumption) []ControlDetail {
 			ctrl.MitigatedSTRIDE = strideList
 
 			controls = append(controls, ctrl)
+		}
+	}
+
+	// Generate architecture-specific controls based on actual components
+	controls = generateArchitectureSpecificControls(controls, components, catAssumptions, catStride, &controlIdx)
+
+	return controls
+}
+
+// generateArchitectureSpecificControls adds component-specific controls
+// based on the actual architecture components (e.g., PHIDatabase, Auth0).
+func generateArchitectureSpecificControls(controls []ControlDetail, components []Component, catAssumptions map[string][]string, catStride map[string]map[StrideCategory]bool, controlIdx *int) []ControlDetail {
+	if len(components) == 0 {
+		return controls
+	}
+
+	componentSpecific := map[string]struct {
+		category  string
+		desc      string
+		rationale string
+		stride    []StrideCategory
+	}{
+		"database": {
+			category:  "DATABASE",
+			desc:      "Implement database-specific encryption, access logging, and connection pooling safeguards",
+			rationale: "Database components require tailored controls for data integrity and confidentiality.",
+			stride:    []StrideCategory{StrideTampering, StrideInfoDisclosure},
+		},
+		"api_gateway": {
+			category:  "NETWORK",
+			desc:      "Implement API Gateway-specific rate limiting, request validation, and TLS termination policies",
+			rationale: "API Gateway components require targeted controls for ingress security and availability.",
+			stride:    []StrideCategory{StrideDenialOfService, StrideInfoDisclosure},
+		},
+		"identity_provider": {
+			category:  "IDENTITY",
+			desc:      "Implement identity-provider-specific MFA enforcement, session hardening, and breach detection",
+			rationale: "Identity provider components require specialized controls for authentication resilience.",
+			stride:    []StrideCategory{StrideSpoofing, StrideElevationPriv},
+		},
+		"web_application": {
+			category:  "ACCESS",
+			desc:      "Implement web-application-specific input validation, CSRF protection, and secure session handling",
+			rationale: "Web application components require application-layer controls for common attack vectors.",
+			stride:    []StrideCategory{StrideTampering, StrideElevationPriv},
+		},
+		"external_service": {
+			category:  "THIRD_PARTY",
+			desc:      "Implement external-service-specific vendor risk monitoring, data flow audits, and contractual controls",
+			rationale: "External service components require supply-chain and data-exposure controls.",
+			stride:    []StrideCategory{StrideTampering, StrideInfoDisclosure},
+		},
+		"admin_tool": {
+			category:  "ACCESS",
+			desc:      "Implement admin-tool-specific privileged access monitoring, command logging, and just-in-time access",
+			rationale: "Admin tools require elevated controls due to high privilege usage.",
+			stride:    []StrideCategory{StrideElevationPriv, StrideRepudiation},
+		},
+		"storage_service": {
+			category:  "BACKUP",
+			desc:      "Implement storage-service-specific encrypted backup, cross-region replication, and restore validation",
+			rationale: "Storage service components require resilience and recovery controls.",
+			stride:    []StrideCategory{StrideInfoDisclosure, StrideDenialOfService},
+		},
+		"encryption_service": {
+			category:  "ENCRYPTION",
+			desc:      "Implement encryption-service-specific key rotation, access auditing, and deletion protection",
+			rationale: "Encryption service components require key-management lifecycle controls.",
+			stride:    []StrideCategory{StrideInfoDisclosure, StrideTampering},
+		},
+		"logging_service": {
+			category:  "LOGGING",
+			desc:      "Implement logging-service-specific immutability, tamper detection, and retention compliance",
+			rationale: "Logging service components require audit integrity and non-repudiation controls.",
+			stride:    []StrideCategory{StrideRepudiation, StrideTampering},
+		},
+	}
+
+	seenCategory := make(map[string]bool)
+	for _, c := range controls {
+		seenCategory[c.Category] = true
+	}
+
+	for _, comp := range components {
+		compLower := strings.ToLower(comp.Label)
+		compType := strings.ToLower(comp.Label)
+		for key, ctrl := range componentSpecific {
+			if strings.Contains(compLower, key) || strings.Contains(compType, key) {
+				if seenCategory[ctrl.category] {
+					continue
+				}
+				seenCategory[ctrl.category] = true
+				*controlIdx++
+				newCtrl := ControlDetail{
+					ID:              fmt.Sprintf("CTRL-%03d", *controlIdx),
+					Description:     fmt.Sprintf("[%s] %s", comp.Label, ctrl.desc),
+					Rationale:       ctrl.rationale,
+					Category:        ctrl.category,
+					Priority:        1,
+					MitigatedSTRIDE: ctrl.stride,
+				}
+				if ids, ok := catAssumptions[ctrl.category]; ok {
+					newCtrl.MitigatedAssumptionIDs = ids
+				}
+				controls = append(controls, newCtrl)
+				break
+			}
 		}
 	}
 
@@ -689,24 +818,29 @@ func hasMatchingStride(target []StrideCategory, catStride map[string]map[StrideC
 
 // processExplicitAssumptions processes explicit assumptions from YAML/JSON,
 // deduplicates against existing assumptions, and enriches them.
+// Deep deduplication: strips bullet prefixes and merges source metadata.
 func (e *Engine) processExplicitAssumptions(existing []Assumption) []Assumption {
-	existingSet := make(map[string]bool)
-	for _, a := range existing {
-		existingSet[normalizeText(a.Description)] = true
+	existingMap := make(map[string]int) // normalized -> index in existing
+	for i, a := range existing {
+		existingMap[normalizeText(a.Description)] = i
 	}
 
 	var result []Assumption
 	nextID := 1
 
-	for _, raw := range e.archDesc.ExplicitAssumptions {
+	for i, raw := range e.archDesc.ExplicitAssumptions {
 		normalized := normalizeText(raw)
 		if normalized == "" {
 			continue
 		}
-		if existingSet[normalized] {
+		if existingIdx, ok := existingMap[normalized]; ok {
+			if existingIdx >= 0 {
+				// Deep dedup: merge source metadata into existing assumption
+				existing[existingIdx] = mergeSourceMetadata(existing[existingIdx], raw, "assumptions", i, e.archDesc.Name)
+			}
 			continue
 		}
-		existingSet[normalized] = true
+		existingMap[normalized] = -1 // mark as processed
 
 		atype := classifyExplicitAssumption(raw)
 		keywords := extractKeywords(raw)
@@ -718,18 +852,29 @@ func (e *Engine) processExplicitAssumptions(existing []Assumption) []Assumption 
 		risk := e.assessExplicitRisk(raw, atype)
 		lh, im := riskToLikelihoodImpact(risk)
 		stride := e.strideEngine.MapAssumption(string(atype), raw, keywords)
+		confidence := computeExplicitConfidence(raw, atype, e.archDesc.SecurityControls)
 
 		assumption := Assumption{
-			ID:          id,
-			Description: raw,
-			Component:   component,
-			Category:    string(atype),
-			Risk:        risk,
-			Stride:      stride,
-			Likelihood:  lh,
-			Impact:      im,
-			Confidence:  0.75,
-			Keywords:    keywords,
+			ID:                 id,
+			Description:        raw,
+			Component:          component,
+			Category:           string(atype),
+			Risk:               risk,
+			Stride:             stride,
+			Likelihood:         lh,
+			Impact:             im,
+			Confidence:         confidence,
+			Keywords:           keywords,
+			SourceType:         "explicit",
+			SourceSection:      "assumptions",
+			SourceIndex:        i,
+			SourceFile:         e.archDesc.Name,
+			VerificationStatus: "UNKNOWN",
+		}
+
+		// Wire security controls into verification
+		if e.archDesc.SecurityControls != nil {
+			assumption = applySecurityControlVerification(assumption, e.archDesc.SecurityControls)
 		}
 
 		if e.explainPipe != nil {
@@ -739,6 +884,115 @@ func (e *Engine) processExplicitAssumptions(existing []Assumption) []Assumption 
 		result = append(result, assumption)
 	}
 	return result
+}
+
+// mergeSourceMetadata merges source metadata from a duplicate explicit assumption
+// into an existing assumption, preserving the original source.
+func mergeSourceMetadata(a Assumption, raw, section string, index int, sourceFile string) Assumption {
+	if a.SourceType == "" {
+		a.SourceType = "merged"
+	}
+	if a.SourceSection == "" {
+		a.SourceSection = section
+	} else {
+		a.SourceSection += "," + section
+	}
+	if a.SourceFile == "" {
+		a.SourceFile = sourceFile
+	} else if a.SourceFile != sourceFile {
+		a.SourceFile += "," + sourceFile
+	}
+	_ = index
+	return a
+}
+
+// computeExplicitConfidence computes confidence for explicit assumptions.
+// Base 0.75; boosted to 0.80+ if supported by declared security controls.
+func computeExplicitConfidence(text string, atype models.AssumptionType, securityControls map[string][]string) float64 {
+	confidence := 0.75
+	lower := strings.ToLower(text)
+
+	// Check if assumption keywords match security controls
+	if securityControls != nil {
+		categoryBoosts := map[string][]string{
+			"authentication": {"mfa", "password", "session", "sso", "oauth", "oidc", "auth0", "login", "identity", "authentication"},
+			"authorization":  {"rbac", "access", "authorized", "permission", "least privilege", "admin", "acl"},
+			"encryption":     {"encrypt", "tls", "ssl", "cipher", "key", "kms", "aes", "cryptographic"},
+			"logging":        {"log", "audit", "monitor", "alert", "detect", "immutable"},
+			"backup":         {"backup", "restore", "recovery", "replicate"},
+			"network":        {"network", "subnet", "firewall", "segment", "private", "internet", "rate limit"},
+			"monitoring":     {"monitor", "health", "availability", "anomaly", "detect"},
+			"third_party":    {"third-party", "third party", "vendor", "external", "supplier", "de-identified"},
+			"session":        {"session", "token", "jwt", "expire", "rotate"},
+		}
+		for category, kws := range categoryBoosts {
+			controls, hasControls := securityControls[category]
+			if !hasControls || len(controls) == 0 {
+				continue
+			}
+			for _, kw := range kws {
+				if strings.Contains(lower, kw) {
+					confidence = 0.85
+					break
+				}
+			}
+			if confidence >= 0.85 {
+				break
+			}
+		}
+	}
+
+	if confidence > 0.95 {
+		confidence = 0.95
+	}
+	return confidence
+}
+
+// applySecurityControlVerification checks if an assumption is covered by
+// declared security controls and marks it PARTIALLY_VERIFIED when applicable.
+func applySecurityControlVerification(a Assumption, securityControls map[string][]string) Assumption {
+	lower := strings.ToLower(a.Description)
+	categoryMap := map[string][]string{
+		"IDENTITY":      {"authentication", "authorization", "session"},
+		"ACCESS":        {"authorization", "authentication"},
+		"CONFIGURATION": {"encryption", "logging", "backup", "network"},
+		"NETWORK":       {"network"},
+		"PROCESS":       {"monitoring", "logging"},
+		"GOVERNANCE":    {"monitoring", "logging"},
+		"DEPENDENCY":    {"third_party"},
+		"DOCUMENTATION": {},
+	}
+
+	categories, ok := categoryMap[strings.ToUpper(a.Category)]
+	if !ok {
+		categories = []string{}
+	}
+
+	matched := false
+	for _, cat := range categories {
+		controls, hasControls := securityControls[cat]
+		if !hasControls || len(controls) == 0 {
+			continue
+		}
+		for _, ctrl := range controls {
+			ctrlLower := strings.ToLower(strings.ReplaceAll(ctrl, "_", " "))
+			if strings.Contains(lower, ctrlLower) || strings.Contains(lower, strings.ReplaceAll(ctrlLower, " ", "")) {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			break
+		}
+	}
+
+	if matched {
+		a.VerificationStatus = "PARTIALLY_VERIFIED"
+		if a.Confidence < 0.80 {
+			a.Confidence = 0.80
+		}
+	}
+	return a
 }
 
 // classifyExplicitAssumption classifies an explicit assumption into a type.
@@ -825,26 +1079,26 @@ func (e *Engine) assessExplicitRisk(text string, atype models.AssumptionType) Ri
 	lower := strings.ToLower(text)
 	score := 0
 
-	// PHI/healthcare keywords boost risk
-	phiKws := []string{"phi", "health", "hipaa", "patient", "medical", "phi data", "protected health"}
+	// PHI/healthcare keywords boost risk significantly
+	phiKws := []string{"phi", "health", "hipaa", "patient", "medical", "phi data", "protected health", "clinic", "hospital", "electronic health record", "ehr"}
 	for _, kw := range phiKws {
+		if strings.Contains(lower, kw) {
+			score += 4
+			break
+		}
+	}
+
+	// High-severity keywords
+	highKws := []string{"critical", "compromise", "breach", "unauthorized", "restricted", "immutable", "forbidden", "mandatory"}
+	for _, kw := range highKws {
 		if strings.Contains(lower, kw) {
 			score += 3
 			break
 		}
 	}
 
-	// High-severity keywords
-	highKws := []string{"critical", "compromise", "breach", "unauthorized", "restricted", "immutable"}
-	for _, kw := range highKws {
-		if strings.Contains(lower, kw) {
-			score += 2
-			break
-		}
-	}
-
 	// Medium-severity keywords
-	medKws := []string{"encrypt", "kms", "access", "authenticate", "mfa", "token", "key", "audit", "backup", "monitor", "rate limit", "session"}
+	medKws := []string{"encrypt", "kms", "access", "authenticate", "mfa", "token", "key", "audit", "backup", "monitor", "rate limit", "session", "tls", "ssl", "certificate"}
 	for _, kw := range medKws {
 		if strings.Contains(lower, kw) {
 			score += 1
@@ -854,22 +1108,60 @@ func (e *Engine) assessExplicitRisk(text string, atype models.AssumptionType) Ri
 
 	// Type-based boost
 	switch atype {
-	case models.AssumptionTypeACCESS:
-		score += 1
-	case models.AssumptionTypeIDENTITY:
+	case models.AssumptionTypeACCESS, models.AssumptionTypeIDENTITY:
+		score += 2
+	case models.AssumptionTypeNETWORK, models.AssumptionTypeCONFIGURATION:
 		score += 1
 	}
 
 	switch {
-	case score >= 5:
+	case score >= 6:
 		return RiskCritical
-	case score >= 3:
+	case score >= 4:
 		return RiskHigh
 	case score >= 2:
 		return RiskMedium
 	default:
 		return RiskLow
 	}
+}
+
+// complianceFrameworkDetails maps known frameworks to specific areas covered.
+var complianceFrameworkDetails = map[string]struct {
+	Label   string
+	Areas   []string
+	Control string
+}{
+	"HIPAA": {
+		Label:   "HIPAA (Health Insurance Portability and Accountability Act)",
+		Areas:   []string{"PHI access controls (164.312(a))", "Encryption of PHI at rest and in transit (164.312(a)(2)(iv))", "Audit controls for PHI access (164.312(b))", "Integrity controls (164.312(c)(1))", "Emergency access procedure (164.312(a)(2)(ii))", "Automatic logoff (164.312(a)(2)(iii))"},
+		Control: "HIPAA Security Rule — Administrative, Physical, and Technical Safeguards",
+	},
+	"SOC2": {
+		Label:   "SOC 2 (Service Organization Control 2)",
+		Areas:   []string{"Security —保护 against unauthorized access", "Availability —监控 and capacity planning", "Processing Integrity — data processing accuracy", "Confidentiality — data classification and handling", "Privacy — PII collection and use"},
+		Control: "SOC 2 Trust Services Criteria — Security, Availability, Processing Integrity, Confidentiality, Privacy",
+	},
+	"ISO27001": {
+		Label:   "ISO/IEC 27001 (Information Security Management)",
+		Areas:   []string{"A.9 Access control — identity and authorization", "A.10 Cryptography — encryption key management", "A.12 Operations security — malware protection, backup, monitoring", "A.16 Incident management — reporting and response", "A.18 Compliance — regulatory and contractual obligations"},
+		Control: "ISO/IEC 27001:2022 Annex A controls",
+	},
+	"PCIDSS": {
+		Label:   "PCI DSS (Payment Card Industry Data Security Standard)",
+		Areas:   []string{"Requirement 3 — Protect stored cardholder data", "Requirement 4 — Encrypt transmission of cardholder data", "Requirement 7 — Restrict access to cardholder data", "Requirement 10 — Track and monitor access to data", "Requirement 12 — Maintain information security policy"},
+		Control: "PCI DSS v4.0 requirements",
+	},
+	"GDPR": {
+		Label:   "GDPR (General Data Protection Regulation)",
+		Areas:   []string{"Art. 5 — Principles of processing (integrity and confidentiality)", "Art. 25 — Data protection by design and default", "Art. 32 — Security of processing", "Art. 33 — Breach notification", "Art. 35 — Data protection impact assessment"},
+		Control: "GDPR Chapter IV — Controller and Processor",
+	},
+	"FedRAMP": {
+		Label:   "FedRAMP (Federal Risk and Authorization Management Program)",
+		Areas:   []string{"AC — Access Control", "AU — Audit and Accountability", "IA — Identification and Authentication", "SC — System and Communications Protection", "SI — System and Information Integrity"},
+		Control: "NIST SP 800-53 rev 5 controls",
+	},
 }
 
 // buildComplianceOutput builds the compliance section from architecture description.
@@ -881,12 +1173,24 @@ func (e *Engine) buildComplianceOutput() []string {
 	}
 
 	compliance := e.archDesc.Compliance
-	output := make([]string, 0, len(compliance)+2)
+	output := make([]string, 0, len(compliance)*6+4)
 	output = append(output, "Compliance frameworks identified in architecture definition:")
 	for _, c := range compliance {
-		output = append(output, fmt.Sprintf("- %s related findings reviewed in this analysis", c))
+		if details, ok := complianceFrameworkDetails[c]; ok {
+			output = append(output, fmt.Sprintf(""))
+			output = append(output, fmt.Sprintf("--- %s ---", details.Label))
+			output = append(output, fmt.Sprintf("Framework: %s", details.Control))
+			output = append(output, fmt.Sprintf("Relevant areas:"))
+			for _, area := range details.Areas {
+				output = append(output, fmt.Sprintf("  - %s", area))
+			}
+			_ = details
+		} else {
+			output = append(output, fmt.Sprintf("- %s (custom framework — review specific requirements)", c))
+		}
 	}
-	output = append(output, "Review gap analysis for detailed compliance mapping.")
+	output = append(output, "")
+	output = append(output, "Review gap analysis for detailed compliance mapping against these requirements.")
 	return output
 }
 
@@ -992,10 +1296,15 @@ func toFloat(v interface{}) (float64, bool) {
 }
 
 // normalizeText normalizes text for deduplication comparison.
+// Strips bullet markers, trailing periods, and collapses whitespace.
 func normalizeText(text string) string {
-	lower := strings.ToLower(text)
+	s := strings.ToLower(text)
+	// Strip leading bullet markers: "- ", "* ", "  - ", etc.
+	s = regexp.MustCompile(`^[\s\-*•·]+`).ReplaceAllString(s, "")
+	// Strip trailing period
+	s = strings.TrimSuffix(s, ".")
 	// Collapse whitespace and strip periods from each token
-	parts := strings.Fields(lower)
+	parts := strings.Fields(s)
 	cleaned := make([]string, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSuffix(p, ".")

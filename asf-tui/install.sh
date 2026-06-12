@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-ASF_VERSION="2.1.1"
+ASF_VERSION="2.1.2"
 ASF_REPO="moksh5936-2/asfassumption"
 
 # ─── Parse flags ──────────────────────────────────────────

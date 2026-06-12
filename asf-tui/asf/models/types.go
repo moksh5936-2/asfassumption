@@ -67,6 +67,7 @@ const (
 	SourceTypeTXT             SourceType = "TXT"
 	SourceTypeCSV             SourceType = "CSV"
 	SourceTypeJSON            SourceType = "JSON"
+	SourceTypeYAML            SourceType = "YAML"
 	SourceTypeIAMExport       SourceType = "IAM_EXPORT"
 	SourceTypeACLList         SourceType = "ACL_LIST"
 	SourceTypeFirewallRules   SourceType = "FIREWALL_RULES"

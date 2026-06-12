@@ -67,6 +67,7 @@ type mainModel struct {
 
 	quitting bool
 	err      error
+	scrollY  int
 }
 
 type navigateMsg struct {
@@ -147,10 +148,26 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.analyze.inputBuf = ""
 				return m, nil
 			}
+			m.scrollY = 0
 			return m.handleBack()
+		case "pgup":
+			m.scrollY -= m.height - 3
+			if m.scrollY < 0 {
+				m.scrollY = 0
+			}
+		case "pgdn":
+			m.scrollY += m.height - 3
+		case "ctrl+u":
+			m.scrollY -= m.height / 2
+			if m.scrollY < 0 {
+				m.scrollY = 0
+			}
+		case "ctrl+d":
+			m.scrollY += m.height / 2
 		}
 
 	case navigateMsg:
+		m.scrollY = 0
 		if msg.to == exportView {
 			m.exportV.selected = 0
 			m.exportV.done = false
@@ -261,6 +278,34 @@ func (m mainModel) View() string {
 	}
 
 	help := m.renderHelp()
+	helpLines := strings.Count(help, "\n") + 1
+	availLines := m.height - helpLines - 2
+
+	allLines := strings.Split(content, "\n")
+	if m.scrollY >= len(allLines) {
+		m.scrollY = 0
+	}
+	if len(allLines) > availLines && availLines > 0 {
+		start := m.scrollY
+		end := m.scrollY + availLines
+		if end > len(allLines) {
+			end = len(allLines)
+		}
+		visible := allLines[start:end]
+		dim := lipgloss.NewStyle().Foreground(m.styles.Theme().DimText)
+		var prefix, suffix string
+		if m.scrollY > 0 {
+			prefix = dim.Render(fmt.Sprintf("(↑ %d more — PgUp) ", m.scrollY))
+		}
+		if m.scrollY+len(visible) < len(allLines) {
+			remaining := len(allLines) - (m.scrollY + len(visible))
+			suffix = "\n" + dim.Render(fmt.Sprintf("(↓ %d more — PgDn) ", remaining))
+		}
+		content = prefix + strings.Join(visible, "\n") + suffix
+	} else {
+		m.scrollY = 0
+	}
+
 	return m.styles.App.Render(
 		lipgloss.JoinVertical(lipgloss.Top,
 			content,
@@ -277,11 +322,11 @@ func (m mainModel) renderHelp() string {
 		startupView:    {"↑↓: Navigate", "Enter: Select", "q: Quit"},
 		dashboardView:  {"↑↓: Navigate", "Enter: Select", "Esc: Back", "q: Quit"},
 		analyzeView:    {"↑↓: Navigate", "Enter: Edit/Select", "Esc: Back"},
-		resultsView:    {"↑↓: Scroll", "Enter: Toggle section", "e: Export", "r: Review", "v: Validate", "Esc: Back"},
-		reviewView:     {"↑↓: Navigate", "Enter: Toggle detail", "s: Accept", "r: Reject", "m: Modified", "n: Note", "v: Validate", "Esc: Back"},
-		validationView: {"↑↓: Navigate", "Enter: Detail", "Esc: Back"},
-		localaiView:    {"↑↓: Navigate", "Enter: Select action", "Esc: Back"},
-		settingsView:   {"↑↓: Navigate", "Enter: Change value", "Esc: Back"},
+		resultsView:    {"↑↓: Navigate", "Enter: Toggle", "PgDn/PgUp: Scroll", "e: Export", "r: Review", "v: Validate", "Esc: Back"},
+		reviewView:     {"↑↓: Navigate", "Enter: Toggle", "PgDn/PgUp: Scroll", "s: Accept", "r: Reject", "m: Modified", "n: Note", "v: Validate", "Esc: Back"},
+		validationView: {"↑↓: Navigate", "Enter: Detail", "PgDn/PgUp: Scroll", "Esc: Back"},
+		localaiView:    {"↑↓: Navigate", "Enter: Select action", "PgDn/PgUp: Scroll", "Esc: Back"},
+		settingsView:   {"↑↓: Navigate", "Enter: Change value", "PgDn/PgUp: Scroll", "Esc: Back"},
 		aboutView:      {"Esc: Back"},
 		exportView:     {"↑↓: Navigate", "Enter: Select format", "y: Confirm export", "Esc: Back"},
 	}

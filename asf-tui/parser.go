@@ -65,8 +65,10 @@ func ParseArchitecture(path string) (*ArchDescription, error) {
 		return parsePDF(path)
 	case ".docx":
 		return parseDOCX(path)
-	case ".txt", ".md":
+	case ".txt":
 		return parseTextFile(path)
+	case ".md":
+		return parseMarkdown(path)
 	default:
 		return parseTextFile(path)
 	}
@@ -351,6 +353,142 @@ func parseTextFile(path string) (*ArchDescription, error) {
 		Name:    fileBase(path),
 		RawText: rawText,
 	}, nil
+}
+
+// parseMarkdown extracts structured sections from Markdown architecture documents.
+func parseMarkdown(path string) (*ArchDescription, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read markdown: %w", err)
+	}
+	content := string(data)
+	desc := &ArchDescription{
+		Name:    fileBase(path),
+		RawText: content,
+	}
+
+	lines := strings.Split(content, "\n")
+	section := ""
+	subHeading := ""
+	inCodeBlock := false
+	var currentList []string
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Track code blocks
+		if strings.HasPrefix(trimmed, "```") {
+			inCodeBlock = !inCodeBlock
+			continue
+		}
+		if inCodeBlock {
+			continue
+		}
+
+		// Detect sub-headings (###) within a section
+		if strings.HasPrefix(trimmed, "###") {
+			flushSection(desc, section, subHeading, currentList)
+			subHeading = strings.ToLower(strings.TrimSpace(strings.Trim(trimmed, "#")))
+			currentList = nil
+			continue
+		}
+
+		// Detect section headers
+		if strings.HasPrefix(trimmed, "#") {
+			flushSection(desc, section, subHeading, currentList)
+			section = strings.ToLower(strings.TrimSpace(strings.Trim(trimmed, "#")))
+			subHeading = ""
+			currentList = nil
+			continue
+		}
+
+		// Detect list items
+		isListItem := strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") ||
+			regexp.MustCompile(`^\d+\.\s+`).MatchString(trimmed)
+
+		if isListItem && trimmed != "" {
+			item := strings.TrimSpace(regexp.MustCompile(`^[\s\-*\d.]+\s+`).ReplaceAllString(trimmed, ""))
+			if item != "" {
+				currentList = append(currentList, item)
+			}
+		} else if trimmed != "" && trimmed != "|" && !strings.HasPrefix(trimmed, "|") {
+			// Non-list item ends current list context
+			flushSection(desc, section, subHeading, currentList)
+			currentList = nil
+		}
+	}
+
+	// Flush any remaining items
+	flushSection(desc, section, subHeading, currentList)
+
+	// Extract compliance from metadata section
+	if desc.Compliance == nil {
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if strings.Contains(strings.ToLower(trimmed), "compliance") && strings.Contains(trimmed, ":") {
+				parts := strings.SplitN(trimmed, ":", 2)
+				if len(parts) == 2 {
+					items := strings.Split(parts[1], ",")
+					for _, item := range items {
+						item = strings.TrimSpace(item)
+						item = strings.TrimPrefix(item, "**")
+						item = strings.TrimSuffix(item, "**")
+						item = strings.TrimSpace(item)
+						if item != "" {
+							desc.Compliance = append(desc.Compliance, item)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return desc, nil
+}
+
+// flushSection populates ArchDescription fields based on the current section.
+func flushSection(desc *ArchDescription, section, subHeading string, items []string) {
+	if len(items) == 0 {
+		return
+	}
+	switch section {
+	case "assumptions":
+		desc.ExplicitAssumptions = append(desc.ExplicitAssumptions, items...)
+	case "security controls":
+		if desc.SecurityControls == nil {
+			desc.SecurityControls = make(map[string][]string)
+		}
+		// Use sub-heading as category if available, otherwise "general"
+		cat := subHeading
+		if cat == "" {
+			cat = "general"
+		}
+		desc.SecurityControls[cat] = append(desc.SecurityControls[cat], items...)
+	case "compliance":
+		for _, item := range items {
+			item = strings.TrimSpace(item)
+			item = strings.TrimPrefix(item, "-")
+			item = strings.TrimPrefix(item, "**")
+			item = strings.TrimPrefix(item, "*")
+			item = strings.TrimSuffix(item, "**")
+			item = strings.TrimSpace(item)
+			if item != "" {
+				desc.Compliance = append(desc.Compliance, item)
+			}
+		}
+	case "notes":
+		for _, item := range items {
+			item = strings.TrimSpace(item)
+			item = strings.TrimPrefix(item, "-")
+			item = strings.TrimPrefix(item, "**")
+			item = strings.TrimPrefix(item, "*")
+			item = strings.TrimSuffix(item, "**")
+			item = strings.TrimSpace(item)
+			if item != "" {
+				desc.Notes = append(desc.Notes, item)
+			}
+		}
+	}
 }
 
 func isPrintableText(data []byte) bool {

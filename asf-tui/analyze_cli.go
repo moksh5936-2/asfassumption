@@ -41,6 +41,10 @@ type cliSummary struct {
 	Contradicted      int `json:"contradicted"`
 	Unknown           int `json:"unknown"`
 	CriticalGaps      int `json:"critical_gaps"`
+	Critical          int `json:"critical,omitempty"`
+	High              int `json:"high,omitempty"`
+	Medium            int `json:"medium,omitempty"`
+	Low               int `json:"low,omitempty"`
 }
 
 type cliAssumption struct {
@@ -50,6 +54,7 @@ type cliAssumption struct {
 	VerificationStatus string   `json:"verification_status"`
 	Confidence         float64  `json:"confidence"`
 	Keywords           []string `json:"keywords"`
+	Risk               string   `json:"risk,omitempty"`
 }
 
 type cliVerification struct {
@@ -118,6 +123,35 @@ func runAnalyzeCLI(args []string) {
 		os.Exit(ExitAnalysisErr)
 	}
 
+	// Check if file is a structured architecture doc that should use the Engine pipeline
+	ext := strings.ToLower(filepath.Ext(filePath))
+	needsEngine := ext == ".yaml" || ext == ".yml" || ext == ".json" || ext == ".md" || ext == ".mmd" || ext == ".drawio" || ext == ".svg"
+
+	if needsEngine && !info.IsDir() {
+		// Use the full Engine pipeline for structured files
+		cfg := &Config{}
+		engine := NewEngine(cfg)
+		progress := make(chan AnalysisProgress, 100)
+		go func() {
+			for range progress {
+			}
+		}()
+		result, err := engine.RunAnalysis(filePath, "", ModeASFOnly, progress)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(ExitAnalysisErr)
+		}
+		out := convertAnalysisResultToCLI(result, graphFlag)
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(out); err != nil {
+			fmt.Fprintf(os.Stderr, "Error encoding output: %v\n", err)
+			os.Exit(ExitExportErr)
+		}
+		os.Exit(ExitSuccess)
+	}
+
+	// Fallback to raw analyzer for plain text files and directories
 	an := analyzer.New()
 	var docs []string
 	if info.IsDir() {
@@ -234,4 +268,106 @@ func runAnalyzeCLI(args []string) {
 		fmt.Fprintf(os.Stderr, "Error encoding output: %v\n", err)
 		os.Exit(ExitExportErr)
 	}
+}
+
+// convertAnalysisResultToCLI converts a full Engine AnalysisResult to the
+// backward-compatible cliOutput format used by the CLI analyze command.
+func convertAnalysisResultToCLI(result *AnalysisResult, graphFlag bool) cliOutput {
+	verified := 0
+	partiallyVerified := 0
+	contradicted := 0
+	unknown := 0
+	for _, a := range result.Assumptions {
+		switch a.VerificationStatus {
+		case "VERIFIED":
+			verified++
+		case "PARTIALLY_VERIFIED":
+			partiallyVerified++
+		case "CONTRADICTED":
+			contradicted++
+		default:
+			unknown++
+		}
+	}
+	out := cliOutput{
+		Version:      ASFVersion,
+		Architecture: result.ArchitectureName,
+		Summary: cliSummary{
+			Assumptions:       result.TotalAssumptions,
+			Verified:          verified,
+			PartiallyVerified: partiallyVerified,
+			Unknown:           unknown,
+			Contradicted:      contradicted,
+			CriticalGaps:      result.CriticalGaps,
+			Critical:          result.CriticalCount,
+			High:              result.HighCount,
+			Medium:            result.MediumCount,
+			Low:               result.LowCount,
+		},
+	}
+
+	for _, a := range result.Assumptions {
+		vStatus := a.VerificationStatus
+		if vStatus == "" {
+			vStatus = "UNKNOWN"
+		}
+		out.Assumptions = append(out.Assumptions, cliAssumption{
+			ID:                 a.ID,
+			Text:               a.Description,
+			AssumptionType:     a.Category,
+			VerificationStatus: vStatus,
+			Confidence:         a.Confidence,
+			Keywords:           a.Keywords,
+			Risk:               string(a.Risk),
+		})
+	}
+
+	// Build verifications from explicit assumptions that have verification status
+	for _, a := range result.Assumptions {
+		if a.VerificationStatus == "" {
+			continue
+		}
+		out.Verifications = append(out.Verifications, cliVerification{
+			AssumptionID: a.ID,
+			Result:       a.VerificationStatus,
+			Confidence:   a.Confidence,
+			Reasoning:    a.Rationale,
+		})
+	}
+
+	// Build gaps from assumptions that are not verified
+	for _, a := range result.Assumptions {
+		if a.VerificationStatus == "VERIFIED" || a.VerificationStatus == "PARTIALLY_VERIFIED" {
+			continue
+		}
+		severity := "LOW"
+		switch a.Risk {
+		case RiskCritical:
+			severity = "CRITICAL"
+		case RiskHigh:
+			severity = "HIGH"
+		case RiskMedium:
+			severity = "MEDIUM"
+		}
+		out.Gaps = append(out.Gaps, cliGap{
+			AssumptionID:   a.ID,
+			Type:           "EVIDENCE_GAP",
+			Severity:       severity,
+			Description:    a.Description,
+			EvidenceDetail: "No matching evidence available for verification",
+		})
+	}
+
+	// Add a summary claim to preserve the claims_found count
+	out.Summary.ClaimsFound = len(out.Assumptions)
+	out.Claims = append(out.Claims, cliClaim{
+		ID:                   "clm_analysis",
+		SourceDocument:       result.ArchitectureName,
+		Text:                 result.Summary,
+		ExtractionConfidence: 0.95,
+		CreatedAt:            result.AnalysisDate,
+		Tags:                 []string{"analysis", "summary"},
+	})
+
+	return out
 }

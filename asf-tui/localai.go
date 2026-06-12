@@ -209,6 +209,9 @@ func (m localaiModel) Update(msg tea.Msg) (localaiModel, tea.Cmd) {
 			if m.section == 0 && m.selected < len(m.catalog) {
 				m.showActions = true
 				m.actionSelected = 0
+			} else if m.section == 1 {
+				m.showActions = true
+				m.actionSelected = 0
 			}
 		case "esc":
 			if m.showActions {
@@ -254,6 +257,14 @@ func (m localaiModel) Update(msg tea.Msg) (localaiModel, tea.Cmd) {
 	return m, nil
 }
 
+func (m *localaiModel) updateSection() {
+	if m.selected < len(m.catalog) {
+		m.section = 0
+	} else if len(m.otherModels) > 0 && m.selected > len(m.catalog) {
+		m.section = 1
+	}
+}
+
 func (m *localaiModel) moveUp() {
 	if m.showActions {
 		if m.actionSelected > 0 {
@@ -263,12 +274,14 @@ func (m *localaiModel) moveUp() {
 	}
 	if m.selected > 0 {
 		m.selected--
+		m.updateSection()
 		return
 	}
 	// Wrap to end
 	total := m.totalItems()
 	if total > 0 {
 		m.selected = total - 1
+		m.updateSection()
 	}
 }
 
@@ -283,9 +296,11 @@ func (m *localaiModel) moveDown() {
 	total := m.totalItems()
 	if m.selected < total-1 {
 		m.selected++
+		m.updateSection()
 		return
 	}
 	m.selected = 0
+	m.updateSection()
 }
 
 func (m *localaiModel) totalItems() int {
