@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 )
 
-var asfLog *log.Logger
-var debugLog *log.Logger
+var asfLog = log.New(io.Discard, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
+var debugLog = log.New(io.Discard, "[asf-debug] ", log.Ltime|log.Lshortfile)
 
 func initLogger() error {
 	logPath := asfLogPath()
