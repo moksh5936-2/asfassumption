@@ -15,7 +15,7 @@ import (
 const DemoSecret = "asf-enterprise-secret-2024"
 
 const (
-	ASFVersion    = "3.0.0-RC2"
+	ASFVersion    = "3.0.1"
 	LicensePrefix = "ASF"
 )
 
