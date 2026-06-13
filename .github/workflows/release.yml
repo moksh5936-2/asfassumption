@@ -57,7 +57,7 @@ jobs:
           else
             BINARY="ASF-v${VERSION}-${GOOS}-${GOARCH}"
           fi
-          go build -ldflags="-s -w" -o "../release/${BINARY}" .
+          go build -ldflags="-s -w -X main.ASFVersion=${VERSION}" -o "../release/${BINARY}" .
           echo "binary=${BINARY}" >> $GITHUB_ENV
           echo "binary=${BINARY}" >> $GITHUB_OUTPUT
 
@@ -181,7 +181,7 @@ jobs:
         env:
           CGO_ENABLED: '0'
         working-directory: asf-tui
-        run: go build -ldflags="-s -w" -o asf-tui .
+        run: go build -ldflags="-s -w -X main.ASFVersion=${GITHUB_REF_NAME#v}" -o asf-tui .
 
       - name: Verify build
         working-directory: asf-tui

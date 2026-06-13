@@ -14,10 +14,10 @@ import (
 // Do NOT use in production. Replace with a proper asymmetric signing scheme.
 const DemoSecret = "asf-enterprise-secret-2024"
 
-const (
-	ASFVersion    = "3.0.1"
-	LicensePrefix = "ASF"
-)
+// ASFVersion is the current version. Overridden at build time via -ldflags -X.
+var ASFVersion = "3.0.2"
+
+const LicensePrefix = "ASF"
 
 type LicenseInfo struct {
 	Key     string
