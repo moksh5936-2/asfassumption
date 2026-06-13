@@ -15,12 +15,6 @@ type NarrativeOutput struct {
 	// Per-assumption narratives
 	AssumptionNarratives []AssumptionNarrative `json:"assumption_narratives"`
 
-	// Executive report
-	ExecutiveReport ExecutiveReport `json:"executive_report"`
-
-	// Technical summary
-	TechnicalSummary TechnicalSummary `json:"technical_summary"`
-
 	// Architect narrative (full text)
 	ArchitectNarrative string `json:"architect_narrative"`
 }
@@ -57,73 +51,6 @@ type AssumptionNarrative struct {
 	DependsOn        []string `json:"depends_on"`
 	DownstreamImpact []string `json:"downstream_impact"`
 	Confidence       float64  `json:"confidence"`
-}
-
-// ExecutiveReport is the C-level summary.
-type ExecutiveReport struct {
-	ArchitectureOverview    string                `json:"architecture_overview"`
-	KeyAssumptions          []ExecutiveAssumption `json:"key_assumptions"`
-	MostCriticalAssumptions []ExecutiveAssumption `json:"most_critical_assumptions"`
-	HighImpactConsequences  []string              `json:"high_impact_consequences"`
-	TrustDependencies       []string              `json:"trust_dependencies"`
-	SinglePointsOfFailure   []string              `json:"single_points_of_failure"`
-	ArchitecturalConcerns   []string              `json:"architectural_concerns"`
-	RecommendedInvestments  []string              `json:"recommended_investments"`
-}
-
-// ExecutiveAssumption is a condensed view for executives.
-type ExecutiveAssumption struct {
-	Text           string `json:"text"`
-	RiskLevel      string `json:"risk_level"`
-	Consequence    string `json:"consequence"`
-	BusinessImpact string `json:"business_impact"`
-}
-
-// TechnicalSummary is the detailed technical view.
-type TechnicalSummary struct {
-	ArchitectureSummary string                    `json:"architecture_summary"`
-	AssumptionDetails   []TechnicalAssumption     `json:"assumption_details"`
-	STRIDEDistribution  map[string]int            `json:"stride_distribution"`
-	RiskDistribution    map[string]int            `json:"risk_distribution"`
-	Dependencies        []TechnicalDependency     `json:"dependencies"`
-	Recommendations     []TechnicalRecommendation `json:"recommendations"`
-}
-
-// TechnicalAssumption is the technical view of a single assumption.
-type TechnicalAssumption struct {
-	ID                string   `json:"id"`
-	Description       string   `json:"description"`
-	Component         string   `json:"component"`
-	Category          string   `json:"category"`
-	RiskLevel         string   `json:"risk_level"`
-	STRIDECategories  []string `json:"stride_categories"`
-	Likelihood        int      `json:"likelihood"`
-	Impact            int      `json:"impact"`
-	Confidence        float64  `json:"confidence"`
-	EvidenceSources   []string `json:"evidence_sources"`
-	Rationale         string   `json:"rationale"`
-	DownstreamSystems []string `json:"downstream_systems"`
-	FailureScenario   string   `json:"failure_scenario"`
-	Recommendation    string   `json:"recommendation"`
-}
-
-// TechnicalDependency maps what depends on an assumption.
-type TechnicalDependency struct {
-	AssumptionID        string   `json:"assumption_id"`
-	AssumptionText      string   `json:"assumption_text"`
-	DependentComponents []string `json:"dependent_components"`
-	DependentSystems    []string `json:"dependent_systems"`
-	DependencyType      string   `json:"dependency_type"`
-}
-
-// TechnicalRecommendation is a technical recommendation.
-type TechnicalRecommendation struct {
-	AssumptionID         string   `json:"assumption_id"`
-	AssumptionText       string   `json:"assumption_text"`
-	Recommendation       string   `json:"recommendation"`
-	Priority             string   `json:"priority"`
-	ImplementationEffort string   `json:"implementation_effort"`
-	MitigatesSTRIDE      []string `json:"mitigates_stride"`
 }
 
 // StyleRule defines a banned phrase or pattern.

@@ -1,5 +1,0 @@
-IDENTITY MANAGEMENT
-
-User identities are provisioned through the corporate LDAP.
-Role assignments are managed by the identity governance team.
-Access reviews are conducted quarterly.

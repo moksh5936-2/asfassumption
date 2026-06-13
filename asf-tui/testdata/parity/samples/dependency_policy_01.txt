@@ -1,5 +1,0 @@
-DEPENDENCIES
-
-The payroll system depends on the corporate LDAP for authentication.
-Integration with the HR system is required for employee data.
-Payment processing relies on third-party banking APIs.

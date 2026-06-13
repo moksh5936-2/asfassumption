@@ -1,5 +1,0 @@
-EXTERNAL INTEGRATIONS
-
-Cloud services depend on the identity provider for SSO.
-Monitoring system integrates with PagerDuty for alerting.
-CI/CD pipeline depends on GitHub Actions for deployment.

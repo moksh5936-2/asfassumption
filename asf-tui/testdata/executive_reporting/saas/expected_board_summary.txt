@@ -1,1 +1,0 @@
-SaaS domain benchmark — expected outputs pending ERN full integration test.

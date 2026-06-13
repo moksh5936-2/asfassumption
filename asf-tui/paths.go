@@ -93,3 +93,10 @@ func oldLicensePath() string {
 func ensureDir(path string) error {
 	return os.MkdirAll(filepath.Dir(path), 0755)
 }
+
+func getDefaultPath(cfg *Config) (string, error) {
+	if cfg != nil && cfg.Output.Directory != "" {
+		return cfg.Output.Directory, nil
+	}
+	return os.Getwd()
+}

@@ -15,10 +15,6 @@ func ExportMarkdown(output *CoverageOutput) string {
 	b.WriteString("# Coverage & Blind Spot Analysis\n\n")
 	b.WriteString(fmt.Sprintf("**Domain:** %s  \n", output.Domain))
 	b.WriteString(fmt.Sprintf("**Generated:** %s  \n", output.GeneratedAt))
-	b.WriteString(fmt.Sprintf("**Architect Attention Score:** %.0f/100  \n\n", output.AttentionScore))
-
-	b.WriteString(attentionScoreInterpretation(output.AttentionScore))
-	b.WriteString("\n\n")
 
 	if output.Assessment != nil && len(output.Assessment.Categories) > 0 {
 		b.WriteString("## Coverage by Category\n\n")
@@ -212,17 +208,4 @@ func mdToHTML(md string) string {
 	}
 
 	return html.String()
-}
-
-func attentionScoreInterpretation(score float64) string {
-	switch {
-	case score >= 90:
-		return "**Interpretation:** Excellent Coverage — The architecture has strong assumption coverage across all categories."
-	case score >= 70:
-		return "**Interpretation:** Good Coverage — Most assumption areas are covered, but some gaps exist."
-	case score >= 50:
-		return "**Interpretation:** Moderate Blind Spots — Several assumption categories need investigation."
-	default:
-		return "**Interpretation:** High Architectural Uncertainty — Critical assumption areas remain unexplored."
-	}
 }

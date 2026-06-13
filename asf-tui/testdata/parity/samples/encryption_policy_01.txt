@@ -1,5 +1,0 @@
-ENCRYPTION & CONFIGURATION
-
-All data is encrypted at rest using AES-256.
-Data in transit is encrypted using TLS 1.2 or higher.
-Encryption keys are managed by AWS KMS.

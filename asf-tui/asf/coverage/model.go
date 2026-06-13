@@ -91,7 +91,7 @@ type CoverageOutput struct {
 	BlindSpots       []BlindSpot         `json:"blind_spots,omitempty"`
 	DomainBlindSpots []DomainBlindSpot   `json:"domain_blind_spots,omitempty"`
 	CISOView         *CISOView           `json:"ciso_view,omitempty"`
-	AttentionScore   float64             `json:"attention_score"`
-	Domain           string              `json:"domain"`
-	GeneratedAt      string              `json:"generated_at"`
+
+	Domain      string `json:"domain"`
+	GeneratedAt string `json:"generated_at"`
 }

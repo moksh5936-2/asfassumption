@@ -18,6 +18,7 @@ type Theme struct {
 	Border    lipgloss.Color
 	Highlight lipgloss.Color
 	Bg        lipgloss.Color
+	SidebarBg lipgloss.Color
 }
 
 var Themes = map[string]Theme{
@@ -35,6 +36,7 @@ var Themes = map[string]Theme{
 		Border:    lipgloss.Color("#334155"),
 		Highlight: lipgloss.Color("#6366F1"),
 		Bg:        lipgloss.Color("#1E293B"),
+		SidebarBg: lipgloss.Color("#0F172A"),
 	},
 	"Midnight": {
 		Name:      "Midnight",
@@ -50,6 +52,7 @@ var Themes = map[string]Theme{
 		Border:    lipgloss.Color("#374151"),
 		Highlight: lipgloss.Color("#A78BFA"),
 		Bg:        lipgloss.Color("#111827"),
+		SidebarBg: lipgloss.Color("#0B0F19"),
 	},
 	"Cyber": {
 		Name:      "Cyber",
@@ -65,6 +68,7 @@ var Themes = map[string]Theme{
 		Border:    lipgloss.Color("#004D14"),
 		Highlight: lipgloss.Color("#FF00FF"),
 		Bg:        lipgloss.Color("#0D0D0D"),
+		SidebarBg: lipgloss.Color("#050505"),
 	},
 	"Minimal": {
 		Name:      "Minimal",
@@ -80,6 +84,7 @@ var Themes = map[string]Theme{
 		Border:    lipgloss.Color("#444444"),
 		Highlight: lipgloss.Color("#FFFFFF"),
 		Bg:        lipgloss.Color("#1A1A1A"),
+		SidebarBg: lipgloss.Color("#111111"),
 	},
 }
 
@@ -107,25 +112,44 @@ type StyleSet struct {
 	SectionItem  lipgloss.Style
 	Header       lipgloss.Style
 	Fox          lipgloss.Style
+
+	Sidebar       lipgloss.Style
+	SidebarItem   lipgloss.Style
+	SidebarActive lipgloss.Style
+	TopBar        lipgloss.Style
+	BottomBar     lipgloss.Style
+	Tab           lipgloss.Style
+	TabActive     lipgloss.Style
+	ScrollHint    lipgloss.Style
+	EmptyState    lipgloss.Style
+	Badge         lipgloss.Style
+	BadgeCritical lipgloss.Style
+	BadgeHigh     lipgloss.Style
+	BadgeMedium   lipgloss.Style
+	BadgeLow      lipgloss.Style
+	DimText       lipgloss.Style
 }
 
 func NewStyles(t Theme) StyleSet {
+	sb := lipgloss.Color("#0F172A")
+	if t.SidebarBg != "" {
+		sb = t.SidebarBg
+	}
 	return StyleSet{
 		t: t,
 
 		App: lipgloss.NewStyle().
-			Background(t.Bg).
-			Padding(0, 2),
+			Background(t.Bg),
 
 		Title: lipgloss.NewStyle().
 			Foreground(t.Primary).
 			Bold(true).
-			MarginTop(1).
 			MarginBottom(1),
 
 		Subtitle: lipgloss.NewStyle().
 			Foreground(t.Secondary).
-			Italic(true),
+			Italic(true).
+			MarginBottom(1),
 
 		MenuItem: lipgloss.NewStyle().
 			Foreground(t.Text).
@@ -169,9 +193,7 @@ func NewStyles(t Theme) StyleSet {
 
 		Help: lipgloss.NewStyle().
 			Foreground(t.DimText).
-			Italic(true).
-			MarginTop(1).
-			MarginBottom(1),
+			Italic(true),
 
 		ErrorText: lipgloss.NewStyle().
 			Foreground(t.Error).
@@ -220,6 +242,84 @@ func NewStyles(t Theme) StyleSet {
 		Fox: lipgloss.NewStyle().
 			Foreground(t.Secondary).
 			Bold(true),
+
+		Sidebar: lipgloss.NewStyle().
+			Background(sb).
+			Padding(0, 1).
+			Width(22),
+
+		SidebarItem: lipgloss.NewStyle().
+			Background(sb).
+			Foreground(t.DimText).
+			Padding(0, 1).
+			Width(20),
+
+		SidebarActive: lipgloss.NewStyle().
+			Background(t.Primary).
+			Foreground(t.Bg).
+			Bold(true).
+			Padding(0, 1).
+			Width(20),
+
+		TopBar: lipgloss.NewStyle().
+			Background(t.Border).
+			Foreground(t.Text).
+			Padding(0, 1),
+
+		BottomBar: lipgloss.NewStyle().
+			Background(t.Border).
+			Foreground(t.DimText).
+			Padding(0, 1),
+
+		Tab: lipgloss.NewStyle().
+			Foreground(t.DimText).
+			Padding(0, 1),
+		TabActive: lipgloss.NewStyle().
+			Foreground(t.Text).
+			Background(t.Border).
+			Bold(true).
+			Padding(0, 1),
+
+		ScrollHint: lipgloss.NewStyle().
+			Foreground(t.DimText).
+			Italic(true),
+
+		EmptyState: lipgloss.NewStyle().
+			Foreground(t.DimText).
+			Italic(true).
+			Padding(1, 2),
+
+		Badge: lipgloss.NewStyle().
+			Foreground(t.DimText).
+			Padding(0, 1),
+
+		BadgeCritical: lipgloss.NewStyle().
+			Foreground(t.Bg).
+			Background(t.Error).
+			Bold(true).
+			Padding(0, 1),
+
+		BadgeHigh: lipgloss.NewStyle().
+			Foreground(t.Bg).
+			Background(t.Warning).
+			Bold(true).
+			Padding(0, 1),
+
+		BadgeMedium: lipgloss.NewStyle().
+			Foreground(t.Bg).
+			Background(t.Accent).
+			Bold(true).
+			Padding(0, 1),
+
+		BadgeLow: lipgloss.NewStyle().
+			Foreground(t.Bg).
+			Background(t.Secondary).
+			Bold(true).
+			Padding(0, 1),
+
+		DimText: lipgloss.NewStyle().
+			Foreground(t.DimText).
+			Italic(true),
 	}
 }
 

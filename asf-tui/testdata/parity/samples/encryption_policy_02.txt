@@ -1,5 +1,0 @@
-SYSTEM CONFIGURATION
-
-Automated backups run daily with 30-day retention.
-System logging is configured for all production services.
-Monitoring alerts are configured for security events.

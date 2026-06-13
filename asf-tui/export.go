@@ -657,114 +657,6 @@ func exportMarkdown(result *AnalysisResult, path string) error {
 		}
 	}
 
-	// ── ERN — Executive Risk Narratives ──
-	if len(result.ERN.ExecutiveRisks) > 0 {
-		b.WriteString("## Executive Risk Narratives\n\n")
-		b.WriteString(fmt.Sprintf("**Financial Exposure:** %s — %s\n\n", result.ERN.FinancialExposure.Level, result.ERN.FinancialExposure.Rationale))
-		if result.ERN.BoardSummary.Summary != "" {
-			b.WriteString("### Board Summary\n\n")
-			b.WriteString(result.ERN.BoardSummary.Summary + "\n\n")
-		}
-		if len(result.ERN.RiskThemes) > 0 {
-			b.WriteString("### Risk Themes\n\n")
-			b.WriteString("| Theme | Count | Severity |\n")
-			b.WriteString("|-------|-------|----------|\n")
-			for _, th := range result.ERN.RiskThemes {
-				b.WriteString(fmt.Sprintf("| %s | %d | %s |\n", th.Name, th.RiskCount, th.Severity))
-			}
-			b.WriteString("\n")
-		}
-		if len(result.ERN.ExecutiveRisks) > 0 {
-			b.WriteString("### Executive Risks\n\n")
-			for _, risk := range result.ERN.ExecutiveRisks {
-				b.WriteString(fmt.Sprintf("**%s** [%s] — %s\n", risk.ID, risk.Priority, risk.Title))
-				b.WriteString(fmt.Sprintf("- Business Impact: %s\n", risk.BusinessImpact))
-				b.WriteString(fmt.Sprintf("- Compliance Impact: %s\n", risk.ComplianceImpact))
-				if len(risk.RecommendedActions) > 0 {
-					b.WriteString("- Recommended Actions:\n")
-					for _, a := range risk.RecommendedActions {
-						b.WriteString(fmt.Sprintf("  - %s\n", a))
-					}
-				}
-				b.WriteString("\n")
-			}
-		}
-		if len(result.ERN.CISOBriefing.TopRisks) > 0 {
-			b.WriteString("### CISO Briefing — Top Risks\n\n")
-			for _, r := range result.ERN.CISOBriefing.TopRisks {
-				b.WriteString(fmt.Sprintf("- %s\n", r))
-			}
-			b.WriteString("\n")
-		}
-		if len(result.ERN.RemediationRoadmap.Phase30) > 0 {
-			b.WriteString("### Remediation Roadmap\n\n")
-			b.WriteString("**30 Days:**\n")
-			for _, item := range result.ERN.RemediationRoadmap.Phase30 {
-				b.WriteString(fmt.Sprintf("- [%s] %s\n", item.Priority, item.Action))
-			}
-			b.WriteString("\n")
-			if len(result.ERN.RemediationRoadmap.Phase90) > 0 {
-				b.WriteString("**90 Days:**\n")
-				for _, item := range result.ERN.RemediationRoadmap.Phase90 {
-					b.WriteString(fmt.Sprintf("- [%s] %s\n", item.Priority, item.Action))
-				}
-				b.WriteString("\n")
-			}
-			if len(result.ERN.RemediationRoadmap.Phase180) > 0 {
-				b.WriteString("**180 Days:**\n")
-				for _, item := range result.ERN.RemediationRoadmap.Phase180 {
-					b.WriteString(fmt.Sprintf("- [%s] %s\n", item.Priority, item.Action))
-				}
-				b.WriteString("\n")
-			}
-			if len(result.ERN.RemediationRoadmap.Phase12m) > 0 {
-				b.WriteString("**12 Months:**\n")
-				for _, item := range result.ERN.RemediationRoadmap.Phase12m {
-					b.WriteString(fmt.Sprintf("- [%s] %s\n", item.Priority, item.Action))
-				}
-				b.WriteString("\n")
-			}
-		}
-		if len(result.ERN.InvestmentInsights) > 0 {
-			b.WriteString("### Security Investment Insights\n\n")
-			for _, ii := range result.ERN.InvestmentInsights {
-				b.WriteString(fmt.Sprintf("- **%s** [%s]: %s\n", ii.Area, ii.Priority, ii.Rationale))
-			}
-			b.WriteString("\n")
-		}
-		if result.ERN.DecisionSupport.Top3Actions != nil && len(result.ERN.DecisionSupport.Top3Actions) > 0 {
-			b.WriteString("### CISO Decision Support — Top 3 Actions\n\n")
-			for _, da := range result.ERN.DecisionSupport.Top3Actions {
-				b.WriteString(fmt.Sprintf("%d. **%s** (%s impact) — %s\n", da.Rank, da.Action, da.Impact, da.Rationale))
-			}
-			b.WriteString("\n")
-		}
-		if len(result.ERN.CrownJewelClasses) > 0 {
-			b.WriteString("### Crown Jewel Classification\n\n")
-			b.WriteString("| Asset | Category | Label |\n")
-			b.WriteString("|-------|----------|-------|\n")
-			for _, cj := range result.ERN.CrownJewelClasses {
-				b.WriteString(fmt.Sprintf("| %s | %s | %s |\n", cj.TechnicalName, cj.BusinessCategory, cj.BusinessLabel))
-			}
-			b.WriteString("\n")
-		}
-		b.WriteString("### Regulatory Impact Analysis\n\n")
-		if len(result.ERN.RegulatoryImpacts) > 0 {
-			for _, ri := range result.ERN.RegulatoryImpacts {
-				b.WriteString(fmt.Sprintf("- **%s** (%s): %s\n", ri.Framework, ri.Domain, ri.Rationale))
-			}
-		} else {
-			b.WriteString("No regulatory impacts identified.\n")
-		}
-		b.WriteString("\n")
-	}
-
-	// ── Portfolio Intelligence (Markdown) ──
-	sampiMD := renderSAMPIReportMarkdown(result.SAMPI)
-	if sampiMD != "" {
-		b.WriteString(sampiMD)
-	}
-
 	// ── Decision Intelligence (Markdown) ──
 	if sdiMD := renderSDIReportMarkdown(result.SDI); sdiMD != "" {
 		b.WriteString(sdiMD)
@@ -842,25 +734,6 @@ func exportMarkdown(result *AnalysisResult, path string) error {
 		b.WriteString("\n")
 	}
 
-	// ── Report Packs ──
-	if result.ERN.ReportPacks.BoardReport != "" || result.ERN.ReportPacks.ExecutiveReport != "" || result.ERN.ReportPacks.TechnicalReport != "" {
-		b.WriteString("## Report Packs\n\n")
-		if result.ERN.ReportPacks.BoardReport != "" {
-			b.WriteString("### Board Report\n\n")
-			b.WriteString(result.ERN.ReportPacks.BoardReport)
-			b.WriteString("\n")
-		}
-		if result.ERN.ReportPacks.ExecutiveReport != "" {
-			b.WriteString("### Executive Report\n\n")
-			b.WriteString(result.ERN.ReportPacks.ExecutiveReport)
-			b.WriteString("\n")
-		}
-		if result.ERN.ReportPacks.TechnicalReport != "" {
-			b.WriteString("### Technical Report\n\n")
-			b.WriteString(result.ERN.ReportPacks.TechnicalReport)
-			b.WriteString("\n")
-		}
-	}
 	b.WriteString("---\n")
 	b.WriteString("*Generated by ASF (Architecture Security Framework) — Deterministic Security Review Engine*\n")
 
@@ -1334,73 +1207,6 @@ func exportHTML(result *AnalysisResult, path string) error {
 		}
 	}
 
-	// ── ERN — Executive Risk Narratives (HTML) ──
-	if len(result.ERN.ExecutiveRisks) > 0 {
-		b.WriteString("<h2>Executive Risk Narratives</h2>\n")
-		b.WriteString(fmt.Sprintf("<p><strong>Financial Exposure:</strong> %s — %s</p>\n", result.ERN.FinancialExposure.Level, result.ERN.FinancialExposure.Rationale))
-		if result.ERN.BoardSummary.Summary != "" {
-			b.WriteString("<h3>Board Summary</h3>\n")
-			b.WriteString(fmt.Sprintf("<p>%s</p>\n", result.ERN.BoardSummary.Summary))
-		}
-		if len(result.ERN.RiskThemes) > 0 {
-			b.WriteString("<h3>Risk Themes</h3>\n<table>\n<tr><th>Theme</th><th>Count</th><th>Severity</th></tr>\n")
-			for _, th := range result.ERN.RiskThemes {
-				b.WriteString(fmt.Sprintf("<tr><td>%s</td><td>%d</td><td>%s</td></tr>\n", th.Name, th.RiskCount, th.Severity))
-			}
-			b.WriteString("</table>\n")
-		}
-		if len(result.ERN.ExecutiveRisks) > 0 {
-			b.WriteString("<h3>Executive Risks</h3>\n")
-			for _, risk := range result.ERN.ExecutiveRisks {
-				b.WriteString(fmt.Sprintf("<p><strong>%s</strong> [%s] — %s<br>\n", risk.ID, risk.Priority, risk.Title))
-				b.WriteString(fmt.Sprintf("Business Impact: %s<br>\n", risk.BusinessImpact))
-				b.WriteString(fmt.Sprintf("Compliance Impact: %s</p>\n", risk.ComplianceImpact))
-				if len(risk.RecommendedActions) > 0 {
-					b.WriteString("<ul>\n")
-					for _, a := range risk.RecommendedActions {
-						b.WriteString(fmt.Sprintf("<li>%s</li>\n", a))
-					}
-					b.WriteString("</ul>\n")
-				}
-			}
-		}
-		if len(result.ERN.CISOBriefing.TopRisks) > 0 {
-			b.WriteString("<h3>CISO Briefing — Top Risks</h3>\n<ul>\n")
-			for _, r := range result.ERN.CISOBriefing.TopRisks {
-				b.WriteString(fmt.Sprintf("<li>%s</li>\n", r))
-			}
-			b.WriteString("</ul>\n")
-		}
-		if len(result.ERN.RemediationRoadmap.Phase30) > 0 {
-			b.WriteString("<h3>Remediation Roadmap</h3>\n")
-			b.WriteString("<p><strong>30 Days:</strong></p>\n<ul>\n")
-			for _, item := range result.ERN.RemediationRoadmap.Phase30 {
-				b.WriteString(fmt.Sprintf("<li>[%s] %s</li>\n", item.Priority, item.Action))
-			}
-			b.WriteString("</ul>\n")
-		}
-		if len(result.ERN.InvestmentInsights) > 0 {
-			b.WriteString("<h3>Security Investment Insights</h3>\n<ul>\n")
-			for _, ii := range result.ERN.InvestmentInsights {
-				b.WriteString(fmt.Sprintf("<li><strong>%s</strong> [%s]: %s</li>\n", ii.Area, ii.Priority, ii.Rationale))
-			}
-			b.WriteString("</ul>\n")
-		}
-		if result.ERN.DecisionSupport.Top3Actions != nil && len(result.ERN.DecisionSupport.Top3Actions) > 0 {
-			b.WriteString("<h3>CISO Decision Support — Top 3 Actions</h3>\n<ol>\n")
-			for _, da := range result.ERN.DecisionSupport.Top3Actions {
-				b.WriteString(fmt.Sprintf("<li><strong>%s</strong> (%s impact) — %s</li>\n", da.Action, da.Impact, da.Rationale))
-			}
-			b.WriteString("</ol>\n")
-		}
-	}
-
-	// ── Portfolio Intelligence (HTML) ──
-	sampiMD := renderSAMPIReportMarkdown(result.SAMPI)
-	if sampiMD != "" {
-		b.WriteString(markdownToHTML(sampiMD))
-	}
-
 	// ── Decision Intelligence (HTML) ──
 	if sdiMD := renderSDIReportMarkdown(result.SDI); sdiMD != "" {
 		b.WriteString(markdownToHTML(sdiMD))
@@ -1454,28 +1260,6 @@ func exportHTML(result *AnalysisResult, path string) error {
 		b.WriteString("</table>\n")
 	}
 
-	// ── Report Packs (HTML) ──
-	if result.ERN.ReportPacks.BoardReport != "" || result.ERN.ReportPacks.ExecutiveReport != "" || result.ERN.ReportPacks.TechnicalReport != "" {
-		b.WriteString("<h2>Report Packs</h2>\n")
-		if result.ERN.ReportPacks.BoardReport != "" {
-			b.WriteString("<h3>Board Report</h3>\n")
-			b.WriteString("<div class=\"report-pack\">\n")
-			b.WriteString(markdownToHTML(result.ERN.ReportPacks.BoardReport))
-			b.WriteString("</div>\n")
-		}
-		if result.ERN.ReportPacks.ExecutiveReport != "" {
-			b.WriteString("<h3>Executive Report</h3>\n")
-			b.WriteString("<div class=\"report-pack\">\n")
-			b.WriteString(markdownToHTML(result.ERN.ReportPacks.ExecutiveReport))
-			b.WriteString("</div>\n")
-		}
-		if result.ERN.ReportPacks.TechnicalReport != "" {
-			b.WriteString("<h3>Technical Report</h3>\n")
-			b.WriteString("<div class=\"report-pack\">\n")
-			b.WriteString(markdownToHTML(result.ERN.ReportPacks.TechnicalReport))
-			b.WriteString("</div>\n")
-		}
-	}
 	b.WriteString("<div class=\"footer\">\n")
 	b.WriteString("Generated by ASF (Architecture Security Framework) — Deterministic Security Review Engine<br>\n")
 	b.WriteString("Risk Model: asf-risk-model-1.0 | 5x5 matrix | Likelihood × Impact = Risk Score<br>\n")
@@ -2019,101 +1803,6 @@ func exportPDF(result *AnalysisResult, path string) error {
 		}
 	}
 
-	// ── ERN — Executive Risk Narratives (PDF) ──
-	if len(result.ERN.ExecutiveRisks) > 0 {
-		pdf.AddPage()
-		pdf.SetFont("Helvetica", "B", 16)
-		pdf.CellFormat(190, 12, "Executive Risk Narratives", "", 1, "L", false, 0, "")
-		pdf.Ln(4)
-		pdf.SetFont("Helvetica", "", 10)
-		pdf.MultiCell(190, 5, fmt.Sprintf("Financial Exposure: %s — %s", result.ERN.FinancialExposure.Level, result.ERN.FinancialExposure.Rationale), "", "L", false)
-		pdf.Ln(4)
-		if result.ERN.BoardSummary.Summary != "" {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "Board Summary", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 9)
-			pdf.MultiCell(190, 4, result.ERN.BoardSummary.Summary, "", "L", false)
-			pdf.Ln(4)
-		}
-		if len(result.ERN.CISOBriefing.TopRisks) > 0 {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, fmt.Sprintf("Top Risks (%d)", len(result.ERN.CISOBriefing.TopRisks)), "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			for _, r := range result.ERN.CISOBriefing.TopRisks {
-				pdf.MultiCell(190, 4, "  - "+r, "", "L", false)
-			}
-			pdf.Ln(4)
-		}
-		if len(result.ERN.RemediationRoadmap.Phase30) > 0 {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "Remediation Roadmap - 30 Days", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			for _, item := range result.ERN.RemediationRoadmap.Phase30 {
-				pdf.MultiCell(190, 4, fmt.Sprintf("  [%s] %s", item.Priority, item.Action), "", "L", false)
-			}
-			pdf.Ln(4)
-		}
-		if len(result.ERN.InvestmentInsights) > 0 {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "Security Investment Insights", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			for _, ii := range result.ERN.InvestmentInsights {
-				pdf.MultiCell(190, 4, fmt.Sprintf("  %s [%s]", ii.Area, ii.Priority), "", "L", false)
-			}
-			pdf.Ln(4)
-		}
-		if result.ERN.DecisionSupport.Top3Actions != nil && len(result.ERN.DecisionSupport.Top3Actions) > 0 {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "CISO Decision Support - Top 3 Actions", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			for _, da := range result.ERN.DecisionSupport.Top3Actions {
-				pdf.MultiCell(190, 4, fmt.Sprintf("  %d. %s (%s)", da.Rank, da.Action, da.Impact), "", "L", false)
-			}
-			pdf.Ln(4)
-		}
-	}
-
-	// ── Report Packs (PDF) ──
-	if result.ERN.ReportPacks.BoardReport != "" || result.ERN.ReportPacks.ExecutiveReport != "" || result.ERN.ReportPacks.TechnicalReport != "" {
-		pdf.AddPage()
-		pdf.SetFont("Helvetica", "B", 16)
-		pdf.CellFormat(190, 12, "Report Packs", "", 1, "L", false, 0, "")
-		pdf.Ln(4)
-		if result.ERN.ReportPacks.BoardReport != "" {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "Board Report", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			pdf.MultiCell(190, 4, stripMarkdownHeadings(result.ERN.ReportPacks.BoardReport), "", "L", false)
-			pdf.Ln(6)
-		}
-		if result.ERN.ReportPacks.ExecutiveReport != "" {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "Executive Report", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			pdf.MultiCell(190, 4, stripMarkdownHeadings(result.ERN.ReportPacks.ExecutiveReport), "", "L", false)
-			pdf.Ln(6)
-		}
-		if result.ERN.ReportPacks.TechnicalReport != "" {
-			pdf.SetFont("Helvetica", "B", 12)
-			pdf.CellFormat(190, 7, "Technical Report", "", 1, "L", false, 0, "")
-			pdf.SetFont("Helvetica", "", 8)
-			pdf.MultiCell(190, 4, stripMarkdownHeadings(result.ERN.ReportPacks.TechnicalReport), "", "L", false)
-			pdf.Ln(6)
-		}
-	}
-
-	// ── Portfolio Intelligence (PDF) ──
-	sampiMD := renderSAMPIReportMarkdown(result.SAMPI)
-	if sampiMD != "" {
-		pdf.AddPage()
-		pdf.SetFont("Helvetica", "B", 16)
-		pdf.CellFormat(190, 12, "Portfolio Intelligence", "", 1, "L", false, 0, "")
-		pdf.Ln(4)
-		pdf.SetFont("Helvetica", "", 8)
-		pdf.MultiCell(190, 4, stripMarkdownHeadings(sampiMD), "", "L", false)
-		pdf.Ln(6)
-	}
-
 	// ── Decision Intelligence (PDF) ──
 	if sdiMD := renderSDIReportMarkdown(result.SDI); sdiMD != "" {
 		pdf.AddPage()
@@ -2211,99 +1900,6 @@ func stripMarkdownHeadings(md string) string {
 		}
 	}
 	return strings.Join(out, "\n")
-}
-
-func renderSAMPIReportMarkdown(sampi SAMPIIntelligence) string {
-	var b strings.Builder
-	if sampi.Dashboard.TotalArchitectures == 0 {
-		return ""
-	}
-
-	b.WriteString("## Portfolio Intelligence\n\n")
-	b.WriteString("### Dashboard\n\n")
-	b.WriteString("| Metric | Value |\n|--------|-------|\n")
-	b.WriteString(fmt.Sprintf("| Architectures | %d |\n", sampi.Dashboard.TotalArchitectures))
-	b.WriteString(fmt.Sprintf("| Findings | %d |\n", sampi.Dashboard.TotalFindings))
-	b.WriteString(fmt.Sprintf("| Threats | %d |\n", sampi.Dashboard.TotalThreats))
-	b.WriteString(fmt.Sprintf("| Attack Paths | %d |\n", sampi.Dashboard.TotalAttackPaths))
-	b.WriteString(fmt.Sprintf("| Controls | %d |\n", sampi.Dashboard.TotalControls))
-	b.WriteString(fmt.Sprintf("| Average Risk Score | %.1f |\n", sampi.Dashboard.AverageRiskScore))
-	b.WriteString(fmt.Sprintf("| Average Coverage | %.1f%% |\n", sampi.Dashboard.AverageCoverage))
-	b.WriteString(fmt.Sprintf("| Compliance Count | %d |\n", sampi.Dashboard.ComplianceCount))
-	b.WriteString("\n")
-
-	if len(sampi.Heatmaps) > 0 {
-		b.WriteString("### Executive Heatmap\n\n")
-		b.WriteString("| Architecture | Risk Band | Score | Findings | Controls |\n")
-		b.WriteString("|-------------|-----------|-------|----------|----------|\n")
-		for _, h := range sampi.Heatmaps {
-			b.WriteString(fmt.Sprintf("| %s | %s | %.1f | %d | %d |\n", h.ArchitectureName, h.RiskBand, h.RiskScore, h.FindingCount, h.ControlCount))
-		}
-		b.WriteString("\n")
-	}
-
-	if len(sampi.RepeatedWeaknesses) > 0 {
-		b.WriteString("### Repeated Weaknesses\n\n")
-		b.WriteString("| Finding | Category | Severity | Occurrences | Systemic |\n")
-		b.WriteString("|---------|----------|----------|-------------|----------|\n")
-		for _, rw := range sampi.RepeatedWeaknesses {
-			sys := ""
-			if rw.Systemic {
-				sys = "⚠"
-			}
-			b.WriteString(fmt.Sprintf("| %s | %s | %s | %d | %s |\n", rw.FindingTitle, rw.Category, rw.Severity, rw.OccurrenceCount, sys))
-			b.WriteString(fmt.Sprintf("  Affected: %s\n", strings.Join(rw.AffectedArchitectures, ", ")))
-		}
-		b.WriteString("\n")
-	}
-
-	if len(sampi.EnterpriseThemes) > 0 {
-		b.WriteString("### Enterprise Risk Themes\n\n")
-		b.WriteString("| Theme | Count | Architectures | Severity |\n")
-		b.WriteString("|-------|-------|---------------|----------|\n")
-		for _, th := range sampi.EnterpriseThemes {
-			b.WriteString(fmt.Sprintf("| %s | %d | %d | %s |\n", th.Name, th.RiskCount, th.AffectedArchitectures, th.Severity))
-		}
-		b.WriteString("\n")
-	}
-
-	if len(sampi.ControlCoverage) > 0 {
-		b.WriteString("### Control Coverage\n\n")
-		b.WriteString("| Control | Coverage | Architectures |\n")
-		b.WriteString("|---------|----------|---------------|\n")
-		for _, cc := range sampi.ControlCoverage {
-			b.WriteString(fmt.Sprintf("| %s | %.1f%% | %d/%d |\n", cc.ControlName, cc.CoveragePercent, cc.ArchitecturesWith, cc.ArchitecturesTotal))
-		}
-		b.WriteString("\n")
-	}
-
-	if sampi.SecurityDebt.Score > 0 {
-		b.WriteString("### Security Debt\n\n")
-		b.WriteString(fmt.Sprintf("- **Score:** %.1f\n", sampi.SecurityDebt.Score))
-		b.WriteString(fmt.Sprintf("- **Longstanding Findings:** %d\n", sampi.SecurityDebt.LongstandingCount))
-		b.WriteString(fmt.Sprintf("- **Repeated Findings:** %d\n", sampi.SecurityDebt.RepeatedCount))
-		b.WriteString("\n")
-		if len(sampi.SecurityDebt.TopDebts) > 0 {
-			b.WriteString("| Description | Architecture | Category | Severity |\n")
-			b.WriteString("|-------------|--------------|----------|----------|\n")
-			for _, d := range sampi.SecurityDebt.TopDebts {
-				b.WriteString(fmt.Sprintf("| %s | %s | %s | %s |\n", d.Description, d.Architecture, d.Category, d.Severity))
-			}
-			b.WriteString("\n")
-		}
-	}
-
-	if len(sampi.ProgramInsights) > 0 {
-		b.WriteString("### Security Program Insights\n\n")
-		b.WriteString("| Area | Priority | Insight |\n")
-		b.WriteString("|------|----------|---------|\n")
-		for _, pi := range sampi.ProgramInsights {
-			b.WriteString(fmt.Sprintf("| %s | %s | %s |\n", pi.Area, pi.Priority, pi.Insight))
-		}
-		b.WriteString("\n")
-	}
-
-	return b.String()
 }
 
 func renderSDIReportMarkdown(sdi SDIIntelligence) string {
@@ -2808,4 +2404,19 @@ func (m mainModel) updateExport(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.exportV, cmd = m.exportV.Update(msg)
 	return m, cmd
+}
+
+func coverageLevelString(cov float64) string {
+	switch {
+	case cov >= 90:
+		return "Excellent"
+	case cov >= 70:
+		return "Strong"
+	case cov >= 50:
+		return "Medium"
+	case cov >= 30:
+		return "Fair"
+	default:
+		return "Poor"
+	}
 }

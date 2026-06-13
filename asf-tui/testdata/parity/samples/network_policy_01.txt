@@ -1,5 +1,0 @@
-NETWORK SECURITY
-
-The payroll system is not accessible from the internet.
-All traffic between environments is encrypted with TLS 1.3.
-Network segments are isolated by application tier.

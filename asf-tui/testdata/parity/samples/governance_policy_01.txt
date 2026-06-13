@@ -1,5 +1,0 @@
-GOVERNANCE
-
-Quarterly security audits are conducted by an external firm.
-Annual penetration testing is required for all critical systems.
-Compliance reviews are performed against SOC 2 framework.

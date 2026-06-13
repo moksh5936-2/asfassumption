@@ -156,34 +156,6 @@ func TestNarrativeEngineGenerateNarrative(t *testing.T) {
 		t.Error("expected non-empty security recommendation")
 	}
 
-	// Verify executive report
-	if output.ExecutiveReport.ArchitectureOverview == "" {
-		t.Error("expected non-empty executive overview")
-	}
-	if len(output.ExecutiveReport.MostCriticalAssumptions) == 0 {
-		t.Error("expected critical assumptions")
-	}
-	if len(output.ExecutiveReport.ArchitecturalConcerns) == 0 {
-		t.Error("expected architectural concerns from contradictions")
-	}
-	if len(output.ExecutiveReport.RecommendedInvestments) == 0 {
-		t.Error("expected recommended investments")
-	}
-
-	// Verify technical summary
-	if output.TechnicalSummary.ArchitectureSummary == "" {
-		t.Error("expected non-empty technical summary")
-	}
-	if len(output.TechnicalSummary.AssumptionDetails) != 3 {
-		t.Errorf("expected 3 technical details, got %d", len(output.TechnicalSummary.AssumptionDetails))
-	}
-	if len(output.TechnicalSummary.Recommendations) == 0 {
-		t.Error("expected recommendations")
-	}
-	if len(output.TechnicalSummary.Dependencies) == 0 {
-		t.Error("expected dependencies")
-	}
-
 	// Verify architect narrative
 	if output.ArchitectNarrative == "" {
 		t.Error("expected non-empty architect narrative")
@@ -412,12 +384,6 @@ func TestExportMarkdown(t *testing.T) {
 	if !strings.Contains(md, "# Security Architect Narrative") {
 		t.Error("expected markdown to contain title")
 	}
-	if !strings.Contains(md, "## Executive Summary") {
-		t.Error("expected markdown to contain Executive Summary")
-	}
-	if !strings.Contains(md, "## Technical Summary") {
-		t.Error("expected markdown to contain Technical Summary")
-	}
 	if !strings.Contains(md, "## Architect Narrative") {
 		t.Error("expected markdown to contain Architect Narrative")
 	}
@@ -458,74 +424,6 @@ func TestExportHTML(t *testing.T) {
 	if !strings.Contains(html, "Security Architect Narrative") {
 		t.Error("expected HTML to contain title")
 	}
-	if !strings.Contains(html, "Executive Summary") {
-		t.Error("expected HTML to contain Executive Summary")
-	}
-	if !strings.Contains(html, "badge-critical") {
-		t.Error("expected HTML to contain critical badge")
-	}
-}
-
-func TestExecutiveReport(t *testing.T) {
-	engine := NewNarrativeEngine("cloud", []string{"Auth0", "API", "DB"}, []string{})
-	assumptions := []Assumption{
-		{
-			ID:          "X1",
-			Description: "Auth0 is the single source of authentication",
-			Component:   "Auth0",
-			Risk:        "Critical",
-			Category:    "identity",
-		},
-		{
-			ID:          "X2",
-			Description: "API validates all tokens",
-			Component:   "API",
-			Risk:        "High",
-			Category:    "access",
-		},
-		{
-			ID:          "X3",
-			Description: "Database has no encryption",
-			Component:   "DB",
-			Risk:        "Critical",
-			Category:    "network",
-		},
-	}
-
-	output := engine.GenerateNarrative(
-		"Test",
-		assumptions,
-		[]ControlDetail{},
-		[]TrustBoundary{},
-		[]Contradiction{},
-		"cloud",
-		map[string]int{},
-		map[string]int{},
-	)
-
-	report := output.ExecutiveReport
-
-	// Should identify critical assumptions
-	if len(report.MostCriticalAssumptions) != 3 {
-		t.Errorf("expected 3 most critical, got %d", len(report.MostCriticalAssumptions))
-	}
-
-	// Should identify single points of failure
-	found := false
-	for _, s := range report.SinglePointsOfFailure {
-		if strings.Contains(s, "Auth0") {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("expected Auth0 to be identified as single point of failure, got: %v", report.SinglePointsOfFailure)
-	}
-
-	// Should generate recommendations
-	if len(report.RecommendedInvestments) == 0 {
-		t.Error("expected recommended investments")
-	}
 }
 
 func TestBannedPhrases(t *testing.T) {
@@ -540,31 +438,6 @@ func TestBannedPhrases(t *testing.T) {
 		}
 		if rule.Reason == "" {
 			t.Errorf("expected reason for pattern '%s'", rule.Pattern)
-		}
-	}
-}
-
-func TestInferBusinessImpact(t *testing.T) {
-	engine := NewNarrativeEngine("cloud", []string{}, []string{})
-
-	tests := []struct {
-		desc     string
-		contains string
-	}{
-		{"MFA is enforced", "Unauthorized access"},
-		{"Data is encrypted", "Data breach"},
-		{"Access is restricted", "Unauthorized data"},
-		{"Logging is enabled", "Inability to detect"},
-		{"Backups are taken", "Permanent data loss"},
-		{"API validates tokens", "API abuse"},
-		{"HIPAA compliance", "Regulatory fines"},
-	}
-
-	for _, tc := range tests {
-		a := Assumption{Description: tc.desc}
-		impact := engine.inferBusinessImpact(a)
-		if !strings.Contains(impact, tc.contains) {
-			t.Errorf("expected business impact containing '%s' for '%s', got: %s", tc.contains, tc.desc, impact)
 		}
 	}
 }
@@ -591,42 +464,6 @@ func TestInferRole(t *testing.T) {
 		if !strings.Contains(role, tc.contains) {
 			t.Errorf("expected role containing '%s' for '%s', got: %s", tc.contains, tc.desc, role)
 		}
-	}
-}
-
-func TestInferEffort(t *testing.T) {
-	engine := NewNarrativeEngine("cloud", []string{}, []string{})
-
-	tests := []struct {
-		control  string
-		contains string
-	}{
-		{"multi-factor authentication", "Low"},
-		{"encryption", "Medium"},
-		{"network segmentation", "High"},
-		{"backup", "Medium"},
-		{"audit logging", "Low"},
-		{"WAF", "Medium"},
-	}
-
-	for _, tc := range tests {
-		a := Assumption{Description: "Test"}
-		effort := engine.inferEffort(a, tc.control)
-		if !strings.Contains(effort, tc.contains) {
-			t.Errorf("expected effort containing '%s' for '%s', got: %s", tc.contains, tc.control, effort)
-		}
-	}
-}
-
-func TestIsSinglePointOfFailure(t *testing.T) {
-	spof := Assumption{Description: "Auth0 is the single source of authentication"}
-	if !isSinglePointOfFailure(spof) {
-		t.Error("expected single point of failure for 'single source'")
-	}
-
-	notSpof := Assumption{Description: "MFA is enabled"}
-	if isSinglePointOfFailure(notSpof) {
-		t.Error("expected not single point of failure for 'MFA is enabled'")
 	}
 }
 

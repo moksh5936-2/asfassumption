@@ -13,9 +13,7 @@ func TestEmptyCoverage(t *testing.T) {
 	if output == nil {
 		t.Fatal("expected non-nil output")
 	}
-	if output.AttentionScore != 100.0 {
-		t.Errorf("expected attention score 100 for empty, got %.0f", output.AttentionScore)
-	}
+
 }
 
 func TestCoverageAllExpected(t *testing.T) {
@@ -121,23 +119,6 @@ func TestTaxonomy(t *testing.T) {
 	}
 }
 
-func TestAttentionScore(t *testing.T) {
-	assumptions := []AssumptionInput{
-		{ID: "A1", Description: "MFA is enabled", Component: "Auth0", Category: "identity", Risk: "Critical"},
-		{ID: "A2", Description: "RBAC is configured", Component: "Auth0", Category: "authorization", Risk: "Critical"},
-		{ID: "A3", Description: "TLS is configured", Component: "WebApp", Category: "cryptography", Risk: "Critical"},
-	}
-	components := []string{"Auth0", "WebApp"}
-
-	engine := NewCoverageEngine("healthcare", components, assumptions)
-	output := engine.RunAll()
-
-	if output.AttentionScore < 0 || output.AttentionScore > 100 {
-		t.Errorf("attention score out of range: %.0f", output.AttentionScore)
-	}
-	t.Logf("attention score: %.0f", output.AttentionScore)
-}
-
 func TestCISOView(t *testing.T) {
 	assumptions := []AssumptionInput{
 		{ID: "A1", Description: "Basic MFA", Component: "Auth0", Category: "identity", Risk: "Critical"},
@@ -172,9 +153,7 @@ func TestExportMarkdown(t *testing.T) {
 	if !strings.Contains(md, "Coverage & Blind Spot Analysis") {
 		t.Error("expected markdown title")
 	}
-	if !strings.Contains(md, "Architect Attention Score") {
-		t.Error("expected attention score in markdown")
-	}
+
 }
 
 func TestExportHTML(t *testing.T) {
@@ -190,9 +169,7 @@ func TestExportHTML(t *testing.T) {
 	if !strings.Contains(html, "<!DOCTYPE html>") {
 		t.Error("expected HTML doctype")
 	}
-	if !strings.Contains(html, "Architect Attention Score") {
-		t.Error("expected attention score in HTML")
-	}
+
 }
 
 func TestCoveragePrecision(t *testing.T) {

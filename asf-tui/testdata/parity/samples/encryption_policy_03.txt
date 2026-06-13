@@ -1,5 +1,0 @@
-CONFIGURATION MANAGEMENT
-
-All configuration changes are tracked in version control.
-Deployments require peer review and approval.
-Configuration drift is detected and remediated automatically.

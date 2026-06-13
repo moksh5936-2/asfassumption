@@ -1,7 +1,10 @@
 package main
 
 import (
-	"github.com/charmbracelet/bubbletea"
+	"fmt"
+	"path/filepath"
+
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -83,16 +86,33 @@ func (m mainModel) viewDashboard() string {
 		lipgloss.JoinVertical(lipgloss.Left, items...),
 	)
 
-	body := lipgloss.JoinHorizontal(lipgloss.Top,
+	topRow := lipgloss.JoinHorizontal(lipgloss.Top,
 		s.BorderBox.Render(statusSection),
 		lipgloss.NewStyle().Width(2).Render(""),
 		s.BorderBox.Render(navSection),
 	)
 
-	return lipgloss.JoinVertical(lipgloss.Left,
+	var rows []string
+	rows = append(rows,
 		s.Title.Render("Dashboard"),
-		body,
+		topRow,
 	)
+
+	if len(m.recentFiles) > 0 {
+		var recentItems []string
+		for i, f := range m.recentFiles {
+			shortName := filepath.Base(f)
+			line := fmt.Sprintf("  %d. %s  (%s)", i+1, shortName, f)
+			recentItems = append(recentItems, s.SectionItem.Render(line))
+		}
+		recentSection := lipgloss.JoinVertical(lipgloss.Left,
+			s.Section.Render("Recent Files"),
+			lipgloss.JoinVertical(lipgloss.Left, recentItems...),
+		)
+		rows = append(rows, s.BorderBox.Render(recentSection))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, rows...)
 }
 
 func fmtStatus(s StyleSet, label, value string) string {
@@ -100,6 +120,21 @@ func fmtStatus(s StyleSet, label, value string) string {
 }
 
 func (m mainModel) updateDashboard(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Number keys for recent files
+		if len(m.recentFiles) > 0 {
+			for i := 0; i < len(m.recentFiles) && i < 9; i++ {
+				if msg.String() == fmt.Sprintf("%d", i+1) {
+					path := m.recentFiles[i]
+					m.currentFile = path
+					m.analyze.setDocPath(path)
+					return m, func() tea.Msg { return navigateMsg{to: analyzeView} }
+				}
+			}
+		}
+	}
+
 	var cmd tea.Cmd
 	m.dash, cmd = m.dash.Update(msg)
 	return m, cmd

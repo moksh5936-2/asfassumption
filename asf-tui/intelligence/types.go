@@ -1,6 +1,18 @@
 package intelligence
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
+func containsAny(s string, substrs []string) bool {
+	for _, sub := range substrs {
+		if strings.Contains(s, sub) {
+			return true
+		}
+	}
+	return false
+}
 
 // RiskLevel represents the severity of an assumption.
 type RiskLevel string

@@ -1,5 +1,0 @@
-IDENTITY & AUTHENTICATION
-
-Biometric authentication is required for data center access.
-Smart card authentication is used for privileged access.
-Session timeout is set to 15 minutes for all users.

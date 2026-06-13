@@ -43,7 +43,6 @@ func (e *CoverageEngine) RunAll() *CoverageOutput {
 	output.BlindSpots = e.detectBlindSpots(assessment)
 	output.DomainBlindSpots = GetDomainBlindSpots(e.domain)
 
-	output.AttentionScore = e.computeAttentionScore(assessment)
 	output.CISOView = e.buildCISOView(assessment, output.BlindSpots, output.DomainBlindSpots)
 
 	return output

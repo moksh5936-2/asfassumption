@@ -78,18 +78,6 @@ type cliOutput struct {
 	DKPIControls        []cliSDRIControl `json:"dkpi_controls,omitempty"`
 	DKPISummary         string           `json:"dkpi_summary,omitempty"`
 
-	// ERN fields
-	ERNExecutiveRisks  []cliERNExecutiveRisk `json:"ern_executive_risks,omitempty"`
-	ERNBoardSummary    string                `json:"ern_board_summary,omitempty"`
-	ERNExposure        string                `json:"ern_exposure,omitempty"`
-	ERNTopRisks        []string              `json:"ern_top_risks,omitempty"`
-	ERNRemediation     []string              `json:"ern_remediation,omitempty"`
-	ERNInvestmentAreas []string              `json:"ern_investment_areas,omitempty"`
-	ERNReportType      string                `json:"ern_report_type,omitempty"`
-	ERNBoardReport     string                `json:"ern_board_report,omitempty"`
-	ERNExecutiveReport string                `json:"ern_executive_report,omitempty"`
-	ERNTechnicalReport string                `json:"ern_technical_report,omitempty"`
-
 	// Trust chain fields
 	TrustChains          []cliTrustChain                `json:"trust_chains,omitempty"`
 	FailureCascades      []cliFailureCascade            `json:"failure_cascades,omitempty"`
@@ -100,15 +88,6 @@ type cliOutput struct {
 
 	// Security Architect Narrative Engine (SANE) fields
 	NarrativeOutput *narrative.NarrativeOutput `json:"narrative_output,omitempty"`
-}
-
-type cliERNExecutiveRisk struct {
-	ID                 string   `json:"id"`
-	Title              string   `json:"title"`
-	Priority           string   `json:"priority"`
-	Severity           string   `json:"severity"`
-	BusinessImpact     string   `json:"business_impact"`
-	RecommendedActions []string `json:"recommended_actions,omitempty"`
 }
 
 type cliSummary struct {
@@ -1075,44 +1054,6 @@ func convertAnalysisResultToCLI(result *AnalysisResult, graphFlag bool, reportTy
 			Preventive: c.Preventive, Detective: c.Detective, Corrective: c.Corrective,
 			Strength: c.Strength, Coverage: c.Coverage, Status: c.Status,
 		})
-	}
-
-	// Add ERN data
-	for _, risk := range result.ERN.ExecutiveRisks {
-		out.ERNExecutiveRisks = append(out.ERNExecutiveRisks, cliERNExecutiveRisk{
-			ID:                 risk.ID,
-			Title:              risk.Title,
-			Priority:           risk.Priority,
-			Severity:           risk.Severity,
-			BusinessImpact:     risk.BusinessImpact,
-			RecommendedActions: risk.RecommendedActions,
-		})
-	}
-	if result.ERN.BoardSummary.Summary != "" {
-		out.ERNBoardSummary = result.ERN.BoardSummary.Summary
-	}
-	out.ERNExposure = result.ERN.FinancialExposure.Level
-	out.ERNTopRisks = result.ERN.CISOBriefing.TopRisks
-	for _, item := range result.ERN.RemediationRoadmap.Phase30 {
-		out.ERNRemediation = append(out.ERNRemediation, item.Action)
-	}
-	for _, item := range result.ERN.RemediationRoadmap.Phase90 {
-		out.ERNRemediation = append(out.ERNRemediation, item.Action)
-	}
-	for _, ii := range result.ERN.InvestmentInsights {
-		out.ERNInvestmentAreas = append(out.ERNInvestmentAreas, ii.Area)
-	}
-	if reportType != "" {
-		out.ERNReportType = reportType
-	}
-	if result.ERN.ReportPacks.BoardReport != "" {
-		out.ERNBoardReport = result.ERN.ReportPacks.BoardReport
-	}
-	if result.ERN.ReportPacks.ExecutiveReport != "" {
-		out.ERNExecutiveReport = result.ERN.ReportPacks.ExecutiveReport
-	}
-	if result.ERN.ReportPacks.TechnicalReport != "" {
-		out.ERNTechnicalReport = result.ERN.ReportPacks.TechnicalReport
 	}
 
 	// Add a summary claim to preserve the claims_found count

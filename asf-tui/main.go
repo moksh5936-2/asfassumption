@@ -97,9 +97,6 @@ func main() {
 		case "analyze":
 			runAnalyzeCLI(args[1:])
 			os.Exit(ExitSuccess)
-		case "portfolio":
-			runPortfolioCLI(args[1:])
-			os.Exit(ExitSuccess)
 		case "--help", "-h":
 			printUsage()
 			os.Exit(ExitSuccess)

@@ -11,6 +11,7 @@ type Config struct {
 	General struct {
 		Theme    string `yaml:"theme"`
 		FoxStyle string `yaml:"fox_style"`
+		Debug    bool   `yaml:"debug"`
 	} `yaml:"general"`
 	Analysis struct {
 		Depth         string `yaml:"depth"`
@@ -40,6 +41,7 @@ func DefaultConfig() Config {
 	c := Config{}
 	c.General.Theme = "Dark"
 	c.General.FoxStyle = "Classic"
+	c.General.Debug = false
 	c.Analysis.Depth = "deep"
 	c.Analysis.Stride = true
 	c.Analysis.Controls = true

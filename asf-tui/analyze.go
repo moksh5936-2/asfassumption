@@ -28,6 +28,7 @@ type analyzeModel struct {
 
 	mode      string
 	running   bool
+	cancelled bool
 	progress  float64
 	stage     string
 	result    *AnalysisResult
@@ -57,6 +58,12 @@ func (m *analyzeModel) Update(msg tea.Msg) (analyzeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if m.running {
+			switch msg.String() {
+			case "esc":
+				m.running = false
+				m.cancelled = true
+				m.statusMsg = "Analysis cancelled"
+			}
 			return *m, nil
 		}
 
@@ -133,6 +140,15 @@ func (m *analyzeModel) handleTextInput(msg tea.KeyMsg) (analyzeModel, tea.Cmd) {
 	return *m, nil
 }
 
+func (m *analyzeModel) setDocPath(path string) {
+	for i := range m.items {
+		if m.items[i].typ == "path" && m.items[i].label == "Document Path" {
+			m.items[i].value = path
+			return
+		}
+	}
+}
+
 func (m *analyzeModel) docPath() string {
 	for _, it := range m.items {
 		if it.typ == "path" && it.label == "Document Path" {
@@ -172,6 +188,7 @@ func (m *analyzeModel) startAnalysis() (analyzeModel, tea.Cmd) {
 		return *m, nil
 	}
 	m.running = true
+	m.cancelled = false
 	m.progress = 0
 	m.stage = "Initializing..."
 	m.statusMsg = ""
@@ -252,7 +269,7 @@ func (m mainModel) viewAnalyze() string {
 		switch item.typ {
 		case "path":
 			if display == "" {
-				display = "[not set]"
+				display = "Select an architecture file to begin."
 			}
 			rows = append(rows, style.Render(fmt.Sprintf("%s%s: %s", prefix, item.label, display)))
 		case "mode":
@@ -280,6 +297,14 @@ func (m mainModel) viewAnalyze() string {
 func (m mainModel) viewAnalyzeProgress() string {
 	s := m.styles
 
+	if m.analyze.cancelled {
+		return lipgloss.JoinVertical(lipgloss.Center,
+			s.Title.Render("Analyze Architecture"),
+			s.StatusWarn.Render("Analysis cancelled."),
+			s.SectionItem.Render("Press Esc or select a different view."),
+		)
+	}
+
 	barWidth := 50
 	if m.width > 80 {
 		barWidth = m.width - 20
@@ -294,6 +319,7 @@ func (m mainModel) viewAnalyzeProgress() string {
 
 	return lipgloss.JoinVertical(lipgloss.Center,
 		s.Title.Render("Analyzing Architecture"),
+		s.Subtitle.Render("Press Esc to cancel"),
 		s.BorderBox.Render(
 			lipgloss.JoinVertical(lipgloss.Center,
 				s.SectionItem.Render(m.analyze.stage),
@@ -311,6 +337,10 @@ func (m mainModel) updateAnalyze(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.analyze.running = false
 		m.analyze.result = msg.result
 		m.analyze.progress = 100
+		if m.analyze.cancelled {
+			m.analyze.cancelled = false
+			return m, nil
+		}
 		return m, func() tea.Msg { return navigateMsg{to: resultsView} }
 	}
 

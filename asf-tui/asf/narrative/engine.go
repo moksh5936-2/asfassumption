@@ -56,16 +56,6 @@ func (e *NarrativeEngine) GenerateNarrative(
 		archName, assumptions, controls, trustBoundaries, domain,
 	)
 
-	// Generate executive report
-	output.ExecutiveReport = e.generateExecutiveReport(
-		assumptions, trustBoundaries, contradictions,
-	)
-
-	// Generate technical summary
-	output.TechnicalSummary = e.generateTechnicalSummary(
-		assumptions, depMap, strideDist, riskDist,
-	)
-
 	// Generate full architect narrative text
 	output.ArchitectNarrative = e.generateFullArchitectNarrative(
 		output.ArchitectureOverview, output.AssumptionNarratives,

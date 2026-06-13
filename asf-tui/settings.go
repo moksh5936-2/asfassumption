@@ -63,6 +63,9 @@ func newSettingsModel(cfg *Config) settingsModel {
 			{label: "Export Directory", key: "export_dir", value: cfg.Output.Directory, values: nil, valueIdx: 0},
 			{label: "AI Enhancement", key: "ai_enabled", value: boolStr(cfg.AI.Enabled), values: []string{"false", "true"}, valueIdx: boolIdx(cfg.AI.Enabled)},
 			{label: "Active Model", key: "active_model", value: cfg.AI.ActiveModel, values: nil, valueIdx: 0},
+			{label: "Debug Logging", key: "debug", value: boolStr(cfg.General.Debug), values: []string{"false", "true"}, valueIdx: boolIdx(cfg.General.Debug)},
+			{label: "", key: "", value: "", values: nil, valueIdx: 0},
+			{label: "Reset to Defaults", key: "reset", value: "", values: []string{"no", "yes"}, valueIdx: 0},
 		},
 	}
 }
@@ -170,6 +173,8 @@ func (m *settingsModel) applyChange(idx int) {
 	switch item.key {
 	case "theme":
 		m.config.Appearance.Theme = item.value
+	case "fox_style":
+		m.config.Appearance.FoxStyle = item.value
 	case "depth":
 		m.config.Analysis.Depth = item.value
 	case "risk_threshold":
@@ -186,8 +191,17 @@ func (m *settingsModel) applyChange(idx int) {
 		m.config.AI.Enabled = item.value == "true"
 	case "active_model":
 		m.config.AI.ActiveModel = item.value
+	case "debug":
+		m.config.General.Debug = item.value == "true"
+	case "reset":
+		if item.value == "yes" {
+			def := DefaultConfig()
+			*m.config = def
+			m.config.Save(ConfigPath())
+			*m = newSettingsModel(m.config)
+		}
+		return // return early to avoid double save
 	}
-	// Auto-save on any change
 	m.config.Save(ConfigPath())
 }
 
@@ -201,6 +215,10 @@ func (m mainModel) viewSettings() string {
 
 	var rows []string
 	for i, item := range m.settings.settings {
+		if item.key == "" && item.label == "" {
+			rows = append(rows, "")
+			continue
+		}
 		labelStr := item.label
 		valueStr := item.value
 
