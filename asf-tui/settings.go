@@ -59,7 +59,7 @@ func newSettingsModel(cfg *Config) settingsModel {
 			{label: "Risk Threshold", key: "risk_threshold", value: riskLevels[riskIdx], values: riskLevels, valueIdx: riskIdx},
 			{label: "STRIDE Analysis", key: "stride", value: boolStr(cfg.Analysis.Stride), values: []string{"true", "false"}, valueIdx: boolIdx(cfg.Analysis.Stride)},
 			{label: "Controls Check", key: "controls", value: boolStr(cfg.Analysis.Controls), values: []string{"true", "false"}, valueIdx: boolIdx(cfg.Analysis.Controls)},
-			{label: "Default Export", key: "export", value: cfg.Output.Default, values: []string{"json", "markdown", "html", "csv", "pdf"}, valueIdx: exportIdx(cfg.Output.Default)},
+			{label: "Default Export", key: "export", value: cfg.Output.Default, values: []string{"json", "markdown", "html", "csv", "pdf", "narrative-md", "narrative-html"}, valueIdx: exportIdx(cfg.Output.Default)},
 			{label: "Export Directory", key: "export_dir", value: cfg.Output.Directory, values: nil, valueIdx: 0},
 			{label: "AI Enhancement", key: "ai_enabled", value: boolStr(cfg.AI.Enabled), values: []string{"false", "true"}, valueIdx: boolIdx(cfg.AI.Enabled)},
 			{label: "Active Model", key: "active_model", value: cfg.AI.ActiveModel, values: nil, valueIdx: 0},
@@ -105,6 +105,10 @@ func exportIdx(s string) int {
 		return 3
 	case "pdf":
 		return 4
+	case "narrative-md":
+		return 5
+	case "narrative-html":
+		return 6
 	}
 	return 1
 }

@@ -267,6 +267,9 @@ func (cie *CIEEngine) detectAuthenticationContradictions(claims []Statement, ass
 	if len(mfaRequired) > 0 && len(mfaExempt) > 0 {
 		for _, req := range mfaRequired {
 			for _, ex := range mfaExempt {
+				if req.ID == ex.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-AUTH-%03d", len(results)),
 					Type:        ContradictionTypeAUTHENTICATION,
@@ -294,6 +297,9 @@ func (cie *CIEEngine) detectAuthenticationContradictions(claims []Statement, ass
 	if len(adminMFA) > 0 && len(breakglass) > 0 {
 		for _, am := range adminMFA {
 			for _, bg := range breakglass {
+				if am.ID == bg.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-AUTH-%03d", len(results)),
 					Type:        ContradictionTypeAUTHENTICATION,
@@ -321,6 +327,9 @@ func (cie *CIEEngine) detectAuthenticationContradictions(claims []Statement, ass
 	if len(allAuth) > 0 && len(anonAccess) > 0 {
 		for _, aa := range allAuth {
 			for _, an := range anonAccess {
+				if aa.ID == an.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-AUTH-%03d", len(results)),
 					Type:        ContradictionTypeAUTHENTICATION,
@@ -357,6 +366,9 @@ func (cie *CIEEngine) detectAuthorizationContradictions(claims []Statement, assu
 	if len(leastPriv) > 0 && len(sharedAdmin) > 0 {
 		for _, lp := range leastPriv {
 			for _, sa := range sharedAdmin {
+				if lp.ID == sa.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-AUTHZ-%03d", len(results)),
 					Type:        ContradictionTypeAUTHORIZATION,
@@ -384,6 +396,9 @@ func (cie *CIEEngine) detectAuthorizationContradictions(claims []Statement, assu
 	if len(rbac) > 0 && len(allAdmin) > 0 {
 		for _, r := range rbac {
 			for _, aa := range allAdmin {
+				if r.ID == aa.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-AUTHZ-%03d", len(results)),
 					Type:        ContradictionTypeAUTHORIZATION,
@@ -411,6 +426,9 @@ func (cie *CIEEngine) detectAuthorizationContradictions(claims []Statement, assu
 	if len(objAuth) > 0 && len(noAuthCheck) > 0 {
 		for _, oa := range objAuth {
 			for _, nac := range noAuthCheck {
+				if oa.ID == nac.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-AUTHZ-%03d", len(results)),
 					Type:        ContradictionTypeAUTHORIZATION,
@@ -441,12 +459,17 @@ func (cie *CIEEngine) detectEncryptionContradictions(claims []Statement, assumpt
 	var results []CIEContradiction
 
 	// All traffic encrypted vs HTTP/legacy allowed
-	allEncrypted := cie.findClaims(claims, []string{"all", "every", "all traffic", "all communication", "all data"}, []string{"encrypted", "tls", "ssl", "https", "secure"})
-	httpAllowed := cie.findClaims(claims, []string{"http", "unencrypted", "plaintext", "clear text", "http allowed", "port 80"}, nil)
+	// Exclude storage/backup-context statements (e.g., "backups in plaintext") from transport-layer checks
+	storageExclude := []string{"backup", "storage", "at rest", "disk", "store", "database"}
+	allEncrypted := cie.findClaimsFiltered(claims, []string{"all", "every", "all traffic", "all communication", "all data"}, []string{"encrypted", "tls", "ssl", "https", "secure"}, storageExclude)
+	httpAllowed := cie.findClaimsFiltered(claims, []string{"http", "unencrypted", "plaintext", "clear text", "http allowed", "port 80"}, nil, storageExclude)
 
 	if len(allEncrypted) > 0 && len(httpAllowed) > 0 {
 		for _, ae := range allEncrypted {
 			for _, ha := range httpAllowed {
+				if ae.ID == ha.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-ENC-%03d", len(results)),
 					Type:        ContradictionTypeENCRYPTION,
@@ -468,12 +491,15 @@ func (cie *CIEEngine) detectEncryptionContradictions(claims []Statement, assumpt
 	}
 
 	// TLS required vs TLS optional
-	tlsReq := cie.findClaims(claims, []string{"tls", "ssl", "https"}, []string{"required", "mandatory", "enforced", "must", "shall"})
-	tlsOpt := cie.findClaims(claims, []string{"tls", "ssl", "https"}, []string{"optional", "not required", "not enforced", "not mandatory", "if available", "when possible"})
+	tlsReq := cie.findClaimsFiltered(claims, []string{"tls", "ssl", "https"}, []string{"required", "mandatory", "enforced", "must", "shall"}, storageExclude)
+	tlsOpt := cie.findClaimsFiltered(claims, []string{"tls", "ssl", "https"}, []string{"optional", "not required", "not enforced", "not mandatory", "if available", "when possible"}, storageExclude)
 
 	if len(tlsReq) > 0 && len(tlsOpt) > 0 {
 		for _, tr := range tlsReq {
 			for _, to := range tlsOpt {
+				if tr.ID == to.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-ENC-%03d", len(results)),
 					Type:        ContradictionTypeENCRYPTION,
@@ -510,6 +536,9 @@ func (cie *CIEEngine) detectSecretsContradictions(claims []Statement, assumption
 	if len(vaultSecrets) > 0 && len(sourceSecrets) > 0 {
 		for _, vs := range vaultSecrets {
 			for _, ss := range sourceSecrets {
+				if vs.ID == ss.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-SEC-%03d", len(results)),
 					Type:        ContradictionTypeSECRETS,
@@ -547,6 +576,9 @@ func (cie *CIEEngine) detectKeyManagementContradictions(claims []Statement, assu
 	if len(keyRotated) > 0 && len(keyNeverRotated) > 0 {
 		for _, kr := range keyRotated {
 			for _, knr := range keyNeverRotated {
+				if kr.ID == knr.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-KM-%03d", len(results)),
 					Type:        ContradictionTypeKEY_MANAGEMENT,
@@ -584,6 +616,9 @@ func (cie *CIEEngine) detectBackupContradictions(claims []Statement, assumptions
 	if len(backupTested) > 0 && len(restoreUnknown) > 0 {
 		for _, bt := range backupTested {
 			for _, ru := range restoreUnknown {
+				if bt.ID == ru.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-BAK-%03d", len(results)),
 					Type:        ContradictionTypeBACKUP,
@@ -598,6 +633,36 @@ func (cie *CIEEngine) detectBackupContradictions(claims []Statement, assumptions
 						"Document and test the full restore procedure quarterly",
 						"Perform disaster recovery drills with realistic scenarios",
 						"Measure and track RTO/RPO targets",
+					},
+				})
+			}
+		}
+	}
+
+	// Encrypted data vs plaintext backups
+	encryptedData := cie.findClaims(claims, []string{"all", "every", "data", "everything", "all data"}, []string{"encrypted", "encryption", "encrypt"})
+	plaintextBackup := cie.findClaims(claims, []string{"backup", "backups"}, []string{"plaintext", "unencrypted", "not encrypted", "no encryption", "clear text"})
+
+	if len(encryptedData) > 0 && len(plaintextBackup) > 0 {
+		for _, ed := range encryptedData {
+			for _, pb := range plaintextBackup {
+				if ed.ID == pb.ID {
+					continue
+				}
+				results = append(results, CIEContradiction{
+					ID:          fmt.Sprintf("CON-BAK-%03d", len(results)),
+					Type:        ContradictionTypeBACKUP,
+					Severity:    RiskCritical,
+					Confidence:  0.92,
+					Summary:     "Data is encrypted but backups are stored in plaintext",
+					Description: fmt.Sprintf("'%s' requires encryption, but '%s' stores backups in plaintext", ed.OriginalText, pb.OriginalText),
+					StatementA:  ed,
+					StatementB:  pb,
+					Reasoning:   "Plaintext backups bypass encryption controls. If the primary data is encrypted but backups are not, the protection is incomplete and the backup becomes an easy target.",
+					Recommendations: []string{
+						"Encrypt all backups using the same or stronger encryption than primary storage",
+						"Implement key management for backup encryption keys",
+						"Verify backup encryption with periodic restore and validation tests",
 					},
 				})
 			}
@@ -621,6 +686,9 @@ func (cie *CIEEngine) detectMonitoringContradictions(claims []Statement, assumpt
 	if len(logsMonitored) > 0 && len(alertsNotReviewed) > 0 {
 		for _, lm := range logsMonitored {
 			for _, anr := range alertsNotReviewed {
+				if lm.ID == anr.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-MON-%03d", len(results)),
 					Type:        ContradictionTypeMONITORING,
@@ -728,6 +796,9 @@ func (cie *CIEEngine) detectNetworkContradictions(claims []Statement, assumption
 	if len(privateNet) > 0 && len(publicAccess) > 0 {
 		for _, pn := range privateNet {
 			for _, pa := range publicAccess {
+				if pn.ID == pa.ID {
+					continue
+				}
 				results = append(results, CIEContradiction{
 					ID:          fmt.Sprintf("CON-NET-%03d", len(results)),
 					Type:        ContradictionTypeNETWORK,
@@ -1071,6 +1142,10 @@ func (cie *CIEEngine) scoreContradiction(con CIEContradiction, assumptions []Ass
 // ─────────────────────────────────────────────────────────────
 
 func (cie *CIEEngine) findClaims(claims []Statement, subjects, predicates []string) []Statement {
+	return cie.findClaimsFiltered(claims, subjects, predicates, nil)
+}
+
+func (cie *CIEEngine) findClaimsFiltered(claims []Statement, subjects, predicates, exclude []string) []Statement {
 	var matches []Statement
 	for _, c := range claims {
 		text := strings.ToLower(c.OriginalText)
@@ -1088,9 +1163,20 @@ func (cie *CIEEngine) findClaims(claims []Statement, subjects, predicates []stri
 				break
 			}
 		}
-		if subjMatch && predMatch {
-			matches = append(matches, c)
+		if !subjMatch || !predMatch {
+			continue
 		}
+		excluded := false
+		for _, e := range exclude {
+			if strings.Contains(text, strings.ToLower(e)) {
+				excluded = true
+				break
+			}
+		}
+		if excluded {
+			continue
+		}
+		matches = append(matches, c)
 	}
 	return matches
 }

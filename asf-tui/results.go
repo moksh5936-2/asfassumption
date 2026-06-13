@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"asf-tui/asf/trust"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -36,6 +37,29 @@ func newResultsModel() resultsModel {
 			"Portfolio Intelligence",
 			"Decision Intelligence",
 			"Digital Twin",
+			"Architect Narrative",
+			"Dependency Graph",
+			"Trust Chains",
+			"Critical Assumptions",
+			"Failure Cascades",
+			"Single Points of Trust Failure",
+			"Trust Collapse Simulation",
+			"Coverage Dashboard",
+			"Blind Spot View",
+			"Coverage Heatmap",
+			"Architect Attention Score",
+			"Verification View",
+			"Evidence View",
+			"Verification Priority",
+			"Verification Roadmap",
+			"CISO Verification Summary",
+			"Review Queue",
+			"Review Priority Matrix",
+			"Review Campaigns",
+			"CISO Review Dashboard",
+			"Confidence View",
+			"Explainability View",
+			"Confidence Breakdown",
 		},
 		expanded: map[int]bool{},
 	}
@@ -174,6 +198,52 @@ func renderSectionContent(s StyleSet, section int, result *AnalysisResult) strin
 		return renderSDI(s, result)
 	case 13:
 		return renderSDT(s, result)
+	case 14:
+		return renderArchitectNarrative(s, result)
+	case 15:
+		return renderDependencyGraph(s, result)
+	case 16:
+		return renderTrustChains(s, result)
+	case 17:
+		return renderTrustCriticalAssumptions(s, result)
+	case 18:
+		return renderFailureCascades(s, result)
+	case 19:
+		return renderSinglePointsOfTrust(s, result)
+	case 20:
+		return renderTrustCollapse(s, result)
+	case 21:
+		return renderCoverageDashboard(s, result)
+	case 22:
+		return renderBlindSpotView(s, result)
+	case 23:
+		return renderCoverageHeatmap(s, result)
+	case 24:
+		return renderAttentionScore(s, result)
+	case 25:
+		return renderVerificationView(s, result)
+	case 26:
+		return renderEvidenceView(s, result)
+	case 27:
+		return renderVerificationPriority(s, result)
+	case 28:
+		return renderVerificationRoadmap(s, result)
+	case 29:
+		return renderCISOVerificationSummary(s, result)
+	case 30:
+		return renderReviewQueue(s, result)
+	case 31:
+		return renderReviewMatrix(s, result)
+	case 32:
+		return renderReviewCampaigns(s, result)
+	case 33:
+		return renderCISOReviewDashboard(s, result)
+	case 34:
+		return renderConfidenceView(s, result)
+	case 35:
+		return renderExplainabilityView(s, result)
+	case 36:
+		return renderConfidenceBreakdownView(s, result)
 	}
 	return ""
 }
@@ -1065,6 +1135,10 @@ func exportFormatFromConfig(cfg *Config) ExportFormat {
 		return ExportCSV
 	case "json":
 		return ExportJSON
+	case "narrative-md":
+		return ExportNarrativeMarkdown
+	case "narrative-html":
+		return ExportNarrativeHTML
 	default:
 		return ExportMarkdown
 	}
@@ -1199,4 +1273,654 @@ func renderSDT(s StyleSet, result *AnalysisResult) string {
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, rows...)
+}
+
+func renderArchitectNarrative(s StyleSet, result *AnalysisResult) string {
+	if result.NarrativeOutput == nil {
+		return "Narrative output not generated."
+	}
+
+	var rows []string
+	n := result.NarrativeOutput
+
+	// Overview
+	rows = append(rows, s.Section.Render("Architecture Overview"))
+	rows = append(rows, fmt.Sprintf("Domain: %s | Components: %d | Assumptions: %d (Critical: %d, High: %d)",
+		n.ArchitectureOverview.Domain, n.ArchitectureOverview.TotalComponents,
+		n.ArchitectureOverview.TotalAssumptions, n.ArchitectureOverview.CriticalCount,
+		n.ArchitectureOverview.HighCount))
+	rows = append(rows, "")
+
+	// Key components
+	if len(n.ArchitectureOverview.KeyComponents) > 0 {
+		rows = append(rows, fmt.Sprintf("Key Components: %s", strings.Join(n.ArchitectureOverview.KeyComponents, ", ")))
+		rows = append(rows, "")
+	}
+
+	// Most critical assumptions
+	if len(n.ExecutiveReport.MostCriticalAssumptions) > 0 {
+		rows = append(rows, s.Section.Render("Most Critical Assumptions"))
+		for _, a := range n.ExecutiveReport.MostCriticalAssumptions {
+			riskStyle := riskStyle(s, RiskLevel(a.RiskLevel))
+			rows = append(rows, fmt.Sprintf("%s %s", riskStyle.Render(string(a.RiskLevel)), a.Text))
+			rows = append(rows, fmt.Sprintf("  Impact: %s", a.BusinessImpact))
+		}
+		rows = append(rows, "")
+	}
+
+	// Assumption narratives (first 3)
+	if len(n.AssumptionNarratives) > 0 {
+		rows = append(rows, s.Section.Render("Assumption Narratives"))
+		showCount := len(n.AssumptionNarratives)
+		if showCount > 3 {
+			showCount = 3
+		}
+		for i := 0; i < showCount; i++ {
+			an := n.AssumptionNarratives[i]
+			riskStyle := riskStyle(s, RiskLevel(an.RiskLevel))
+			rows = append(rows, fmt.Sprintf("%s %s", riskStyle.Render(an.RiskLevel), an.AssumptionText))
+			rows = append(rows, fmt.Sprintf("  Context: %s", an.Context))
+			rows = append(rows, fmt.Sprintf("  Consequence: %s", an.FailureConsequence))
+			rows = append(rows, fmt.Sprintf("  Recommendation: %s", an.SecurityRecommendation))
+			rows = append(rows, "")
+		}
+		if len(n.AssumptionNarratives) > 3 {
+			rows = append(rows, fmt.Sprintf("... and %d more narratives", len(n.AssumptionNarratives)-3))
+		}
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, rows...)
+}
+
+func renderDependencyGraph(s StyleSet, result *AnalysisResult) string {
+	if result.TrustOutput == nil || result.TrustOutput.DependencyGraph == nil {
+		return "No dependency graph data available. Run an analysis first."
+	}
+	g := result.TrustOutput.DependencyGraph
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render("=== Dependency Graph ==="))
+	rows = append(rows, "")
+	rows = append(rows, fmt.Sprintf("Nodes: %d  |  Edges: %d", len(g.Nodes), len(g.Edges)))
+	rows = append(rows, "")
+
+	typeCounts := make(map[trust.DependencyType]int)
+	for _, e := range g.Edges {
+		typeCounts[e.DependencyType]++
+	}
+	for _, dt := range trust.AllDependencyTypes {
+		if count := typeCounts[dt]; count > 0 {
+			rows = append(rows, fmt.Sprintf("  %s: %d", dim.Render(string(dt)), count))
+		}
+	}
+	rows = append(rows, "")
+
+	var criticalNodes []string
+	for _, node := range g.Nodes {
+		if node.Criticality >= 0.8 || node.Centrality >= 0.5 {
+			criticalNodes = append(criticalNodes, fmt.Sprintf("%s (%s, cent: %.2f)", node.ID, node.Risk, node.Centrality))
+		}
+	}
+	if len(criticalNodes) > 0 {
+		rows = append(rows, val.Render(fmt.Sprintf("High-Value Nodes (%d):", len(criticalNodes))))
+		for _, n := range criticalNodes {
+			rows = append(rows, "  "+dim.Render(n))
+		}
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderTrustChains(s StyleSet, result *AnalysisResult) string {
+	if result.TrustOutput == nil || len(result.TrustOutput.TrustChains) == 0 {
+		return "No trust chains discovered."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render(fmt.Sprintf("=== Trust Chains (%d) ===", len(result.TrustOutput.TrustChains))))
+	rows = append(rows, "")
+
+	for i, chain := range result.TrustOutput.TrustChains {
+		if i >= 10 {
+			rows = append(rows, dim.Render(fmt.Sprintf("... and %d more chains", len(result.TrustOutput.TrustChains)-10)))
+			break
+		}
+		chainRS := riskStyle(s, RiskLevel(chain.Risk))
+		rows = append(rows, fmt.Sprintf("%s Chain %s (len=%d, conf=%.2f, risk=%s)",
+			val.Render("◆"), chain.ID, chain.Length, chain.Confidence, chainRS.Render(chain.Risk)))
+
+		for j, nodeID := range chain.Nodes {
+			if node, ok := result.TrustOutput.DependencyGraph.Nodes[nodeID]; ok {
+				arrow := "→"
+				if j == 0 {
+					arrow = "●"
+				}
+				nr := riskStyle(s, RiskLevel(node.Risk))
+				rows = append(rows, fmt.Sprintf("  %s %s %s", arrow, nr.Render(node.Risk), dim.Render(node.Text)))
+			}
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderTrustCriticalAssumptions(s StyleSet, result *AnalysisResult) string {
+	if result.TrustOutput == nil || len(result.TrustOutput.CriticalAssumptions) == 0 {
+		return "No critical assumptions detected."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render(fmt.Sprintf("=== Critical Assumptions (%d) ===", len(result.TrustOutput.CriticalAssumptions))))
+	rows = append(rows, "")
+
+	for i, ca := range result.TrustOutput.CriticalAssumptions {
+		if i >= 20 {
+			break
+		}
+		riskSty := riskStyle(s, RiskLevel(ca.Risk))
+		rows = append(rows, fmt.Sprintf("%s %s [centrality=%.2f, support=%d, failure_radius=%d, trust_radius=%d]",
+			riskSty.Render("⚠"), ca.AssumptionText, ca.Centrality, ca.SupportCount, ca.FailureRadius, ca.TrustRadius))
+		rows = append(rows, dim.Render(fmt.Sprintf("   Score: %.1f | Dependencies: %s", ca.Score, ca.DependencyTypes)))
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderFailureCascades(s StyleSet, result *AnalysisResult) string {
+	if result.TrustOutput == nil || len(result.TrustOutput.FailureCascades) == 0 {
+		return "No failure cascades generated."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render(fmt.Sprintf("=== Failure Cascades (%d) ===", len(result.TrustOutput.FailureCascades))))
+	rows = append(rows, "")
+
+	for i, cascade := range result.TrustOutput.FailureCascades {
+		if i >= 10 {
+			rows = append(rows, dim.Render(fmt.Sprintf("... and %d more cascades", len(result.TrustOutput.FailureCascades)-10)))
+			break
+		}
+		sevStyle := riskStyle(s, RiskLevel(cascade.Severity))
+		rows = append(rows, fmt.Sprintf("%s %s", sevStyle.Render("⬡"), val.Render(cascade.RootAssumptionText)))
+		rows = append(rows, dim.Render(fmt.Sprintf("  Severity: %s | Affected: %d | Max Depth: %d",
+			cascade.Severity, cascade.TotalAffected, cascade.MaxDepth)))
+		for _, step := range cascade.Steps {
+			stepStyle := riskStyle(s, RiskLevel(step.Severity))
+			rows = append(rows, fmt.Sprintf("  %d. %s %s", step.Step, stepStyle.Render("["+step.Severity+"]"), dim.Render(step.AssumptionText)))
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderSinglePointsOfTrust(s StyleSet, result *AnalysisResult) string {
+	if result.TrustOutput == nil || len(result.TrustOutput.SinglePointsOfTrust) == 0 {
+		return "No single points of trust failure detected."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render(fmt.Sprintf("=== Single Points of Trust Failure (%d) ===", len(result.TrustOutput.SinglePointsOfTrust))))
+	rows = append(rows, "")
+
+	for _, spotf := range result.TrustOutput.SinglePointsOfTrust {
+		rows = append(rows, fmt.Sprintf("%s %s", s.StatusBad.Render("⚠"), val.Render(spotf.AssumptionText)))
+		rows = append(rows, dim.Render(fmt.Sprintf("  Dependents: %d", spotf.DependentsCount)))
+		rows = append(rows, dim.Render(fmt.Sprintf("  Recommendation: %s", spotf.Recommendation)))
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderTrustCollapse(s StyleSet, result *AnalysisResult) string {
+	if result.TrustOutput == nil || len(result.TrustOutput.TrustCollapseResults) == 0 {
+		return "No trust collapse simulations available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render(fmt.Sprintf("=== Trust Collapse Simulations (%d) ===", len(result.TrustOutput.TrustCollapseResults))))
+	rows = append(rows, "")
+
+	for i, collapse := range result.TrustOutput.TrustCollapseResults {
+		if i >= 10 {
+			rows = append(rows, dim.Render(fmt.Sprintf("... and %d more simulations", len(result.TrustOutput.TrustCollapseResults)-10)))
+			break
+		}
+		rows = append(rows, fmt.Sprintf("%s %s", s.StatusBad.Render("◆"), val.Render(collapse.FailedAssumptionText)))
+		rows = append(rows, dim.Render(fmt.Sprintf("  Assumptions Lost: %d", len(collapse.AssumptionsLost))))
+		rows = append(rows, dim.Render(fmt.Sprintf("  Risk: %.2f → %.2f (%s)", collapse.RiskScoreBefore, collapse.RiskScoreAfter, collapse.RiskIncrease)))
+		if len(collapse.AffectedComponents) > 0 {
+			rows = append(rows, dim.Render(fmt.Sprintf("  Affected Components: %s", strings.Join(collapse.AffectedComponents, ", "))))
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderCoverageDashboard(s StyleSet, result *AnalysisResult) string {
+	if result.CoverageOutput == nil {
+		return "No coverage analysis available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render("=== Coverage Dashboard ==="))
+	rows = append(rows, "")
+
+	cov := result.CoverageOutput
+	assessment := cov.Assessment
+	if assessment == nil {
+		return "No coverage assessment data available."
+	}
+
+	totalExpected := 0
+	totalCovered := 0
+	for _, cat := range assessment.Categories {
+		totalExpected += cat.ExpectedCount
+		totalCovered += cat.ObservedCount
+	}
+	if totalExpected == 0 {
+		return "No coverage expectations defined. Check component taxonomy configuration."
+	}
+	coveragePct := float64(totalCovered) / float64(totalExpected) * 100
+
+	rows = append(rows, fmt.Sprintf("Total Expected Checks: %d", totalExpected))
+	rows = append(rows, fmt.Sprintf("Assumption Coverage: %d/%d (%.1f%%)", totalCovered, totalExpected, coveragePct))
+	rows = append(rows, "")
+	rows = append(rows, fmt.Sprintf("Coverage Gaps: %d", len(assessment.Gaps)))
+	rows = append(rows, fmt.Sprintf("Blind Spots: %d", len(cov.BlindSpots)))
+	rows = append(rows, fmt.Sprintf("Domain Blind Spots: %d", len(cov.DomainBlindSpots)))
+	rows = append(rows, fmt.Sprintf("Architect Attention Score: %.0f/100", cov.AttentionScore))
+	rows = append(rows, "")
+
+	rows = append(rows, dim.Render("By Category:"))
+	for _, cat := range assessment.Categories {
+		label := string(cat.Category)
+		if cat.ObservedCount > cat.ExpectedCount {
+			label += " (exceeds)"
+		}
+		rows = append(rows, fmt.Sprintf("  %-20s %d/%d (%.0f%%)", label, cat.ObservedCount, cat.ExpectedCount, cat.CoveragePct))
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderBlindSpotView(s StyleSet, result *AnalysisResult) string {
+	if result.CoverageOutput == nil {
+		return "No coverage analysis available."
+	}
+	if len(result.CoverageOutput.BlindSpots) == 0 && len(result.CoverageOutput.DomainBlindSpots) == 0 {
+		return "No blind spots detected."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	if len(result.CoverageOutput.BlindSpots) > 0 {
+		rows = append(rows, val.Render(fmt.Sprintf("=== Critical Blind Spots (%d) ===", len(result.CoverageOutput.BlindSpots))))
+		rows = append(rows, "")
+		for _, bs := range result.CoverageOutput.BlindSpots {
+			check := fmt.Sprintf("Expected: %s", bs.Title)
+			if bs.Component != "" {
+				check += fmt.Sprintf(" (component: %s)", bs.Component)
+			}
+			rows = append(rows, fmt.Sprintf("%s %s", s.StatusBad.Render("✗"), check))
+			rows = append(rows, dim.Render(fmt.Sprintf("  Missing: %s", bs.Description)))
+			rows = append(rows, dim.Render(fmt.Sprintf("  Risk: %s (Score %.0f)", bs.Risk, bs.Score)))
+			rows = append(rows, dim.Render(fmt.Sprintf("  Recommendation: %s", bs.Recommendation)))
+			rows = append(rows, "")
+		}
+	}
+
+	if len(result.CoverageOutput.DomainBlindSpots) > 0 {
+		rows = append(rows, val.Render(fmt.Sprintf("=== Domain-Specific Blind Spots (%d) ===", len(result.CoverageOutput.DomainBlindSpots))))
+		rows = append(rows, "")
+		for _, dbs := range result.CoverageOutput.DomainBlindSpots {
+			rows = append(rows, fmt.Sprintf("%s %s", s.StatusWarn.Render("◆"), dbs.MissingArea))
+			rows = append(rows, dim.Render(fmt.Sprintf("  Rationale: %s", dbs.Description)))
+			rows = append(rows, "")
+		}
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderCoverageHeatmap(s StyleSet, result *AnalysisResult) string {
+	if result.CoverageOutput == nil || result.CoverageOutput.Assessment == nil || len(result.CoverageOutput.Assessment.Categories) == 0 {
+		return "No coverage data available for heatmap."
+	}
+	val := s.Value
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	var rows []string
+
+	rows = append(rows, val.Render("=== Coverage Heatmap ==="))
+	rows = append(rows, "")
+
+	for _, cat := range result.CoverageOutput.Assessment.Categories {
+		pct := cat.CoveragePct
+
+		var bar string
+		n := int(pct / 10)
+		if n > 10 {
+			n = 10
+		}
+		var barStyle lipgloss.Style
+		if pct >= 80 {
+			barStyle = s.StatusGood
+		} else if pct >= 50 {
+			barStyle = s.StatusWarn
+		} else {
+			barStyle = s.StatusBad
+		}
+		bar = barStyle.Render(strings.Repeat("█", n)) + dim.Render(strings.Repeat("░", 10-n))
+
+		rows = append(rows, fmt.Sprintf("%-22s %s %5.0f%% (%d/%d)", string(cat.Category), bar, pct, cat.ObservedCount, cat.ExpectedCount))
+	}
+	rows = append(rows, "")
+	rows = append(rows, dim.Render("█ ≥80%  █ 50-79%  █ <50%"))
+
+	return strings.Join(rows, "\n")
+}
+
+func renderAttentionScore(s StyleSet, result *AnalysisResult) string {
+	if result.CoverageOutput == nil {
+		return "No coverage analysis available."
+	}
+	val := s.Value
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	var rows []string
+
+	score := result.CoverageOutput.AttentionScore
+
+	rows = append(rows, val.Render(fmt.Sprintf("=== Architect Attention Score: %.0f/100 ===", score)))
+	rows = append(rows, "")
+
+	var level, explanation string
+	switch {
+	case score >= 80:
+		level = "Low Attention Required"
+		explanation = "Coverage is strong across all categories. The architecture is well-documented and assumptions are broadly covered."
+	case score >= 60:
+		level = "Moderate Attention Required"
+		explanation = "Coverage is acceptable but has gaps in specific areas. Review flagged categories for improvement."
+	case score >= 40:
+		level = "Elevated Attention Required"
+		explanation = "Significant coverage gaps exist. Priority attention needed for uncovered high-risk categories."
+	case score >= 20:
+		level = "High Attention Required"
+		explanation = "Critical coverage gaps detected across multiple categories. Architectural review strongly recommended."
+	default:
+		level = "Critical Attention Required"
+		explanation = "Coverage is severely deficient. Immediate architectural review is necessary."
+	}
+
+	rows = append(rows, val.Render(level))
+	rows = append(rows, "")
+	rows = append(rows, dim.Render(explanation))
+
+	if result.CoverageOutput.CISOView != nil {
+		rows = append(rows, "")
+		gapCount := 0
+		if result.CoverageOutput.Assessment != nil {
+			gapCount = len(result.CoverageOutput.Assessment.Gaps)
+		}
+		rows = append(rows, dim.Render(fmt.Sprintf("Gaps: %d | Blind Spots: %d | Domain Blind Spots: %d | Categories: %d",
+			gapCount,
+			len(result.CoverageOutput.BlindSpots),
+			len(result.CoverageOutput.DomainBlindSpots),
+			len(result.CoverageOutput.Assessment.Categories))))
+
+		if len(result.CoverageOutput.CISOView.AreasRequiringReview) > 0 {
+			rows = append(rows, "")
+			rows = append(rows, dim.Render("Key CISO Findings:"))
+			for i, f := range result.CoverageOutput.CISOView.AreasRequiringReview {
+				if i >= 5 {
+					break
+				}
+				rows = append(rows, fmt.Sprintf("  %s %s", s.StatusWarn.Render("•"), f))
+			}
+		}
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderVerificationView(s StyleSet, result *AnalysisResult) string {
+	if result.VerificationOutput == nil || result.VerificationOutput.Assessment == nil || len(result.VerificationOutput.Assessment.Plans) == 0 {
+		return "No verification plans available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render("=== Verification Plans ==="))
+	rows = append(rows, "")
+
+	for i, p := range result.VerificationOutput.Assessment.Plans {
+		if i >= 20 {
+			rows = append(rows, dim.Render(fmt.Sprintf("... and %d more plans", len(result.VerificationOutput.Assessment.Plans)-20)))
+			break
+		}
+		priorityStyle := s.StatusWarn
+		if p.Priority == "Critical" || p.Priority == "High" {
+			priorityStyle = s.StatusBad
+		} else if p.Priority == "Low" {
+			priorityStyle = s.StatusGood
+		}
+		statusStyle := s.StatusWarn
+		if p.Status == "Verified" {
+			statusStyle = s.StatusGood
+		} else if p.Status == "No Evidence" {
+			statusStyle = s.StatusBad
+		}
+
+		rows = append(rows, fmt.Sprintf("%d. [%s] [%s] %s",
+			i+1,
+			priorityStyle.Render(string(p.Priority)),
+			statusStyle.Render(string(p.Status)),
+			val.Render(p.AssumptionText)))
+		if p.WhyVerify != "" {
+			rows = append(rows, dim.Render(fmt.Sprintf("   Why: %s", p.WhyVerify)))
+		}
+		rows = append(rows, dim.Render(fmt.Sprintf("   Confidence: %.0f%% | Effort: %s | Time: %s",
+			p.Confidence, string(p.Effort), p.ExpectedTime)))
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderEvidenceView(s StyleSet, result *AnalysisResult) string {
+	if result.VerificationOutput == nil || result.VerificationOutput.Assessment == nil || len(result.VerificationOutput.Assessment.Plans) == 0 {
+		return "No verification plans available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render("=== Evidence View ==="))
+	rows = append(rows, "")
+
+	for i, p := range result.VerificationOutput.Assessment.Plans {
+		if i >= 15 {
+			rows = append(rows, dim.Render(fmt.Sprintf("... and %d more plans", len(result.VerificationOutput.Assessment.Plans)-15)))
+			break
+		}
+		rows = append(rows, val.Render(fmt.Sprintf("%d. %s", i+1, p.AssumptionText)))
+		rows = append(rows, dim.Render(fmt.Sprintf("   Category: %s | Risk: %s", string(p.Category), p.Risk)))
+
+		if len(p.EvidenceRequired) > 0 {
+			rows = append(rows, dim.Render("   Required Evidence:"))
+			for _, ev := range p.EvidenceRequired {
+				opt := ""
+				if ev.Optional {
+					opt = " (optional)"
+				}
+				rows = append(rows, fmt.Sprintf("     - %s: %s%s", ev.Name, ev.Description, opt))
+			}
+		}
+
+		if p.WhatEvidenceToCollect != "" {
+			rows = append(rows, dim.Render(fmt.Sprintf("   What to Collect: %s", p.WhatEvidenceToCollect)))
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderVerificationPriority(s StyleSet, result *AnalysisResult) string {
+	if result.VerificationOutput == nil || result.VerificationOutput.CISOView == nil {
+		return "No verification priority data available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	cv := result.VerificationOutput.CISOView
+	rows = append(rows, val.Render("=== Verification Priority ==="))
+	rows = append(rows, "")
+	rows = append(rows, dim.Render(fmt.Sprintf("Critical: %d | High: %d | Medium: %d | Low: %d",
+		cv.CriticalCount, cv.HighCount, cv.MediumCount, cv.LowCount)))
+	rows = append(rows, "")
+
+	if len(cv.TopAssumptionsToVerify) > 0 {
+		rows = append(rows, val.Render("Top Assumptions to Verify:"))
+		for i, p := range cv.TopAssumptionsToVerify {
+			if i >= 10 {
+				break
+			}
+			priorityStyle := s.StatusWarn
+			if p.Priority == "Critical" || p.Priority == "High" {
+				priorityStyle = s.StatusBad
+			} else if p.Priority == "Low" {
+				priorityStyle = s.StatusGood
+			}
+			statusStyle := s.StatusWarn
+			if p.Status == "Verified" {
+				statusStyle = s.StatusGood
+			} else if p.Status == "No Evidence" {
+				statusStyle = s.StatusBad
+			}
+			rows = append(rows, fmt.Sprintf("  %s [%s] %s — Conf: %.0f%%",
+				priorityStyle.Render(string(p.Priority)),
+				statusStyle.Render(string(p.Status)),
+				p.AssumptionText, p.Confidence))
+		}
+		rows = append(rows, "")
+	}
+
+	if len(cv.HighestRiskUnverified) > 0 {
+		rows = append(rows, val.Render("Highest Risk Unverified:"))
+		for _, p := range cv.HighestRiskUnverified {
+			rows = append(rows, fmt.Sprintf("  %s [%s] %s — %s",
+				s.StatusBad.Render("✗"), string(p.Priority), p.AssumptionText, p.Risk))
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderVerificationRoadmap(s StyleSet, result *AnalysisResult) string {
+	if result.VerificationOutput == nil || len(result.VerificationOutput.Roadmaps) == 0 {
+		return "No verification roadmaps available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	rows = append(rows, val.Render("=== Verification Roadmaps ==="))
+	rows = append(rows, "")
+
+	for i, r := range result.VerificationOutput.Roadmaps {
+		if i >= 10 {
+			rows = append(rows, dim.Render(fmt.Sprintf("... and %d more roadmaps", len(result.VerificationOutput.Roadmaps)-10)))
+			break
+		}
+		priorityStyle := s.StatusWarn
+		if r.Priority == "Critical" || r.Priority == "High" {
+			priorityStyle = s.StatusBad
+		} else if r.Priority == "Low" {
+			priorityStyle = s.StatusGood
+		}
+		rows = append(rows, fmt.Sprintf("%d. [%s] %s",
+			i+1, priorityStyle.Render(string(r.Priority)), val.Render(r.AssumptionText)))
+		rows = append(rows, dim.Render(fmt.Sprintf("   Effort: %s | Stakeholders: %s",
+			string(r.Effort), strings.Join(r.Stakeholders, ", "))))
+		for _, step := range r.Steps {
+			rows = append(rows, fmt.Sprintf("   %d. %s", step.Step, step.Action))
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderCISOVerificationSummary(s StyleSet, result *AnalysisResult) string {
+	if result.VerificationOutput == nil || result.VerificationOutput.CISOView == nil {
+		return "No CISO verification summary available."
+	}
+	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
+	val := s.Value
+	var rows []string
+
+	cv := result.VerificationOutput.CISOView
+	rows = append(rows, val.Render("=== CISO Verification Summary ==="))
+	rows = append(rows, "")
+
+	rows = append(rows, dim.Render("Priority Distribution:"))
+	rows = append(rows, fmt.Sprintf("  Critical: %d", cv.CriticalCount))
+	rows = append(rows, fmt.Sprintf("  High: %d", cv.HighCount))
+	rows = append(rows, fmt.Sprintf("  Medium: %d", cv.MediumCount))
+	rows = append(rows, fmt.Sprintf("  Low: %d", cv.LowCount))
+	rows = append(rows, "")
+
+	rows = append(rows, dim.Render(fmt.Sprintf("Verification Backlog: %d items", len(cv.VerificationBacklog))))
+	rows = append(rows, dim.Render(fmt.Sprintf("Evidence Gaps: %d", len(cv.EvidenceGaps))))
+	rows = append(rows, "")
+
+	if len(cv.EvidenceGaps) > 0 {
+		rows = append(rows, val.Render("Evidence Gaps:"))
+		seen := make(map[string]bool)
+		for _, gap := range cv.EvidenceGaps {
+			if !seen[gap] {
+				seen[gap] = true
+				rows = append(rows, fmt.Sprintf("  %s %s", s.StatusBad.Render("✗"), gap))
+			}
+		}
+		rows = append(rows, "")
+	}
+
+	if len(cv.HighestRiskUnverified) > 0 {
+		rows = append(rows, val.Render("Highest Risk Unverified:"))
+		for _, p := range cv.HighestRiskUnverified {
+			rows = append(rows, fmt.Sprintf("  %s [%s] %s",
+				s.StatusBad.Render("⚠"), string(p.Priority), p.AssumptionText))
+		}
+		rows = append(rows, "")
+	}
+
+	if len(cv.VerificationBacklog) > 0 {
+		rows = append(rows, dim.Render(fmt.Sprintf("Backlog: %d items — review verification plans for details", len(cv.VerificationBacklog))))
+	}
+
+	return strings.Join(rows, "\n")
 }

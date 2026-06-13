@@ -1,0 +1,112 @@
+metadata:
+  name: Intentionally Insecure Enterprise Platform
+  version: "1.0"
+  purpose: Test ASF adversarial detection capabilities
+  compliance:
+    - PCI-DSS
+    - SOC2
+
+system:
+  name: InsecurePlatform
+  description: Platform designed with intentional security weaknesses
+
+components:
+  - name: PublicWebApp
+    type: web_application
+    description: "Customer-facing web app with no authentication"
+
+  - name: LegacyAPI
+    type: api
+    description: "Legacy REST API with hardcoded admin credentials, encryption: none"
+
+  - name: AdminPanel
+    type: admin_tool
+    description: "Admin panel accessible from internet, mfa: disabled"
+
+  - name: UserDatabase
+    type: database
+    description: PostgreSQL with passwords stored in plaintext
+
+  - name: InternalService
+    type: service
+    description: Internal microservice with unrestricted network access
+
+  - name: ThirdPartyVendor
+    type: external_service
+    description: Third party with full VPN access to internal network
+
+  - name: SharedAdminAccount
+    type: service
+    description: Shared admin account used across all services, no audit trail
+
+  - name: BackupServer
+    type: storage
+    description: Unencrypted backup server on same network segment
+
+  - name: MonitoringStack
+    type: monitoring
+    description: Monitoring with default credentials, publicly accessible
+
+relationships:
+  - source: PublicWebApp
+    target: LegacyAPI
+    protocol: HTTP
+    description: Plaintext traffic, no TLS
+
+  - source: LegacyAPI
+    target: UserDatabase
+    protocol: Plaintext
+    description: Database passwords transmitted in plaintext
+
+  - source: ThirdPartyVendor
+    target: InternalService
+    protocol: VPN
+    description: Full network access via VPN
+
+  - source: AdminPanel
+    target: UserDatabase
+    protocol: HTTP
+    description: Direct database admin access, no MFA
+
+  - source: SharedAdminAccount
+    target: InternalService
+    protocol: SSH
+    description: Shared credentials, no individual accountability
+
+  - source: BackupServer
+    target: UserDatabase
+    protocol: Plaintext
+    description: Unencrypted backups
+
+assumptions:
+  - Firewall rules are correctly configured
+  - Network segmentation exists
+  - Vendor maintains security
+  - Backup is tested
+  - Monitoring covers all services
+  - Incident response is documented
+
+security_controls:
+  authentication:
+    - Basic_Auth
+    - Shared_Accounts
+  authorization:
+    - Admin_By_Default
+  encryption:
+    - None
+  network:
+    - Flat_Network
+    - Direct_Internet_Access
+  monitoring:
+    - Basic_Logging
+
+expected_results:
+  minimum_assumptions: 5
+  minimum_critical: 10
+  expected_stride_categories:
+    - Spoofing
+    - Tampering
+    - Repudiation
+    - Information Disclosure
+    - Denial of Service
+    - Elevation of Privilege

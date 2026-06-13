@@ -96,15 +96,6 @@ func checkAssumptionAgainstEvidence(assumption models.Assumption, ev models.Evid
 	return nil
 }
 
-func extractResourceKeywords(text string) []string {
-	re := regexp.MustCompile(`\b[A-Z][a-z]+\b`)
-	matches := re.FindAllString(text, -1)
-	if len(matches) > 5 {
-		matches = matches[:5]
-	}
-	return matches
-}
-
 func checkAccess(assumption models.Assumption, ev models.Evidence) *checkResult {
 	textLower := strings.ToLower(assumption.Text)
 	records := ev.Records

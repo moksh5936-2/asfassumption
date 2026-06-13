@@ -10,6 +10,8 @@ import (
 
 	"asf-tui/asf/analyzer"
 	"asf-tui/asf/graph"
+	"asf-tui/asf/narrative"
+	"asf-tui/asf/trust"
 )
 
 type cliClaim struct {
@@ -87,6 +89,17 @@ type cliOutput struct {
 	ERNBoardReport     string                `json:"ern_board_report,omitempty"`
 	ERNExecutiveReport string                `json:"ern_executive_report,omitempty"`
 	ERNTechnicalReport string                `json:"ern_technical_report,omitempty"`
+
+	// Trust chain fields
+	TrustChains          []cliTrustChain                `json:"trust_chains,omitempty"`
+	FailureCascades      []cliFailureCascade            `json:"failure_cascades,omitempty"`
+	CriticalAssumptions  []cliCriticalAssumption        `json:"critical_assumptions,omitempty"`
+	SinglePointsOfTrust  []cliSinglePointOfTrustFailure `json:"single_points_of_trust_failure,omitempty"`
+	TrustCollapseResults []cliTrustCollapseResult       `json:"trust_collapse_results,omitempty"`
+	TrustChainSummary    string                         `json:"trust_chain_summary,omitempty"`
+
+	// Security Architect Narrative Engine (SANE) fields
+	NarrativeOutput *narrative.NarrativeOutput `json:"narrative_output,omitempty"`
 }
 
 type cliERNExecutiveRisk struct {
@@ -246,7 +259,7 @@ func runAnalyzeCLI(args []string) {
 
 	for _, a := range args {
 		if a == "--help" || a == "-h" {
-			fmt.Println("Usage: asf analyze <file> [-e evidence ...] [--json] [--graph] [--report-type board|executive|technical]")
+			fmt.Println("Usage: asf analyze <file> [-e evidence ...] [--json] [--graph] [--report-type board|executive|technical|architect-narrative|executive-summary|technical-summary]")
 			fmt.Println()
 			fmt.Println("Analyze a policy document or architecture diagram for security assumptions.")
 			fmt.Println()
@@ -255,7 +268,7 @@ func runAnalyzeCLI(args []string) {
 			fmt.Println("  -e, --evidence <path>     Evidence files/directories (CSV, JSON, YAML)")
 			fmt.Println("  --json                    Output as JSON (default)")
 			fmt.Println("  --graph                   Include dependency graph in JSON output")
-			fmt.Println("  --report-type <type>      Filter output to specific report pack (board, executive, technical)")
+			fmt.Println("  --report-type <type>      Filter output to specific report pack (board, executive, technical, architect-narrative, executive-summary, technical-summary)")
 			fmt.Println("  --help, -h                Show this help")
 			os.Exit(ExitSuccess)
 		}
@@ -440,6 +453,14 @@ func runAnalyzeCLI(args []string) {
 		fmt.Fprintf(os.Stderr, "Error encoding output: %v\n", err)
 		os.Exit(ExitExportErr)
 	}
+}
+
+func convertDependencyTypes(dts []trust.DependencyType) []string {
+	out := make([]string, len(dts))
+	for i, dt := range dts {
+		out[i] = string(dt)
+	}
+	return out
 }
 
 // convertAnalysisResultToCLI converts a full Engine AnalysisResult to the
@@ -628,6 +649,86 @@ func convertAnalysisResultToCLI(result *AnalysisResult, graphFlag bool, reportTy
 
 	// Add TBI summary
 	out.TBISummary = result.TBISummary
+
+	// Add trust chain data
+	if result.TrustOutput != nil {
+		for _, tc := range result.TrustOutput.TrustChains {
+			out.TrustChains = append(out.TrustChains, cliTrustChain{
+				ID:              tc.ID,
+				Nodes:           tc.Nodes,
+				Length:          tc.Length,
+				Confidence:      tc.Confidence,
+				Risk:            tc.Risk,
+				DependencyCount: tc.DependencyCount,
+				RootNode:        tc.RootNode,
+				LeafNode:        tc.LeafNode,
+			})
+		}
+		for _, fc := range result.TrustOutput.FailureCascades {
+			steps := make([]cliCascadeResult, len(fc.Steps))
+			for i, s := range fc.Steps {
+				steps[i] = cliCascadeResult{
+					Step:             s.Step,
+					AssumptionID:     s.AssumptionID,
+					AssumptionText:   s.AssumptionText,
+					Severity:         s.Severity,
+					AffectedAssets:   s.AffectedAssets,
+					AffectedControls: s.AffectedControls,
+					Reason:           s.Reason,
+				}
+			}
+			out.FailureCascades = append(out.FailureCascades, cliFailureCascade{
+				RootAssumptionID:   fc.RootAssumptionID,
+				RootAssumptionText: fc.RootAssumptionText,
+				Steps:              steps,
+				TotalAffected:      fc.TotalAffected,
+				Severity:           fc.Severity,
+				MaxDepth:           fc.MaxDepth,
+			})
+		}
+		for _, ca := range result.TrustOutput.CriticalAssumptions {
+			out.CriticalAssumptions = append(out.CriticalAssumptions, cliCriticalAssumption{
+				AssumptionID:    ca.AssumptionID,
+				AssumptionText:  ca.AssumptionText,
+				Centrality:      ca.Centrality,
+				SupportCount:    ca.SupportCount,
+				FailureRadius:   ca.FailureRadius,
+				TrustRadius:     ca.TrustRadius,
+				Risk:            ca.Risk,
+				Score:           ca.Score,
+				DependencyTypes: convertDependencyTypes(ca.DependencyTypes),
+			})
+		}
+		for _, sp := range result.TrustOutput.SinglePointsOfTrust {
+			out.SinglePointsOfTrust = append(out.SinglePointsOfTrust, cliSinglePointOfTrustFailure{
+				NodeID:          sp.NodeID,
+				AssumptionText:  sp.AssumptionText,
+				DependentsCount: sp.DependentsCount,
+				DependentNodes:  sp.DependentNodes,
+				DependencyTypes: convertDependencyTypes(sp.DependencyTypes),
+				Recommendation:  sp.Recommendation,
+			})
+		}
+		for _, tc := range result.TrustOutput.TrustCollapseResults {
+			out.TrustCollapseResults = append(out.TrustCollapseResults, cliTrustCollapseResult{
+				FailedAssumptionID:   tc.FailedAssumptionID,
+				FailedAssumptionText: tc.FailedAssumptionText,
+				AssumptionsLost:      tc.AssumptionsLost,
+				ControlsLost:         tc.ControlsLost,
+				AssetsExposed:        tc.AssetsExposed,
+				RiskIncrease:         tc.RiskIncrease,
+				RiskScoreBefore:      tc.RiskScoreBefore,
+				RiskScoreAfter:       tc.RiskScoreAfter,
+				AffectedComponents:   tc.AffectedComponents,
+			})
+		}
+		out.TrustChainSummary = fmt.Sprintf("%d trust chains, %d failure cascades, %d critical assumptions, %d single points of trust failure, %d collapse simulations",
+			len(result.TrustOutput.TrustChains),
+			len(result.TrustOutput.FailureCascades),
+			len(result.TrustOutput.CriticalAssumptions),
+			len(result.TrustOutput.SinglePointsOfTrust),
+			len(result.TrustOutput.TrustCollapseResults))
+	}
 
 	// Add TMI threats
 	for _, t := range result.Threats {
@@ -1025,6 +1126,11 @@ func convertAnalysisResultToCLI(result *AnalysisResult, graphFlag bool, reportTy
 		Tags:                 []string{"analysis", "summary"},
 	})
 
+	// Include narrative output if available
+	if result.NarrativeOutput != nil {
+		out.NarrativeOutput = result.NarrativeOutput
+	}
+
 	return out
 }
 
@@ -1054,6 +1160,70 @@ type cliCIEStatement struct {
 	OriginalText string  `json:"original_text"`
 	Category     string  `json:"category"`
 	Confidence   float64 `json:"confidence"`
+}
+
+// Trust chain CLI types
+type cliTrustChain struct {
+	ID              string   `json:"id"`
+	Nodes           []string `json:"nodes"`
+	Length          int      `json:"length"`
+	Confidence      float64  `json:"confidence"`
+	Risk            string   `json:"risk"`
+	DependencyCount int      `json:"dependency_count"`
+	RootNode        string   `json:"root_node"`
+	LeafNode        string   `json:"leaf_node"`
+}
+
+type cliCascadeResult struct {
+	Step             int      `json:"step"`
+	AssumptionID     string   `json:"assumption_id"`
+	AssumptionText   string   `json:"assumption_text"`
+	Severity         string   `json:"severity"`
+	AffectedAssets   []string `json:"affected_assets,omitempty"`
+	AffectedControls []string `json:"affected_controls,omitempty"`
+	Reason           string   `json:"reason"`
+}
+
+type cliFailureCascade struct {
+	RootAssumptionID   string             `json:"root_assumption_id"`
+	RootAssumptionText string             `json:"root_assumption_text"`
+	Steps              []cliCascadeResult `json:"steps"`
+	TotalAffected      int                `json:"total_affected"`
+	Severity           string             `json:"severity"`
+	MaxDepth           int                `json:"max_depth"`
+}
+
+type cliCriticalAssumption struct {
+	AssumptionID    string   `json:"assumption_id"`
+	AssumptionText  string   `json:"assumption_text"`
+	Centrality      float64  `json:"centrality"`
+	SupportCount    int      `json:"support_count"`
+	FailureRadius   int      `json:"failure_radius"`
+	TrustRadius     int      `json:"trust_radius"`
+	Risk            string   `json:"risk"`
+	Score           float64  `json:"score"`
+	DependencyTypes []string `json:"dependency_types"`
+}
+
+type cliSinglePointOfTrustFailure struct {
+	NodeID          string   `json:"node_id"`
+	AssumptionText  string   `json:"assumption_text"`
+	DependentsCount int      `json:"dependents_count"`
+	DependentNodes  []string `json:"dependent_nodes"`
+	DependencyTypes []string `json:"dependency_types"`
+	Recommendation  string   `json:"recommendation"`
+}
+
+type cliTrustCollapseResult struct {
+	FailedAssumptionID   string   `json:"failed_assumption_id"`
+	FailedAssumptionText string   `json:"failed_assumption_text"`
+	AssumptionsLost      []string `json:"assumptions_lost"`
+	ControlsLost         []string `json:"controls_lost,omitempty"`
+	AssetsExposed        []string `json:"assets_exposed,omitempty"`
+	RiskIncrease         string   `json:"risk_increase"`
+	RiskScoreBefore      float64  `json:"risk_score_before"`
+	RiskScoreAfter       float64  `json:"risk_score_after"`
+	AffectedComponents   []string `json:"affected_components,omitempty"`
 }
 
 // APD CLI types

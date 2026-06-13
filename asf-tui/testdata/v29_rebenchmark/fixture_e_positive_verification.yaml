@@ -1,0 +1,50 @@
+metadata:
+  name: Positive Verification Test
+  version: "1.0"
+  purpose: Test ASF verification engine produces VERIFIED/PARTIALLY_VERIFIED
+  compliance:
+    - SOC2
+    - HIPAA
+system:
+  name: PositiveVerificationSystem
+  description: Well-secured system for positive verification testing
+components:
+  - name: Auth0
+    type: identity_provider
+    description: Identity provider with MFA, admin MFA, and audit logging
+  - name: APIService
+    type: api
+    description: API service with OAuth2 and RBAC
+  - name: Database
+    type: database
+    description: Encrypted database with encrypted tested backups
+  - name: KMS
+    type: key_management
+    description: Key management with rotation and audit logging
+relationships:
+  - source: Auth0
+    target: APIService
+    protocol: OAuth2
+    description: OAuth2 with TLS
+  - source: APIService
+    target: Database
+    protocol: SQL
+    description: Encrypted SQL connection
+security_controls:
+  authentication:
+    - MFA
+    - OAuth2
+    - Admin_MFA
+  authorization:
+    - RBAC
+    - Least_Privilege
+  encryption:
+    - TLS
+    - AES256
+    - KMS
+  backup:
+    - Encrypted_Backups
+    - Restore_Testing
+  monitoring:
+    - Audit_Logging
+    - SIEM

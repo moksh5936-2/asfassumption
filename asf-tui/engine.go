@@ -11,7 +11,13 @@ import (
 	"time"
 
 	"asf-tui/asf/analyzer"
+	"asf-tui/asf/confidencex"
+	"asf-tui/asf/coverage"
 	"asf-tui/asf/models"
+	"asf-tui/asf/narrative"
+	"asf-tui/asf/review"
+	"asf-tui/asf/trust"
+	"asf-tui/asf/verify"
 	"asf-tui/intelligence"
 )
 
@@ -322,6 +328,20 @@ type AnalysisResult struct {
 
 	// Security Digital Twin (SDT) fields
 	SDT SDTIntelligence `json:"sdt,omitempty"`
+
+	// Security Architect Narrative Engine (SANE) fields
+	NarrativeOutput *narrative.NarrativeOutput `json:"narrative_output,omitempty"`
+
+	// Assumption Dependency & Trust Chain Engine (V14) fields
+	TrustOutput *trust.ChainOutput `json:"trust_output,omitempty"`
+
+	CoverageOutput *coverage.CoverageOutput `json:"coverage_output,omitempty"`
+
+	VerificationOutput *verify.VerificationOutput `json:"verification_output,omitempty"`
+
+	ReviewOutput *review.ReviewOutput `json:"review_output,omitempty"`
+
+	ConfidenceOutput *confidencex.ConfidenceOutput `json:"confidence_output,omitempty"`
 }
 
 type AnalysisProgress struct {
@@ -415,7 +435,7 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		// Merge intelligence results
 		intelAssumptions := convertIntelAssumptions(intelResult.Assumptions)
 		result.Assumptions = mergeAssumptions(result.Assumptions, intelAssumptions)
-		result.Contradictions = convertIntelContradictions(intelResult.Contradictions)
+		result.Contradictions = deduplicateContradictions(convertIntelContradictions(intelResult.Contradictions))
 		result.TrustBoundaries = convertIntelTrustBoundaries(intelResult.TrustBoundaries)
 		result.Domain = intelResult.Domain
 		result.IntelligenceSummary = intelResult.Summary
@@ -424,7 +444,7 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		progress <- AnalysisProgress{Percent: 70, Stage: "Running Contradiction Intelligence Engine..."}
 		cie := intelligence.NewCIEEngine()
 		cieContradictions := cie.DetectAllContradictions(intelArch, existingIntelAssumptions, convertControlsToIntel(result.Controls), convertTrustBoundariesToIntel(result.TrustBoundaries))
-		result.CIEContradictions = convertCIEContradictions(cieContradictions)
+		result.CIEContradictions = deduplicateCIEContradictions(convertCIEContradictions(cieContradictions))
 		result.CIESummary = intelligence.BuildContradictionSummary(cieContradictions)
 		debugLog.Printf("cie: detected %d contradictions", len(cieContradictions))
 
@@ -476,7 +496,7 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		if tmiResult != nil {
 			tmiThreats = tmiResult.Threats
 		}
-		sdriResult := sdri.Run(intelArch, existingIntelAssumptions, intelResult.Controls, apdPaths, tmiThreats, result.Domain)
+		sdriResult := sdri.Run(intelArch, existingIntelAssumptions, convertControlsToIntel(result.Controls), apdPaths, tmiThreats, result.Domain)
 		if sdriResult != nil {
 			result.SDRIControls = convertSDRIControls(sdriResult.Controls)
 			result.SDRIDesignFindings = convertSDRIDesignFindings(sdriResult.DesignFindings)
@@ -690,6 +710,15 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		}
 	}
 
+	// Re-apply security control verification to all assumptions (native + intel-generated)
+	// The buildResult function applies this, but intel engine replaces the assumption list at line 462,
+	// losing the verification status. This ensures every assumption gets control-based verification.
+	if e.archDesc != nil && e.archDesc.SecurityControls != nil {
+		for i := range result.Assumptions {
+			result.Assumptions[i] = applySecurityControlVerification(result.Assumptions[i], e.archDesc.SecurityControls)
+		}
+	}
+
 	progress <- AnalysisProgress{Percent: 80, Stage: "Generating STRIDE Mapping..."}
 	result.StrideDistribution = e.mapStrideDistribution(result.Assumptions)
 
@@ -716,8 +745,387 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 
 	progress <- AnalysisProgress{Percent: 100, Stage: "Complete", Complete: true}
 
+	// Generate Security Architect Narrative
+	result.NarrativeOutput = e.generateNarrativeOutput(result)
+
+	// Run Assumption Dependency & Trust Chain Engine (V14)
+	progress <- AnalysisProgress{Percent: 94, Stage: "Running Trust Chain Analysis..."}
+	result.TrustOutput = e.runTrustChainAnalysis(result)
+
+	// Run Assumption Coverage & Blind Spot Engine (V15)
+	progress <- AnalysisProgress{Percent: 96, Stage: "Running Coverage & Blind Spot Analysis..."}
+	result.CoverageOutput = e.runCoverageAnalysis(result)
+
+	// Run Assumption Verification Intelligence Engine (V16)
+	progress <- AnalysisProgress{Percent: 98, Stage: "Running Verification Intelligence Analysis..."}
+	result.VerificationOutput = e.runVerificationAnalysis(result)
+
+	// Run Security Review Workbench (V17)
+	progress <- AnalysisProgress{Percent: 99, Stage: "Running Security Review Workbench..."}
+	result.ReviewOutput = e.runReviewAnalysis(result)
+
+	// Run Confidence & Explainability Engine (V18)
+	progress <- AnalysisProgress{Percent: 100, Stage: "Running Confidence Explainability Analysis..."}
+	result.ConfidenceOutput = e.runConfidenceExplainability(result)
+
 	asfLog.Printf("analysis complete: %d assumptions, %d critical, %d high", result.TotalAssumptions, result.CriticalCount, result.HighCount)
 	return result, nil
+}
+
+func (e *Engine) generateNarrativeOutput(result *AnalysisResult) *narrative.NarrativeOutput {
+	// Convert engine assumptions to narrative assumptions
+	var narrAssumptions []narrative.Assumption
+	for _, a := range result.Assumptions {
+		strideCats := make([]string, len(a.Stride))
+		for i, s := range a.Stride {
+			strideCats[i] = string(s)
+		}
+		narrAssumptions = append(narrAssumptions, narrative.Assumption{
+			ID:                  a.ID,
+			Description:         a.Description,
+			Component:           a.Component,
+			Category:            a.Category,
+			Risk:                string(a.Risk),
+			STRIDECategories:    strideCats,
+			Likelihood:          a.Likelihood,
+			Impact:              a.Impact,
+			Confidence:          a.Confidence,
+			Keywords:            a.Keywords,
+			SourceComponents:    a.SourceComponents,
+			SourceRelationships: a.SourceRelationships,
+			Rationale:           a.Rationale,
+			EvidenceSources:     a.EvidenceSources,
+		})
+	}
+
+	// Convert controls
+	var narrControls []narrative.ControlDetail
+	for _, c := range result.Controls {
+		strideCats := make([]string, len(c.MitigatedSTRIDE))
+		for i, s := range c.MitigatedSTRIDE {
+			strideCats[i] = string(s)
+		}
+		narrControls = append(narrControls, narrative.ControlDetail{
+			Name:                 c.ID,
+			Category:             c.Category,
+			Description:          c.Description,
+			Rationale:            c.Rationale,
+			MitigatedAssumptions: c.MitigatedAssumptionIDs,
+			STRIDECategories:     strideCats,
+		})
+	}
+
+	// Convert trust boundaries
+	var narrBoundaries []narrative.TrustBoundary
+	for _, tb := range result.TrustBoundaries {
+		narrBoundaries = append(narrBoundaries, narrative.TrustBoundary{
+			Type:        tb.Type,
+			Components:  tb.Components,
+			RiskLevel:   string(tb.RiskLevel),
+			Description: tb.Description,
+		})
+	}
+
+	// Convert contradictions
+	var narrContradictions []narrative.Contradiction
+	for _, c := range result.Contradictions {
+		narrContradictions = append(narrContradictions, narrative.Contradiction{
+			ID:                  c.ID,
+			Severity:            string(c.Severity),
+			Description:         c.Description,
+			Explanation:         c.Explanation,
+			AffectedAssumptions: c.AffectedAssumptions,
+		})
+	}
+
+	// Build stride and risk distributions
+	strideDist := make(map[string]int)
+	for cat, count := range result.StrideDistribution {
+		strideDist[string(cat)] = count
+	}
+	riskDist := map[string]int{
+		"Critical": result.CriticalCount,
+		"High":     result.HighCount,
+		"Medium":   result.MediumCount,
+		"Low":      result.LowCount,
+	}
+
+	// Extract components
+	var components []string
+	seen := make(map[string]bool)
+	for _, a := range result.Assumptions {
+		if a.Component != "" && !seen[a.Component] {
+			seen[a.Component] = true
+			components = append(components, a.Component)
+		}
+	}
+
+	engine := narrative.NewNarrativeEngine(result.Domain, components, nil)
+	return engine.GenerateNarrative(
+		result.ArchitectureName,
+		narrAssumptions,
+		narrControls,
+		narrBoundaries,
+		narrContradictions,
+		result.Domain,
+		strideDist,
+		riskDist,
+	)
+}
+
+func (e *Engine) runTrustChainAnalysis(result *AnalysisResult) *trust.ChainOutput {
+	if len(result.Assumptions) == 0 {
+		return nil
+	}
+
+	// Convert assumptions to trust engine input
+	inputs := make([]trust.AssumptionInput, len(result.Assumptions))
+	for i, a := range result.Assumptions {
+		inputs[i] = trust.AssumptionInput{
+			ID:         a.ID,
+			Text:       a.Description,
+			Component:  a.Component,
+			Category:   a.Category,
+			Risk:       string(a.Risk),
+			Confidence: a.Confidence,
+			Keywords:   a.Keywords,
+			Source:     a.SourceType,
+		}
+	}
+
+	// Extract unique components
+	compSet := make(map[string]bool)
+	for _, a := range result.Assumptions {
+		if a.Component != "" {
+			compSet[a.Component] = true
+		}
+	}
+	components := make([]string, 0, len(compSet))
+	for c := range compSet {
+		components = append(components, c)
+	}
+
+	domain := result.Domain
+	if domain == "" {
+		domain = result.DKPI.DomainResult.PrimaryDomain
+	}
+
+	discovery := trust.NewDiscoveryEngine(domain, components)
+	graph := discovery.DiscoverDependencies(inputs)
+	engine := trust.NewTrustChainEngine(graph)
+	output := engine.RunAll()
+	output.Domain = domain
+
+	return output
+}
+
+func (e *Engine) runCoverageAnalysis(result *AnalysisResult) *coverage.CoverageOutput {
+	if len(result.Assumptions) == 0 {
+		return nil
+	}
+
+	inputs := make([]coverage.AssumptionInput, len(result.Assumptions))
+	for i, a := range result.Assumptions {
+		inputs[i] = coverage.AssumptionInput{
+			ID:          a.ID,
+			Description: a.Description,
+			Component:   a.Component,
+			Category:    a.Category,
+			Keywords:    a.Keywords,
+			Risk:        string(a.Risk),
+		}
+	}
+
+	compSet := make(map[string]bool)
+	for _, a := range result.Assumptions {
+		if a.Component != "" {
+			compSet[a.Component] = true
+		}
+	}
+	components := make([]string, 0, len(compSet))
+	for c := range compSet {
+		components = append(components, c)
+	}
+
+	domain := result.Domain
+	if domain == "" {
+		domain = result.DKPI.DomainResult.PrimaryDomain
+	}
+
+	engine := coverage.NewCoverageEngine(domain, components, inputs)
+	return engine.RunAll()
+}
+
+func (e *Engine) runVerificationAnalysis(result *AnalysisResult) *verify.VerificationOutput {
+	if len(result.Assumptions) == 0 {
+		return nil
+	}
+
+	inputs := make([]verify.VerificationInput, len(result.Assumptions))
+	for i, a := range result.Assumptions {
+		inputs[i] = verify.VerificationInput{
+			ID:          a.ID,
+			Description: a.Description,
+			Component:   a.Component,
+			Category:    a.Category,
+			Risk:        string(a.Risk),
+			Keywords:    a.Keywords,
+		}
+	}
+
+	compSet := make(map[string]bool)
+	for _, a := range result.Assumptions {
+		if a.Component != "" {
+			compSet[a.Component] = true
+		}
+	}
+	components := make([]string, 0, len(compSet))
+	for c := range compSet {
+		components = append(components, c)
+	}
+
+	domain := result.Domain
+	if domain == "" {
+		domain = result.DKPI.DomainResult.PrimaryDomain
+	}
+
+	engine := verify.NewVerificationEngine(domain, components, inputs)
+	return engine.RunAll()
+}
+
+func (e *Engine) runReviewAnalysis(result *AnalysisResult) *review.ReviewOutput {
+	if len(result.Assumptions) == 0 {
+		return nil
+	}
+
+	inputs := make([]review.ReviewInput, len(result.Assumptions))
+	for i, a := range result.Assumptions {
+		verConf := a.Confidence * 100
+		coverageGap := len(a.EvidenceSources) == 0
+
+		// Look up blind spot score from coverage analysis
+		blindSpot := 0.0
+		if result.CoverageOutput != nil {
+			for _, bs := range result.CoverageOutput.BlindSpots {
+				if bs.Component == a.Component || bs.Category == coverage.CoverageCategory(a.Category) {
+					blindSpot = bs.Score
+					break
+				}
+			}
+		}
+
+		centrality := a.QualityScore
+		if a.Confidence > 0 && centrality == 0 {
+			centrality = a.Confidence * 0.5
+		}
+
+		supportCount := len(a.SourceComponents)
+		if supportCount == 0 {
+			supportCount = len(a.Keywords)
+		}
+
+		depCount := len(a.SourceRelationships)
+
+		verPriority := string(a.Risk)
+		if a.VerificationStatus == "" {
+			verPriority = "Unverified"
+		}
+
+		inputs[i] = review.ReviewInput{
+			AssumptionID:           a.ID,
+			AssumptionText:         a.Description,
+			Risk:                   string(a.Risk),
+			Category:               a.Category,
+			Component:              a.Component,
+			Centrality:             centrality,
+			Criticality:            riskToCriticality(a.Risk),
+			FailureRadius:          a.Impact,
+			SupportCount:           supportCount,
+			DependencyCount:        depCount,
+			VerificationPriority:   verPriority,
+			VerificationConfidence: verConf,
+			VerificationStatus:     a.VerificationStatus,
+			CoverageGap:            coverageGap,
+			BlindSpotScore:         blindSpot,
+			Domain:                 result.Domain,
+		}
+	}
+
+	engine := review.NewReviewEngine(result.Domain, inputs)
+	return engine.RunAll()
+}
+
+func riskToCriticality(r RiskLevel) float64 {
+	switch r {
+	case RiskCritical:
+		return 0.95
+	case RiskHigh:
+		return 0.80
+	case RiskMedium:
+		return 0.50
+	default:
+		return 0.20
+	}
+}
+
+func (e *Engine) runConfidenceExplainability(result *AnalysisResult) *confidencex.ConfidenceOutput {
+	if len(result.Assumptions) == 0 {
+		return nil
+	}
+
+	inputs := make([]confidencex.ConfidenceInput, len(result.Assumptions))
+	for i, a := range result.Assumptions {
+		hasTrustChain := false
+		if result.TrustOutput != nil && len(result.TrustOutput.TrustChains) > 0 {
+			for _, tc := range result.TrustOutput.TrustChains {
+				for _, n := range tc.Nodes {
+					if n == a.ID {
+						hasTrustChain = true
+						break
+					}
+				}
+				if hasTrustChain {
+					break
+				}
+			}
+		}
+
+		hasCoverageGap := false
+		blindSpotScore := 0.0
+		if result.CoverageOutput != nil {
+			for _, bs := range result.CoverageOutput.BlindSpots {
+				if bs.Component == a.Component || bs.Category == coverage.CoverageCategory(a.Category) {
+					hasCoverageGap = true
+					blindSpotScore = bs.Score
+					break
+				}
+			}
+		}
+
+		inputs[i] = confidencex.ConfidenceInput{
+			AssumptionID:         a.ID,
+			AssumptionText:       a.Description,
+			Component:            a.Component,
+			Category:             a.Category,
+			Risk:                 string(a.Risk),
+			Confidence:           a.Confidence * 100,
+			EvidenceSources:      a.EvidenceSources,
+			SourceComponents:     a.SourceComponents,
+			SourceRelationships:  a.SourceRelationships,
+			Keywords:             a.Keywords,
+			Rationale:            a.Rationale,
+			VerificationStatus:   a.VerificationStatus,
+			Domain:               result.Domain,
+			HasTrustChain:        hasTrustChain,
+			HasCoverageGap:       hasCoverageGap,
+			BlindSpotScore:       blindSpotScore,
+			DependencyCentrality: float64(len(a.SourceRelationships)) / 10.0,
+			FailureRadius:        a.Impact,
+		}
+	}
+
+	engine := confidencex.NewExplainabilityEngine(result.Domain, inputs)
+	return engine.RunAll()
 }
 
 func (e *Engine) runNativeAnalysis(docPath, evPath string) (*asfJSONResult, error) {
@@ -878,7 +1286,7 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 		e.explainPipe = NewExplainabilityPipeline(e.archDesc, archPath, e.strideEngine)
 	}
 
-	for i, a := range r.Assumptions {
+	for _, a := range r.Assumptions {
 		sev := gapMap[a.ID]
 		risk := mapRiskLevel(sev, verificationMap[a.ID])
 
@@ -905,6 +1313,11 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 			e.explainPipe.Explain(&assumption)
 		}
 
+		// Apply fact protection: transform assumptions that contradict explicit architecture facts
+		if e.archDesc != nil && len(e.archDesc.SecurityControls) > 0 {
+			assumption = transformAssumptionForFacts(assumption, e.archDesc.SecurityControls)
+		}
+
 		result.Assumptions = append(result.Assumptions, assumption)
 
 		switch assumption.Risk {
@@ -917,8 +1330,6 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 		case RiskLow:
 			result.LowCount++
 		}
-
-		_ = i
 	}
 
 	// Process explicit assumptions from YAML/JSON
@@ -949,6 +1360,47 @@ func (e *Engine) buildResult(r *asfJSONResult, archPath, mode string) *AnalysisR
 	if e.archDesc.SecurityControls != nil {
 		for i := range result.Assumptions {
 			result.Assumptions[i] = applySecurityControlVerification(result.Assumptions[i], e.archDesc.SecurityControls)
+		}
+	}
+
+	// Re-map risk after security control verification so CONTRADICTED status is reflected
+	for i, a := range result.Assumptions {
+		if a.VerificationStatus == "CONTRADICTED" {
+			result.Assumptions[i].Risk = RiskLow
+		} else if a.VerificationStatus == "" || a.VerificationStatus == "UNKNOWN" {
+			// Calibrate risk for known insecure patterns in assumptions
+			textLower := strings.ToLower(a.Description)
+			insecureEscalation := false
+			insecureHigh := false
+
+			criticalPatterns := []string{
+				"shared admin", "default credential", "no encryption",
+				"plaintext", "unencrypted", "no authentication",
+				"no authorization", "single factor",
+			}
+			for _, p := range criticalPatterns {
+				if strings.Contains(textLower, p) {
+					insecureEscalation = true
+					break
+				}
+			}
+
+			highPatterns := []string{
+				"flat network", "no logging", "no monitoring",
+				"unencrypted backup", "weak cipher",
+			}
+			for _, p := range highPatterns {
+				if strings.Contains(textLower, p) {
+					insecureHigh = true
+					break
+				}
+			}
+
+			if insecureEscalation && a.Risk < RiskCritical {
+				result.Assumptions[i].Risk = RiskCritical
+			} else if insecureHigh && a.Risk < RiskHigh {
+				result.Assumptions[i].Risk = RiskHigh
+			}
 		}
 	}
 
@@ -1407,7 +1859,9 @@ func mergeSourceMetadata(a Assumption, raw, section string, index int, sourceFil
 	} else if a.SourceFile != sourceFile {
 		a.SourceFile += "," + sourceFile
 	}
-	_ = index
+	if a.SourceIndex == 0 {
+		a.SourceIndex = index
+	}
 	return a
 }
 
@@ -1455,17 +1909,117 @@ func computeExplicitConfidence(text string, atype models.AssumptionType, securit
 
 // applySecurityControlVerification checks if an assumption is covered by
 // declared security controls and marks it PARTIALLY_VERIFIED when applicable.
+var insecureControlExact = map[string]bool{
+	"none":     true,
+	"disabled": true,
+}
+
+var insecureControlContains = []string{
+	"none", "disabled", "plaintext", "flatnetwork", "directinternet",
+	"basic", "shared", "admin_by_default",
+}
+
+func hasInsecureControl(controls []string) bool {
+	for _, ctrl := range controls {
+		ctrlKey := strings.ToLower(strings.ReplaceAll(ctrl, "_", ""))
+		if insecureControlExact[ctrlKey] {
+			return true
+		}
+		for _, prefix := range insecureControlContains {
+			if strings.Contains(ctrlKey, strings.ReplaceAll(prefix, "_", "")) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// normalizedControlName maps common assumption keywords to canonical control names
+// so that, e.g., "multi-factor" in text matches "Admin_MFA" in security controls.
+// normalizedControlName maps common assumption keywords to canonical control names
+// so that, e.g., "multi-factor" in text matches "Admin_MFA" in security controls.
+var normalizedControlName = map[string]string{
+	"mfa":             "mfa",
+	"multi-factor":    "mfa",
+	"multi factor":    "mfa",
+	"two-factor":      "mfa",
+	"two factor":      "mfa",
+	"2fa":             "mfa",
+	"totp":            "mfa",
+	"rbac":            "rbac",
+	"role-based":      "rbac",
+	"role based":      "rbac",
+	"abac":            "abac",
+	"least privilege": "least_privilege",
+	"least-privilege": "least_privilege",
+	"tls":             "tls",
+	"https":           "https",
+	"ssl":             "tls",
+	"aes-256":         "aes256",
+	"aes 256":         "aes256",
+	"aes256":          "aes256",
+	"kms":             "kms",
+	"encrypted":       "encrypted_control",
+	"encryption":      "encrypted_control",
+	"audit":           "audit_logging",
+	"siem":            "siem",
+	"alert":           "alerting",
+	"backup":          "backup",
+	"restore":         "restore_testing",
+}
+
+// controlCategoryConcept maps control categories to normalized concept keywords
+// that appear in assumption text. For example, an assumption saying "encrypted"
+// matches any control in the "encryption" category, even if no specific control
+// name (TLS, AES256, KMS) appears in the text.
+var controlCategoryConcept = map[string][]string{
+	"authentication": {"mfa", "authentication", "login", "identity", "auth", "password"},
+	"authorization":  {"authorization", "rbac", "access control", "permission", "role", "privilege"},
+	"encryption":     {"encrypted", "encryption", "tls", "https", "ssl", "cipher", "crypto"},
+	"backup":         {"backup", "restore", "recovery"},
+	"monitoring":     {"audit", "log", "monitor", "alert", "siem", "detection"},
+	"logging":        {"audit", "log", "monitor"},
+	"network":        {"network", "firewall", "segment", "vpc", "subnet"},
+}
+
 func applySecurityControlVerification(a Assumption, securityControls map[string][]string) Assumption {
 	lower := strings.ToLower(a.Description)
 	categoryMap := map[string][]string{
-		"IDENTITY":      {"authentication", "authorization", "session"},
-		"ACCESS":        {"authorization", "authentication"},
-		"CONFIGURATION": {"encryption", "logging", "backup", "network"},
-		"NETWORK":       {"network"},
-		"PROCESS":       {"monitoring", "logging"},
-		"GOVERNANCE":    {"monitoring", "logging"},
-		"DEPENDENCY":    {"third_party"},
-		"DOCUMENTATION": {},
+		"IDENTITY":                 {"authentication", "authorization", "session"},
+		"ACCESS":                   {"authorization", "authentication"},
+		"CONFIGURATION":            {"encryption", "logging", "backup", "network"},
+		"NETWORK":                  {"network"},
+		"PROCESS":                  {"monitoring", "logging"},
+		"GOVERNANCE":               {"monitoring", "logging"},
+		"DEPENDENCY":               {"third_party"},
+		"DOCUMENTATION":            {},
+		"AUTHENTICATION":           {"authentication"},
+		"AUTHORIZATION":            {"authorization"},
+		"ENCRYPTION":               {"encryption"},
+		"BACKUPS":                  {"backup"},
+		"LOGGING":                  {"logging"},
+		"MONITORING":               {"monitoring"},
+		"KEYMANAGEMENT":            {"encryption"},
+		"AUDITABILITY":             {"monitoring", "logging"},
+		"PRIVILEGEMANAGEMENT":      {"authorization", "authentication"},
+		"SESSIONSECURITY":          {"authentication"},
+		"DATAPROTECTION":           {"encryption", "backup"},
+		"NETWORKSEGMENTATION":      {"network"},
+		"DISASTERRECOVERY":         {"backup"},
+		"THIRDPARTYRISK":           {"third_party"},
+		"VENDORRISK":               {"third_party"},
+		"APISECURITY":              {"authentication", "authorization", "encryption"},
+		"SECRETSACCESS":            {"authentication"},
+		"SECRETS_ACCESS":           {"authentication"},
+		"DATARETENTION":            {"backup"},
+		"OBJECTLEVELAUTHORIZATION": {"authorization"},
+		"TRUSTBOUNDARIES":          {"authentication", "authorization", "encryption", "monitoring"},
+		"IDENTITY_TO_APPLICATION":  {"authentication", "authorization", "encryption"},
+		"APPLICATION_TO_DATA":      {"encryption", "backup", "authorization"},
+		"THIRD_PARTY_TO_INTERNAL":  {"third_party", "authentication"},
+		"THIRD_PARTY_TO_DATA":      {"third_party", "encryption", "backup"},
+		"COMPLIANCE":               {"monitoring", "logging"},
+		"PRIVACY":                  {"encryption", "backup"},
 	}
 
 	categories, ok := categoryMap[strings.ToUpper(a.Category)]
@@ -1473,28 +2027,110 @@ func applySecurityControlVerification(a Assumption, securityControls map[string]
 		categories = []string{}
 	}
 
-	matched := false
+	// Phase 1: Check for negative/insecure controls that CONTRADICT the assumption.
+	// When a mapped security control category has explicitly insecure values
+	// (e.g. encryption: [None], network: [Flat_Network]), any assumption in
+	// that category is contradicted regardless of its text content.
+	insecureFound := false
+	hasSecureControls := false
 	for _, cat := range categories {
 		controls, hasControls := securityControls[cat]
 		if !hasControls || len(controls) == 0 {
 			continue
 		}
-		for _, ctrl := range controls {
-			ctrlLower := strings.ToLower(strings.ReplaceAll(ctrl, "_", " "))
-			if strings.Contains(lower, ctrlLower) || strings.Contains(lower, strings.ReplaceAll(ctrlLower, " ", "")) {
-				matched = true
-				break
-			}
-		}
-		if matched {
-			break
+		if hasInsecureControl(controls) {
+			insecureFound = true
+		} else {
+			hasSecureControls = true
 		}
 	}
 
-	if matched {
-		a.VerificationStatus = "PARTIALLY_VERIFIED"
-		if a.Confidence < 0.80 {
-			a.Confidence = 0.80
+	if insecureFound {
+		a.VerificationStatus = "CONTRADICTED"
+		if a.Confidence < 0.90 {
+			a.Confidence = 0.90
+		}
+		a.Rationale = fmt.Sprintf("Contradicted by declared security controls: insecure configuration found for category %s", strings.Join(categories, ", "))
+		return a
+	}
+
+	// Phase 2: Positive verification — if secure controls exist for the assumption's domain.
+	// VERIFIED when the assumption text explicitly mentions a matching control or
+	// a normalized variant. PARTIALLY_VERIFIED when controls exist but text does not
+	// reference them.
+	if hasSecureControls {
+		matched := false
+		var matchedControl string
+		for _, cat := range categories {
+			controls, hasControls := securityControls[cat]
+			if !hasControls || len(controls) == 0 {
+				continue
+			}
+			for _, ctrl := range controls {
+				ctrlLower := strings.ToLower(strings.ReplaceAll(ctrl, "_", " "))
+				// Direct text match: does the assumption contain the control name?
+				if strings.Contains(lower, ctrlLower) || strings.Contains(lower, strings.ReplaceAll(ctrlLower, " ", "")) {
+					matched = true
+					matchedControl = ctrl
+					break
+				}
+				// Normalized name match: check if any keyword in the text maps to this control
+				for textKW, canonical := range normalizedControlName {
+					canonicalLower := strings.ToLower(strings.ReplaceAll(canonical, "_", " "))
+					if strings.Contains(lower, textKW) && (canonicalLower == ctrlLower || canonicalLower == strings.ToLower(ctrl)) {
+						matched = true
+						matchedControl = ctrl
+						break
+					}
+				}
+				if matched {
+					break
+				}
+			}
+			if matched {
+				break
+			}
+		}
+
+		if matched {
+			a.VerificationStatus = "VERIFIED"
+			if a.Confidence < 0.85 {
+				a.Confidence = 0.85
+			}
+			a.Rationale = fmt.Sprintf("Verified: assumption matches declared control '%s'. Secure design confirmed for category %s.", matchedControl, strings.Join(categories, ", "))
+		} else {
+			// Check concept-based match: does the text mention a concept that maps to a control category?
+			conceptMatched := false
+			var matchedConcept string
+			for _, cat := range categories {
+				concepts, hasConcepts := controlCategoryConcept[cat]
+				if !hasConcepts {
+					continue
+				}
+				for _, concept := range concepts {
+					if strings.Contains(lower, concept) {
+						conceptMatched = true
+						matchedConcept = concept
+						break
+					}
+				}
+				if conceptMatched {
+					break
+				}
+			}
+			if conceptMatched {
+				a.VerificationStatus = "VERIFIED"
+				if a.Confidence < 0.75 {
+					a.Confidence = 0.75
+				}
+				a.Rationale = fmt.Sprintf("Verified: assumption mentions '%s' which is covered by declared controls in category %s.", matchedConcept, strings.Join(categories, ", "))
+			} else {
+				a.VerificationStatus = "PARTIALLY_VERIFIED"
+				if a.Confidence < 0.70 {
+					a.Confidence = 0.70
+				}
+				a.Rationale = fmt.Sprintf("Partially verified: security controls exist for category %s but assumption text does not explicitly reference them.", strings.Join(categories, ", "))
+			}
 		}
 	}
 	return a
@@ -1689,7 +2325,6 @@ func (e *Engine) buildComplianceOutput() []string {
 			for _, area := range details.Areas {
 				output = append(output, fmt.Sprintf("  - %s", area))
 			}
-			_ = details
 		} else {
 			output = append(output, fmt.Sprintf("- %s (custom framework — review specific requirements)", c))
 		}
@@ -1874,6 +2509,97 @@ func cleanAssumptionText(text string) string {
 	return text
 }
 
+// factPolarityRule describes a known security control pattern and how to
+// transform an assumption that contradicts it.
+type factPolarityRule struct {
+	category     string   // security control category, lowercased
+	negValues    []string // negative indicator values
+	triggerWords []string // words in assumption description that trigger protection
+	transformed  string   // replacement description prefix for the transformed assumption
+}
+
+var defaultPolarityRules = []factPolarityRule{
+	{category: "encryption", negValues: []string{"none", "disabled", "false"},
+		triggerWords: []string{"encrypt", "tls", "ssl", "https"},
+		transformed:  "Plaintext communication is expected; compensating controls or accepted risk exists"},
+	{category: "authentication", negValues: []string{"basic", "none", "disabled", "single_factor", "password_only"},
+		triggerWords: []string{"mfa", "multi-factor", "two-factor", "2fa", "strong authentication", "passwordless"},
+		transformed:  "Single-factor or weak authentication is in use; compensating controls or accepted risk exists"},
+	{category: "authorization", negValues: []string{"disabled", "none"},
+		triggerWords: []string{"authorization", "access control", "least privilege", "rbac"},
+		transformed:  "Authorization controls are disabled; risk of unauthorized access accepted"},
+	{category: "network", negValues: []string{"flat", "flatnetwork", "open", "none"},
+		triggerWords: []string{"network segmentation", "firewall", "isolated", "network control", "vlan"},
+		transformed:  "Flat network topology in use; lateral movement risk accepted"},
+	{category: "backup", negValues: []string{"unencrypted", "none", "disabled", "false"},
+		triggerWords: []string{"backup encryption", "encrypted backup", "backup security"},
+		transformed:  "Backups are unencrypted; data exposure risk accepted"},
+	{category: "monitoring", negValues: []string{"disabled", "none", "false"},
+		triggerWords: []string{"monitoring", "alerting", "logging", "siem", "audit"},
+		transformed:  "Monitoring and alerting are disabled; detection gaps accepted"},
+}
+
+// transformAssumptionForFacts checks an assumption against the architecture's
+// security controls. If the assumption asserts a security property that is
+// explicitly negated by a control, the assumption description is replaced with
+// a risk-aware statement that respects the architect's declared fact.
+func transformAssumptionForFacts(a Assumption, sc map[string][]string) Assumption {
+	descLower := strings.ToLower(a.Description)
+
+	for _, rule := range defaultPolarityRules {
+		// Check if the assumption text triggers this rule
+		triggered := false
+		for _, tw := range rule.triggerWords {
+			if strings.Contains(descLower, tw) {
+				triggered = true
+				break
+			}
+		}
+		if !triggered {
+			continue
+		}
+
+		// Check if the architecture has a security control for this category
+		catLower := strings.ToLower(rule.category)
+		values, ok := sc[catLower]
+		if !ok {
+			// Also check the original case (YAML keys may vary)
+			values, ok = sc[rule.category]
+			if !ok {
+				continue
+			}
+		}
+
+		// Check if any control value is a negative/disabled value
+		hasNegative := false
+		for _, v := range values {
+			vLower := strings.ToLower(v)
+			for _, nv := range rule.negValues {
+				if vLower == nv || strings.ReplaceAll(vLower, "_", "") == nv {
+					hasNegative = true
+					break
+				}
+			}
+			if hasNegative {
+				break
+			}
+		}
+		if !hasNegative {
+			continue
+		}
+
+		// Transform the assumption: replace description with risk-aware statement
+		a.Description = rule.transformed + " [" + rule.category + ": " + strings.Join(values, ", ") + "]"
+		a.VerificationStatus = "CONTRADICTED"
+		if a.Confidence < 0.90 {
+			a.Confidence = 0.90
+		}
+		break
+	}
+
+	return a
+}
+
 func buildConfidenceSummary(assumptions []Assumption) string {
 	total := len(assumptions)
 	if total == 0 {
@@ -1894,12 +2620,51 @@ func buildConfidenceSummary(assumptions []Assumption) string {
 }
 
 func extractComponent(keywords []string, text string) string {
-	if len(keywords) > 0 {
-		return strings.Join(keywords[:min(3, len(keywords))], ", ")
-	}
+	// Look for capitalized words that look like component names
+	// Generated text uses PascalCase/TitleCase names (WebApp, Auth0, PHIDatabase, etc.)
 	words := strings.Fields(text)
-	if len(words) > 5 {
-		return words[0]
+	genericUpper := map[string]bool{
+		"THE": true, "ALL": true, "ONLY": true, "EVERY": true, "EACH": true,
+		"THIS": true, "THAT": true, "THESE": true, "THOSE": true, "WHAT": true,
+		"WHEN": true, "WHICH": true, "WHERE": true, "WHILE": true, "WITH": true,
+		"FROM": true, "INTO": true, "OVER": true, "UNDER": true, "BETWEEN": true,
+		"THROUGH": true, "BEFORE": true, "AFTER": true, "ABOVE": true, "BELOW": true,
+		"SYSTEM": true, "SYSTEMS": true, "COMPONENT": true, "COMPONENTS": true,
+	}
+	for _, w := range words {
+		cleaned := strings.Trim(w, ".,;:!?\"'()[]{}-")
+		if len(cleaned) >= 2 {
+			upper := strings.ToUpper(cleaned)
+			if !genericUpper[upper] && cleaned[0] >= 'A' && cleaned[0] <= 'Z' {
+				// Check if the rest is lowercase (camelCase/PascalCase name)
+				hasLower := false
+				for i := 1; i < len(cleaned); i++ {
+					if cleaned[i] >= 'a' && cleaned[i] <= 'z' {
+						hasLower = true
+						break
+					}
+				}
+				if hasLower {
+					return cleaned
+				}
+			}
+		}
+	}
+
+	// Fall back to first meaningful keyword
+	for _, kw := range keywords {
+		lower := strings.ToLower(kw)
+		genericLower := map[string]bool{
+			"encrypt": true, "encryption": true, "access": true, "authentication": true,
+			"authorization": true, "network": true, "security": true, "communication": true,
+			"configuration": true, "connection": true, "data": true, "information": true,
+		}
+		if !genericLower[lower] && len(kw) > 2 {
+			return kw
+		}
+	}
+	if len(keywords) > 0 {
+		return keywords[0]
 	}
 	return "general"
 }
@@ -2091,6 +2856,59 @@ func convertCIEContradictions(cieContradictions []intelligence.CIEContradiction)
 			Evidence:                c.Evidence,
 			Recommendations:         c.Recommendations,
 		})
+	}
+	return result
+}
+
+func deduplicateContradictions(contradictions []Contradiction) []Contradiction {
+	seen := make(map[string]bool)
+	var result []Contradiction
+	for _, c := range contradictions {
+		assumptions := make([]string, len(c.AffectedAssumptions))
+		copy(assumptions, c.AffectedAssumptions)
+		sort.Strings(assumptions)
+		key := c.RuleName + "|" + strings.Join(assumptions, ",")
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, c)
+		}
+	}
+	return result
+}
+
+func deduplicateCIEContradictions(contradictions []CIEContradiction) []CIEContradiction {
+	// Two-phase dedup:
+	// Phase 1: Dedup by exact statement text pair (handles same claim with different IDs)
+	// Phase 2: Dedup by type + summary (handles semantically same claims with slightly different text)
+	textSeen := make(map[string]bool)
+	var phase1 []CIEContradiction
+	for _, c := range contradictions {
+		aText := strings.ToLower(strings.TrimSpace(c.StatementA.OriginalText))
+		bText := strings.ToLower(strings.TrimSpace(c.StatementB.OriginalText))
+
+		if aText == bText {
+			continue
+		}
+		if aText > bText {
+			aText, bText = bText, aText
+		}
+		key := c.Type + "|" + aText + "|" + bText
+		if !textSeen[key] {
+			textSeen[key] = true
+			phase1 = append(phase1, c)
+		}
+	}
+
+	// Phase 2: Dedup by type + summary (semantic dedup)
+	summarySeen := make(map[string]bool)
+	var result []CIEContradiction
+	for _, c := range phase1 {
+		summary := strings.ToLower(strings.TrimSpace(c.Summary))
+		key := c.Type + "|" + summary
+		if !summarySeen[key] {
+			summarySeen[key] = true
+			result = append(result, c)
+		}
 	}
 	return result
 }

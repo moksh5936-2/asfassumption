@@ -9,6 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"asf-tui/asf/confidencex"
+	"asf-tui/asf/coverage"
+	"asf-tui/asf/narrative"
+	"asf-tui/asf/review"
+	"asf-tui/asf/trust"
+	"asf-tui/asf/verify"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/go-pdf/fpdf"
@@ -17,11 +24,26 @@ import (
 type ExportFormat string
 
 const (
-	ExportJSON     ExportFormat = "json"
-	ExportMarkdown ExportFormat = "markdown"
-	ExportCSV      ExportFormat = "csv"
-	ExportPDF      ExportFormat = "pdf"
-	ExportHTML     ExportFormat = "html"
+	ExportJSON               ExportFormat = "json"
+	ExportMarkdown           ExportFormat = "markdown"
+	ExportCSV                ExportFormat = "csv"
+	ExportPDF                ExportFormat = "pdf"
+	ExportHTML               ExportFormat = "html"
+	ExportNarrativeMarkdown  ExportFormat = "narrative-md"
+	ExportNarrativeHTML      ExportFormat = "narrative-html"
+	ExportTrustMarkdown      ExportFormat = "trust-md"
+	ExportTrustHTML          ExportFormat = "trust-html"
+	ExportTrustJSON          ExportFormat = "trust-json"
+	ExportCoverageMarkdown   ExportFormat = "coverage-md"
+	ExportCoverageHTML       ExportFormat = "coverage-html"
+	ExportCoverageJSON       ExportFormat = "coverage-json"
+	ExportVerifyMarkdown     ExportFormat = "verify-md"
+	ExportVerifyHTML         ExportFormat = "verify-html"
+	ExportVerifyJSON         ExportFormat = "verify-json"
+	ExportReviewMarkdown     ExportFormat = "review-md"
+	ExportReviewHTML         ExportFormat = "review-html"
+	ExportConfidenceMarkdown ExportFormat = "confidence-md"
+	ExportConfidenceHTML     ExportFormat = "confidence-html"
 )
 
 func ExportResult(result *AnalysisResult, format ExportFormat, outputDir string) (string, error) {
@@ -52,6 +74,51 @@ func ExportResult(result *AnalysisResult, format ExportFormat, outputDir string)
 	case ExportHTML:
 		path = filepath.Join(outputDir, baseName+".html")
 		err = exportHTML(result, path)
+	case ExportNarrativeMarkdown:
+		path = filepath.Join(outputDir, baseName+"_narrative.md")
+		err = exportNarrativeMarkdown(result, path)
+	case ExportNarrativeHTML:
+		path = filepath.Join(outputDir, baseName+"_narrative.html")
+		err = exportNarrativeHTML(result, path)
+	case ExportTrustMarkdown:
+		path = filepath.Join(outputDir, baseName+"_trust.md")
+		err = exportTrustMarkdown(result, path)
+	case ExportTrustHTML:
+		path = filepath.Join(outputDir, baseName+"_trust.html")
+		err = exportTrustHTML(result, path)
+	case ExportTrustJSON:
+		path = filepath.Join(outputDir, baseName+"_trust.json")
+		err = exportTrustJSON(result, path)
+	case ExportCoverageMarkdown:
+		path = filepath.Join(outputDir, baseName+"_coverage.md")
+		err = exportCoverageMarkdown(result, path)
+	case ExportCoverageHTML:
+		path = filepath.Join(outputDir, baseName+"_coverage.html")
+		err = exportCoverageHTML(result, path)
+	case ExportCoverageJSON:
+		path = filepath.Join(outputDir, baseName+"_coverage.json")
+		err = exportCoverageJSON(result, path)
+	case ExportVerifyMarkdown:
+		path = filepath.Join(outputDir, baseName+"_verify.md")
+		err = exportVerifyMarkdown(result, path)
+	case ExportVerifyHTML:
+		path = filepath.Join(outputDir, baseName+"_verify.html")
+		err = exportVerifyHTML(result, path)
+	case ExportVerifyJSON:
+		path = filepath.Join(outputDir, baseName+"_verify.json")
+		err = exportVerifyJSON(result, path)
+	case ExportReviewMarkdown:
+		path = filepath.Join(outputDir, baseName+"_review.md")
+		err = exportReviewMarkdown(result, path)
+	case ExportReviewHTML:
+		path = filepath.Join(outputDir, baseName+"_review.html")
+		err = exportReviewHTML(result, path)
+	case ExportConfidenceMarkdown:
+		path = filepath.Join(outputDir, baseName+"_confidence.md")
+		err = exportConfidenceMarkdown(result, path)
+	case ExportConfidenceHTML:
+		path = filepath.Join(outputDir, baseName+"_confidence.html")
+		err = exportConfidenceHTML(result, path)
 	}
 
 	if err != nil {
@@ -66,6 +133,135 @@ func exportJSON(result *AnalysisResult, path string) error {
 		return err
 	}
 	return os.WriteFile(path, data, 0644)
+}
+
+func exportNarrativeMarkdown(result *AnalysisResult, path string) error {
+	if result.NarrativeOutput == nil {
+		return fmt.Errorf("narrative output not generated")
+	}
+	data := narrative.ExportMarkdown(result.NarrativeOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportNarrativeHTML(result *AnalysisResult, path string) error {
+	if result.NarrativeOutput == nil {
+		return fmt.Errorf("narrative output not generated")
+	}
+	data := narrative.ExportHTML(result.NarrativeOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportTrustMarkdown(result *AnalysisResult, path string) error {
+	if result.TrustOutput == nil {
+		return fmt.Errorf("trust chain output not generated")
+	}
+	data := trust.ExportMarkdown(result.TrustOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportTrustHTML(result *AnalysisResult, path string) error {
+	if result.TrustOutput == nil {
+		return fmt.Errorf("trust chain output not generated")
+	}
+	data := trust.ExportHTML(result.TrustOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportTrustJSON(result *AnalysisResult, path string) error {
+	if result.TrustOutput == nil {
+		return fmt.Errorf("trust chain output not generated")
+	}
+	data, err := json.MarshalIndent(result.TrustOutput, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func exportCoverageMarkdown(result *AnalysisResult, path string) error {
+	if result.CoverageOutput == nil {
+		return fmt.Errorf("coverage output not generated")
+	}
+	data := coverage.ExportMarkdown(result.CoverageOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportCoverageHTML(result *AnalysisResult, path string) error {
+	if result.CoverageOutput == nil {
+		return fmt.Errorf("coverage output not generated")
+	}
+	data := coverage.ExportHTML(result.CoverageOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportCoverageJSON(result *AnalysisResult, path string) error {
+	if result.CoverageOutput == nil {
+		return fmt.Errorf("coverage output not generated")
+	}
+	data, err := json.MarshalIndent(result.CoverageOutput, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func exportVerifyMarkdown(result *AnalysisResult, path string) error {
+	if result.VerificationOutput == nil {
+		return fmt.Errorf("verification output not generated")
+	}
+	data := verify.ExportMarkdown(result.VerificationOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportVerifyHTML(result *AnalysisResult, path string) error {
+	if result.VerificationOutput == nil {
+		return fmt.Errorf("verification output not generated")
+	}
+	data := verify.ExportHTML(result.VerificationOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportVerifyJSON(result *AnalysisResult, path string) error {
+	if result.VerificationOutput == nil {
+		return fmt.Errorf("verification output not generated")
+	}
+	data, err := json.MarshalIndent(result.VerificationOutput, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func exportReviewMarkdown(result *AnalysisResult, path string) error {
+	if result.ReviewOutput == nil {
+		return fmt.Errorf("review output not generated")
+	}
+	data := review.ExportMarkdown(result.ReviewOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportReviewHTML(result *AnalysisResult, path string) error {
+	if result.ReviewOutput == nil {
+		return fmt.Errorf("review output not generated")
+	}
+	data := review.ExportHTML(result.ReviewOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportConfidenceMarkdown(result *AnalysisResult, path string) error {
+	if result.ConfidenceOutput == nil {
+		return fmt.Errorf("confidence output not generated")
+	}
+	data := confidencex.ExportMarkdown(result.ConfidenceOutput)
+	return os.WriteFile(path, []byte(data), 0644)
+}
+
+func exportConfidenceHTML(result *AnalysisResult, path string) error {
+	if result.ConfidenceOutput == nil {
+		return fmt.Errorf("confidence output not generated")
+	}
+	data := confidencex.ExportHTML(result.ConfidenceOutput)
+	return os.WriteFile(path, []byte(data), 0644)
 }
 
 func exportMarkdown(result *AnalysisResult, path string) error {
@@ -2500,11 +2696,11 @@ func (m exportModel) Update(msg tea.Msg) (exportModel, tea.Cmd) {
 				m.selected--
 			}
 		case "down", "j":
-			if m.selected < 4 {
+			if m.selected < 13 {
 				m.selected++
 			}
 		case "enter":
-			formats := []ExportFormat{ExportJSON, ExportMarkdown, ExportCSV, ExportPDF, ExportHTML}
+			formats := []ExportFormat{ExportJSON, ExportMarkdown, ExportCSV, ExportPDF, ExportHTML, ExportNarrativeMarkdown, ExportNarrativeHTML, ExportTrustMarkdown, ExportTrustHTML, ExportTrustJSON, ExportReviewMarkdown, ExportReviewHTML, ExportConfidenceMarkdown, ExportConfidenceHTML}
 			if m.selected < len(formats) {
 				m.format = formats[m.selected]
 				m.showConfirmation = true
@@ -2581,6 +2777,15 @@ func (m mainModel) viewExport() string {
 		{"HTML (.html)", ExportHTML},
 		{"CSV (.csv)", ExportCSV},
 		{"PDF (.pdf)", ExportPDF},
+		{"Narrative Markdown (.md)", ExportNarrativeMarkdown},
+		{"Narrative HTML (.html)", ExportNarrativeHTML},
+		{"Trust Chain Markdown (.md)", ExportTrustMarkdown},
+		{"Trust Chain HTML (.html)", ExportTrustHTML},
+		{"Trust Chain JSON (.json)", ExportTrustJSON},
+		{"Review Workbench Markdown (.md)", ExportReviewMarkdown},
+		{"Review Workbench HTML (.html)", ExportReviewHTML},
+		{"Confidence Report Markdown (.md)", ExportConfidenceMarkdown},
+		{"Confidence Report HTML (.html)", ExportConfidenceHTML},
 	}
 
 	var items []string

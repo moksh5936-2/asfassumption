@@ -1,0 +1,39 @@
+metadata:
+  name: Blind Spot Review Test
+  version: "1.0"
+  purpose: Test ASF blind spot and review workbench
+  compliance:
+    - PCI-DSS
+system:
+  name: BlindSpotSystem
+  description: System with gaps for blind spot detection
+components:
+  - name: PublicAPI
+    type: api
+    description: Internet-facing API
+  - name: PaymentProcessor
+    type: payment
+    description: PCI-scoped payment processor
+  - name: CustomerDB
+    type: database
+    description: Customer database
+  - name: VendorWebhook
+    type: third_party_integration
+    description: Third-party webhook integration
+relationships:
+  - source: Internet
+    target: PublicAPI
+    protocol: HTTPS
+    description: External traffic to API
+  - source: PublicAPI
+    target: PaymentProcessor
+    protocol: HTTPS
+    description: API to payment processor
+  - source: PublicAPI
+    target: CustomerDB
+    protocol: SQL
+    description: API queries customer database
+  - source: VendorWebhook
+    target: PublicAPI
+    protocol: HTTPS
+    description: Vendor webhook calls API

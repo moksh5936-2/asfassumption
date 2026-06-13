@@ -19,7 +19,7 @@ func TestExportAllFormats(t *testing.T) {
 		t.Fatalf("RunAnalysis: %v", err)
 	}
 
-	for _, format := range []ExportFormat{ExportJSON, ExportMarkdown, ExportCSV, ExportHTML, ExportPDF} {
+	for _, format := range []ExportFormat{ExportJSON, ExportMarkdown, ExportCSV, ExportHTML, ExportPDF, ExportNarrativeMarkdown, ExportNarrativeHTML} {
 		outPath, err := ExportResult(result, format, "/tmp")
 		if err != nil {
 			t.Errorf("Export %s: %v", format, err)

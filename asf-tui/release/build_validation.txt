@@ -1,0 +1,55 @@
+ASF v3.0.0-RC2 — Build Validation Report
+============================================
+
+Date:       2026-06-13
+Go Version: go1.24.0 darwin/arm64
+Git Commit: 40e3906
+Git Branch: main
+Git Tag:    v2.2.0
+Timestamp:  2026-06-13T07:43:22Z
+
+──────────────────────────────────────────────
+Step              Result
+──────────────────────────────────────────────
+go fmt ./...      PASS
+go vet ./...      PASS
+go build ./...    PASS
+go test -count=1 ./...  PASS (22 packages, 0 failures)
+
+──────────────────────────────────────────────
+Package Test Results
+──────────────────────────────────────────────
+ok  asf-tui                       9.738s
+ok  asf-tui/asf/analyzer           0.703s
+ok  asf-tui/asf/assumption         2.516s
+ok  asf-tui/asf/confidence         1.210s
+ok  asf-tui/asf/confidencex        0.960s
+ok  asf-tui/asf/coverage           1.778s
+ok  asf-tui/asf/evidence           2.023s
+ok  asf-tui/asf/extraction         2.266s
+?   asf-tui/asf/fact              [no test files]
+ok  asf-tui/asf/fidelity           2.784s
+ok  asf-tui/asf/gaps               3.017s
+ok  asf-tui/asf/graph              2.572s
+?   asf-tui/asf/ingestion         [no test files]
+ok  asf-tui/asf/models             2.573s
+ok  asf-tui/asf/narrative          2.572s
+ok  asf-tui/asf/review             2.261s
+ok  asf-tui/asf/trust              2.258s
+ok  asf-tui/asf/verification       2.330s
+ok  asf-tui/asf/verify             2.333s
+ok  asf-tui/benchmark/fidelity     2.330s
+ok  asf-tui/intelligence           2.235s
+
+──────────────────────────────────────────────
+Environment
+──────────────────────────────────────────────
+OS:           darwin/arm64
+Go Binary:    /Users/moksh/.go/bin/go
+GOROOT:       /Users/moksh/.go
+GOPATH:       /Users/moksh/go
+CGO_ENABLED:  0 (set in release builds)
+
+──────────────────────────────────────────────
+Validation Result: PASS — Ready for release build
+──────────────────────────────────────────────

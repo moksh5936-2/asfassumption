@@ -1,0 +1,13 @@
+# Architecture: adversarial_parser_pollution.yaml
+# This comment must never become an assumption.
+name: Parser Pollution Test
+description: This file tests whether comments and headings become findings.
+components:
+  - name: PublicWebApp
+    type: web_application
+    description: Public web application with no authentication
+relationships:
+  - source: Internet
+    target: PublicWebApp
+    protocol: HTTP
+    description: Plaintext HTTP from internet

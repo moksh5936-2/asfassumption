@@ -1,0 +1,49 @@
+metadata:
+  name: Trust Chain Test
+  version: "1.0"
+  purpose: Test ASF trust chain and SPOF detection
+  compliance:
+    - HIPAA
+system:
+  name: TrustChainSystem
+  description: System designed to test trust chain analysis
+components:
+  - name: Auth0
+    type: identity_provider
+    description: Identity provider with shared admin account, MFA disabled
+  - name: APIService
+    type: api
+    description: API service depending on Auth0 for identity
+  - name: PHIDatabase
+    type: database
+    description: Database containing PHI, depends on APIService
+  - name: MonitoringStack
+    type: monitoring
+    description: Monitoring with default credentials
+  - name: ThirdPartyVPN
+    type: vpn
+    description: Third-party VPN with full internal network access
+  - name: KMS
+    type: key_management
+    description: Key management with unknown rotation status
+relationships:
+  - source: Internet
+    target: Auth0
+    protocol: HTTPS
+    description: Internet to identity provider
+  - source: Auth0
+    target: APIService
+    protocol: OAuth2
+    description: Auth0 authenticates API service
+  - source: APIService
+    target: PHIDatabase
+    protocol: SQL
+    description: API service queries PHI database
+  - source: ThirdPartyVPN
+    target: APIService
+    protocol: TCP
+    description: Third party VPN access to API service
+  - source: ThirdPartyVPN
+    target: PHIDatabase
+    protocol: TCP
+    description: Third party VPN access to PHI database

@@ -63,6 +63,11 @@ func NewClaimExtractor() *ClaimExtractor {
 	return &ClaimExtractor{}
 }
 
+func isHeaderLine(s string) bool {
+	s = strings.TrimSpace(s)
+	return strings.HasPrefix(s, "#")
+}
+
 func (ce *ClaimExtractor) Extract(text, sourceDocument, sourceLocation string) []models.Claim {
 	var claims []models.Claim
 	seen := make(map[string]bool)
@@ -71,6 +76,9 @@ func (ce *ClaimExtractor) Extract(text, sourceDocument, sourceLocation string) [
 	for _, sentence := range sentences {
 		cleaned := strings.TrimSpace(sentence)
 		if cleaned == "" || len(cleaned) < 15 {
+			continue
+		}
+		if isHeaderLine(cleaned) {
 			continue
 		}
 		if isDeclarative(cleaned) {
@@ -90,14 +98,20 @@ func (ce *ClaimExtractor) Extract(text, sourceDocument, sourceLocation string) [
 }
 
 func splitSentences(text string) []string {
-	re := regexp.MustCompile(`[.!?](\s+|$)`)
+	re := regexp.MustCompile(`(?:[.!?]|\n\n)(?:\s+|$)`)
 	matches := re.FindAllStringIndex(text, -1)
 	if len(matches) == 0 {
-		text = strings.TrimSpace(text)
-		if text != "" {
-			return []string{text}
+		// No sentence-ending punctuation or paragraph breaks found.
+		// Fall back to line-by-line splitting to avoid merging headers with content.
+		lines := strings.Split(text, "\n")
+		var result []string
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				result = append(result, line)
+			}
 		}
-		return nil
+		return result
 	}
 
 	var result []string

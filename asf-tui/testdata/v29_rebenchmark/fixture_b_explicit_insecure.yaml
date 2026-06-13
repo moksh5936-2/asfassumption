@@ -1,0 +1,47 @@
+metadata:
+  name: Explicit Insecure Intent Test
+  version: "1.0"
+  purpose: Test ASF respect for architect-declared insecure design
+  compliance:
+    - PCI-DSS
+system:
+  name: ExplicitInsecurePlatform
+  description: Platform with architect-declared no-security posture
+components:
+  - name: LegacyAPI
+    type: api
+    description: Legacy REST API with no auth, no encryption
+  - name: LegacyDatabase
+    type: database
+    description: Customer database with no encryption
+  - name: BackupServer
+    type: backup
+    description: Unencrypted backups never tested
+relationships:
+  - source: Internet
+    target: LegacyAPI
+    protocol: HTTP
+    description: Plaintext API access from internet
+  - source: LegacyAPI
+    target: LegacyDatabase
+    protocol: SQL
+    description: Plaintext SQL queries
+  - source: LegacyDatabase
+    target: BackupServer
+    protocol: NFS
+    description: Plaintext NFS backups
+assumptions:
+  - API is accessible from internet
+  - Database stores customer data
+  - Backups are stored on backup server
+security_controls:
+  encryption:
+    - None
+  authentication:
+    - Disabled
+  authorization:
+    - Disabled
+  backup_encryption:
+    - "false"
+  backup_restore_testing:
+    - "false"

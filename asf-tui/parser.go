@@ -491,22 +491,8 @@ func flushSection(desc *ArchDescription, section, subHeading string, items []str
 	}
 }
 
-func isPrintableText(data []byte) bool {
-	if len(data) == 0 {
-		return true
-	}
-	printable := 0
-	for _, b := range data {
-		if b >= 0x20 && b <= 0x7e || b == '\n' || b == '\r' || b == '\t' {
-			printable++
-		}
-	}
-	return float64(printable)/float64(len(data)) > 0.5
-}
-
 func buildTextFromDiagram(name string, components []Component, relations []Relation) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("# Architecture: %s\n\n", name))
 
 	b.WriteString("## Topology\n\n")
 	if len(relations) > 0 {

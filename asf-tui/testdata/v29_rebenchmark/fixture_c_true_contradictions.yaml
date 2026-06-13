@@ -1,0 +1,38 @@
+metadata:
+  name: True Contradiction Test
+  version: "1.0"
+  purpose: Test ASF contradiction detection precision
+  compliance:
+    - SOC2
+system:
+  name: ContradictionTest
+  description: System with explicit policy-exception contradictions
+components:
+  - name: Auth0
+    type: identity_provider
+    description: Identity provider with MFA
+  - name: LegacyAPI
+    type: api
+    description: Legacy API with plaintext exception
+  - name: BackupServer
+    type: backup
+    description: Backup server with plaintext exception
+  - name: AdminConsole
+    type: admin_portal
+    description: Admin portal with shared admin account
+relationships:
+  - source: Internet
+    target: LegacyAPI
+    protocol: HTTP
+    description: Unencrypted HTTP from internet
+assumptions:
+  - MFA is required for all accounts
+  - All traffic is encrypted
+  - All backups are encrypted
+  - Least privilege access control is enforced
+  - Service accounts are exempt from MFA
+  - Legacy API uses HTTP plaintext
+  - Backups are stored in plaintext
+  - Shared admin account is used by all operators
+  - Auth0 enforces MFA
+  - No unencrypted traffic traverses the network

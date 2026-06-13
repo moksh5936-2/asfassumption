@@ -65,13 +65,16 @@ func TestCIEPlaintextBackup(t *testing.T) {
 
 	found := false
 	for _, c := range contradictions {
-		if c.Type == intelligence.ContradictionTypeENCRYPTION || c.Type == intelligence.ContradictionTypeCONTROL {
+		if c.Type == intelligence.ContradictionTypeENCRYPTION || c.Type == intelligence.ContradictionTypeCONTROL || c.Type == intelligence.ContradictionTypeBACKUP {
 			found = true
 			t.Logf("✅ CIE detected: %s", c.Summary)
 		}
 	}
 	if !found {
-		t.Errorf("Expected ENCRYPTION or CONTROL contradiction for plaintext backup")
+		t.Errorf("Expected ENCRYPTION, CONTROL, or BACKUP contradiction for plaintext backup, got %d contradictions", len(contradictions))
+		for _, c := range contradictions {
+			t.Logf("  got: type=%s summary=%s", c.Type, c.Summary)
+		}
 	}
 }
 

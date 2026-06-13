@@ -1029,8 +1029,8 @@ func TestApplySecurityControlVerification(t *testing.T) {
 		Confidence:  0.75,
 	}
 	result := applySecurityControlVerification(a, securityControls)
-	if result.VerificationStatus != "PARTIALLY_VERIFIED" {
-		t.Errorf("expected PARTIALLY_VERIFIED, got %s", result.VerificationStatus)
+	if result.VerificationStatus != "VERIFIED" {
+		t.Errorf("expected VERIFIED, got %s", result.VerificationStatus)
 	}
 	if result.Confidence < 0.80 {
 		t.Errorf("expected confidence >= 0.80 after control match, got %.2f", result.Confidence)

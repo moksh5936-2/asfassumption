@@ -957,6 +957,27 @@ func determineFrameworks(compliance []string) []ComplianceFramework {
 	return fws
 }
 
+// ciareControlAliases maps control name variants/normalizations to canonical framework
+// requirement names, so e.g. Admin_MFA and TOTP both match the "MFA" framework requirement.
+var ciareControlAliases = map[string][]string{
+	"mfa":                        {"mfa", "adminmfa", "totp", "twofactor", "multifactor", "twofactorauthentication", "multifactorauthentication"},
+	"passwordpolicy":             {"passwordpolicy", "password"},
+	"rbac":                       {"rbac", "rolebasedaccess", "abac", "rolebasedaccesscontrol"},
+	"privilegedaccessmanagement": {"privilegedaccessmanagement", "pam", "jita", "justintimeaccess", "justintime"},
+	"tlsencryption":              {"tlsencryption", "tls", "https", "ssltls", "tlswithhsts", "transportencryption"},
+	"dataencryptionatrest":       {"dataencryptionatrest", "encryptionatrest", "aes256", "aes", "aes256encryption"},
+	"dataencryptionintransit":    {"dataencryptionintransit", "encryptionintransit", "tls", "https", "tls13", "transportencryption"},
+	"auditlogging":               {"auditlogging", "auditlog", "audit", "logging"},
+	"siemintegration":            {"siemintegration", "siem", "securityinformationandeventmanagement"},
+	"automatedbackup":            {"automatedbackup", "backup", "automatedbackups"},
+	"backuprecoverytesting":      {"backuprecoverytesting", "restoretesting", "backuptesting", "disasterrecoverytesting"},
+	"keyrotation":                {"keyrotation", "keyrotation", "keymanagement"},
+	"networksegmentation":        {"networksegmentation", "networksegmentation", "segmentation", "networkisolation"},
+	"vulnerabilityscanning":      {"vulnerabilityscanning", "vulnerabilityscanning", "vulnscanning"},
+	"patchmanagement":            {"patchmanagement", "patchmanagement", "patching"},
+	"incidentresponseplan":       {"incidentresponseplan", "incidentresponse", "ir"},
+}
+
 func normalizeControlName(name string) string {
 	normalized := strings.ToLower(name)
 	normalized = strings.NewReplacer(" ", "", "-", "", "_", "", ".", "").Replace(normalized)
@@ -965,9 +986,20 @@ func normalizeControlName(name string) string {
 
 func controlObserved(name string, observedControls []SDRIControl) bool {
 	n := normalizeControlName(name)
+	// Check exact normalized match first
 	for _, c := range observedControls {
 		if normalizeControlName(c.Name) == n && c.Status != "Missing" {
 			return true
+		}
+	}
+	// Check alias-based match: if the framework name has aliases, check those too
+	if aliases, ok := ciareControlAliases[n]; ok {
+		for _, alias := range aliases {
+			for _, c := range observedControls {
+				if normalizeControlName(c.Name) == alias && c.Status != "Missing" {
+					return true
+				}
+			}
 		}
 	}
 	return false
