@@ -299,7 +299,8 @@ fi
 
 # ─── Existing install detection logic ─────────────────────
 if [ -n "$EXISTING_BIN" ] && [ "$UPGRADE" = false ] && [ "$CLEAN" = false ]; then
-  if echo "$EXISTING_VER" | grep -qi "v${VERSION}"; then
+  INSTALLED_VER="$(echo "$EXISTING_VER" | head -1 | sed 's/.*v//')"
+  if [ "$INSTALLED_VER" = "$VERSION" ]; then
     if [ -n "$ASF_IN_PATH" ]; then
       ok "ASF v${VERSION} is already installed and available (${EXISTING_VER})"
       echo ""
@@ -368,11 +369,11 @@ try:
             print(r['tag_name'])
             sys.exit(0)
 except Exception: pass
-print('v3.0.0-RC2')
-" 2>/dev/null || echo "v3.0.0-RC2")"
+print('v3.0.0')
+" 2>/dev/null || echo "v3.0.0")"
   LATEST_VERSION="$(echo "$LATEST_VERSION" | tr -d '\r\n' | xargs)"
   if [ -z "$LATEST_VERSION" ]; then
-    LATEST_VERSION="v3.0.0-RC2"
+    LATEST_VERSION="v3.0.0"
     warn "Could not detect version; defaulting to ${LATEST_VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi
@@ -462,7 +463,8 @@ fi
 
 # ─── Verify binary ─────────────────────────────────────────
 BIN_VER="$("${TMP_DIR}/asf" --version 2>/dev/null || echo "unknown")"
-if echo "${BIN_VER}" | grep -qi "v${VERSION}"; then
+BIN_VERSION="$(echo "$BIN_VER" | head -1 | sed 's/.*v//')"
+if [ "$BIN_VERSION" = "$VERSION" ]; then
   ok "Binary verified: ${BIN_VER}"
 else
   warn "Binary reports ${BIN_VER} (expected v${VERSION})"
