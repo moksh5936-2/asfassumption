@@ -152,6 +152,80 @@ echo "  release/VERSION: ${ver_file}"
 if [ -n "$asftui_ver" ]; then pass "asf-tui/install.sh version: ${asftui_ver}"; else fail "asf-tui/install.sh missing version"; fi
 if [ -n "$ver_file" ]; then pass "release/VERSION: ${ver_file}"; else fail "release/VERSION missing"; fi
 
+# ─── Version Regression Tests ─────────────────────────────
+echo ""
+echo "═══ Version Regression Tests (INSTALLER_HOTFIX) ═══"
+
+# Test 1: Single-line tag parsing
+echo ""
+echo "  Test 1: Single-line tag parsing"
+result1="$(echo "v3.0.0-RC2" | tr -d '\r\n' | xargs)"
+if [ "$result1" = "v3.0.0-RC2" ]; then pass "Single-line: v3.0.0-RC2"; else fail "Single-line: got [${result1}]"; fi
+
+# Test 2: Trailing newline
+echo ""
+echo "  Test 2: Trailing newline"
+result2="$(printf "v3.0.0-RC2\n" | tr -d '\r\n' | xargs)"
+if [ "$result2" = "v3.0.0-RC2" ]; then pass "Trailing newline: v3.0.0-RC2"; else fail "Trailing newline: got [${result2}]"; fi
+
+# Test 3: CRLF line endings
+echo ""
+echo "  Test 3: CRLF line endings"
+result3="$(printf "v3.0.0-RC2\r\n" | tr -d '\r\n' | xargs)"
+if [ "$result3" = "v3.0.0-RC2" ]; then pass "CRLF: v3.0.0-RC2"; else fail "CRLF: got [${result3}]"; fi
+
+# Test 4: URL contains /releases/download/v3.0.0-RC2/ exactly once
+echo ""
+echo "  Test 4: URL tag path validation"
+REPO="moksh5936-2/asfassumption"
+LATEST_VERSION="v3.0.0-RC2"
+OS_FINAL="darwin"
+ARCH_FINAL="arm64"
+BINARY_NAME="ASF-${LATEST_VERSION}-${OS_FINAL}-${ARCH_FINAL}"
+DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/${BINARY_NAME}"
+tag_count="$(printf '%s' "$DOWNLOAD_URL" | grep -o '/releases/download/v3.0.0-RC2/' | wc -l | tr -d ' ')"
+if [ "$tag_count" = "1" ]; then pass "URL contains /releases/download/v3.0.0-RC2/ exactly once"; else fail "URL has ${tag_count} occurrences (expected 1): ${DOWNLOAD_URL}"; fi
+
+# Test 5: Asset filename contains ASF-v3.0.0-RC2-darwin-arm64 exactly once
+echo ""
+echo "  Test 5: Asset filename validation"
+asset_count="$(printf '%s' "$BINARY_NAME" | grep -o "ASF-v3.0.0-RC2-darwin-arm64" | wc -l | tr -d ' ')"
+if [ "$asset_count" = "1" ]; then pass "Asset filename is ASF-v3.0.0-RC2-darwin-arm64"; else fail "Asset filename mismatch: ${BINARY_NAME}"; fi
+
+# Test 6: No whitespace in URL
+echo ""
+echo "  Test 6: URL whitespace check"
+if printf '%s' "$DOWNLOAD_URL" | grep -q '[[:space:]]'; then fail "URL contains whitespace: ${DOWNLOAD_URL}"; else pass "URL has no whitespace"; fi
+
+# Test 7: Except Exception prevents double version (root cause fix)
+echo ""
+echo "  Test 7: bare except vs except Exception"
+# Simulate the FIXED behavior: except Exception does NOT catch sys.exit(0)
+fixed_output="$(python3 -c "
+import sys
+try:
+    print('v3.0.0-RC2')
+    sys.exit(0)
+except Exception: pass
+print('v3.0.0-RC2')
+" 2>/dev/null)"
+fixed_lines="$(echo "$fixed_output" | wc -l | tr -d ' ')"
+if [ "$fixed_lines" = "1" ]; then pass "except Exception: single version output"; else fail "except Exception: ${fixed_lines} lines"; fi
+
+# Test 8: bare except BUG — catches SystemExit, double version
+echo ""
+echo "  Test 8: bare except bug (historical — should fail)"
+bug_output="$(python3 -c "
+import sys
+try:
+    print('v3.0.0-RC2')
+    sys.exit(0)
+except: pass
+print('v3.0.0-RC2')
+" 2>/dev/null)"
+bug_lines="$(echo "$bug_output" | wc -l | tr -d ' ')"
+if [ "$bug_lines" = "2" ]; then pass "bare except: double version output (CONFIRMED BUG)"; else fail "bare except: ${bug_lines} lines"; fi
+
 # ─── Summary ─────────────────────────────────────────────
 echo ""
 echo "═══ Results ═══"

@@ -78,21 +78,40 @@ if (-not $Version) {
         $releases = Invoke-RestMethod -Uri $apiUrl -Headers $headers -ErrorAction Stop
         $release = $releases | Where-Object { -not $_.draft } | Select-Object -First 1
         if ($release) {
-            $Version = $release.tag_name -replace "^v", ""
+            $LatestTag = $release.tag_name
+            $Version = $LatestTag -replace "^v", ""
         } else {
             throw "no non-draft release found"
         }
-        Write-Host "  ✓ Latest: v${Version}" -ForegroundColor Green
+        Write-Host "  ✓ Latest: ${LatestTag}" -ForegroundColor Green
     } catch {
+        $LatestTag = "v3.0.0-RC2"
         $Version = "3.0.0-RC2"
-        Write-Host "  ⚠  Could not detect version, defaulting to v${Version}" -ForegroundColor Yellow
+        Write-Host "  ⚠  Could not detect version, defaulting to ${LatestTag}" -ForegroundColor Yellow
         if (-not $Token) { Write-Host "  ⚠  Set GITHUB_TOKEN env var for private repos" -ForegroundColor Yellow }
     }
+} else {
+    $LatestTag = "v${Version}"
 }
 
-$BinaryName = "ASF-v${Version}-${OsArch}"
-$DownloadUrl = "https://github.com/${Repo}/releases/download/v${Version}/${BinaryName}.exe"
-$ChecksumsUrl = "https://github.com/${Repo}/releases/download/v${Version}/checksums.txt"
+# Normalize version values
+$LatestTag = $LatestTag.Trim("`r`n").Trim()
+$Version = $Version.Trim("`r`n").Trim()
+
+$AssetVersion = $Version
+$BinaryName = "ASF-${LatestTag}-${OsArch}"
+$DownloadUrl = "https://github.com/${Repo}/releases/download/${LatestTag}/${BinaryName}.exe"
+$ChecksumsUrl = "https://github.com/${Repo}/releases/download/${LatestTag}/checksums.txt"
+
+# Validate URL before download
+if ($DownloadUrl -match "\s") {
+    Write-Host "  ✗ Download URL contains whitespace or newlines: ${DownloadUrl}" -ForegroundColor Red
+    exit 1
+}
+if ($BinaryName -notmatch "^ASF-") {
+    Write-Host "  ✗ Invalid binary name: ${BinaryName}" -ForegroundColor Red
+    exit 1
+}
 
 # ─── Check existing ───────────────────────────────────────
 $InstalledBin = "${InstallDir}\asf.exe"

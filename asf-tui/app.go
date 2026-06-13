@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -67,7 +68,7 @@ type mainModel struct {
 
 	quitting bool
 	err      error
-	scrollY  int
+	vp       viewport.Model
 }
 
 type navigateMsg struct {
@@ -82,6 +83,7 @@ func newMainModel(cfg *Config) *mainModel {
 		styles:      s,
 		config:      cfg,
 		engine:      e,
+		vp:          viewport.New(0, 0),
 		startup:     newStartupModel(),
 		dash:        newDashboardModel(),
 		analyze:     newAnalyzeModel(e),
@@ -148,26 +150,30 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.analyze.inputBuf = ""
 				return m, nil
 			}
-			m.scrollY = 0
+			m.vp.YOffset = 0
 			return m.handleBack()
 		case "pgup":
-			m.scrollY -= m.height - 3
-			if m.scrollY < 0 {
-				m.scrollY = 0
+			m.vp.YOffset -= m.height - 3
+			if m.vp.YOffset < 0 {
+				m.vp.YOffset = 0
 			}
 		case "pgdn":
-			m.scrollY += m.height - 3
+			m.vp.YOffset += m.height - 3
 		case "ctrl+u":
-			m.scrollY -= m.height / 2
-			if m.scrollY < 0 {
-				m.scrollY = 0
+			m.vp.YOffset -= m.height / 2
+			if m.vp.YOffset < 0 {
+				m.vp.YOffset = 0
 			}
 		case "ctrl+d":
-			m.scrollY += m.height / 2
+			m.vp.YOffset += m.height / 2
+		case "home":
+			m.vp.YOffset = 0
+		case "end":
+			m.vp.YOffset = 1 << 30
 		}
 
 	case navigateMsg:
-		m.scrollY = 0
+		m.vp.YOffset = 0
 		if msg.to == exportView {
 			m.exportV.selected = 0
 			m.exportV.done = false
@@ -193,6 +199,13 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		default:
 			m.err = error(msg)
+			return m, nil
+		}
+
+	case tea.MouseMsg:
+		switch msg.Type {
+		case tea.MouseWheelUp, tea.MouseWheelDown:
+			m.vp, _ = m.vp.Update(msg)
 			return m, nil
 		}
 	}
@@ -280,35 +293,21 @@ func (m mainModel) View() string {
 	help := m.renderHelp()
 	helpLines := strings.Count(help, "\n") + 1
 	availLines := m.height - helpLines - 2
-
-	allLines := strings.Split(content, "\n")
-	if m.scrollY >= len(allLines) {
-		m.scrollY = 0
+	if availLines < 1 {
+		availLines = 1
 	}
-	if len(allLines) > availLines && availLines > 0 {
-		start := m.scrollY
-		end := m.scrollY + availLines
-		if end > len(allLines) {
-			end = len(allLines)
-		}
-		visible := allLines[start:end]
-		dim := lipgloss.NewStyle().Foreground(m.styles.Theme().DimText)
-		var prefix, suffix string
-		if m.scrollY > 0 {
-			prefix = dim.Render(fmt.Sprintf("(↑ %d more — PgUp) ", m.scrollY))
-		}
-		if m.scrollY+len(visible) < len(allLines) {
-			remaining := len(allLines) - (m.scrollY + len(visible))
-			suffix = "\n" + dim.Render(fmt.Sprintf("(↓ %d more — PgDn) ", remaining))
-		}
-		content = prefix + strings.Join(visible, "\n") + suffix
-	} else {
-		m.scrollY = 0
+
+	m.vp.Width = m.width - 4
+	m.vp.Height = availLines
+	m.vp.SetContent(content)
+
+	if strings.Count(content, "\n")+1 <= availLines {
+		m.vp.YOffset = 0
 	}
 
 	return m.styles.App.Render(
 		lipgloss.JoinVertical(lipgloss.Top,
-			content,
+			m.vp.View(),
 			help,
 		),
 	)

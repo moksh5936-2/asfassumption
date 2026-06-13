@@ -359,27 +359,40 @@ fi
 if [ -z "$VERSION" ]; then
   info "Detecting latest version..."
   API_URL="https://api.github.com/repos/${REPO}/releases?per_page=10"
-  VERSION="$(curl_get "$API_URL" | python3 -c "
+  LATEST_VERSION="$(curl_get "$API_URL" | python3 -c "
 import json,sys
 try:
     releases = json.load(sys.stdin)
     for r in releases:
         if not r.get('draft', True):
-            print(r['tag_name'].lstrip('v'))
+            print(r['tag_name'])
             sys.exit(0)
-except: pass
-print('3.0.0-RC2')
-" 2>/dev/null || echo "3.0.0-RC2")"
-  if [ -z "$VERSION" ]; then
-    VERSION="3.0.0-RC2"
-    warn "Could not detect version; defaulting to ${VERSION}"
+except Exception: pass
+print('v3.0.0-RC2')
+" 2>/dev/null || echo "v3.0.0-RC2")"
+  LATEST_VERSION="$(echo "$LATEST_VERSION" | tr -d '\r\n' | xargs)"
+  if [ -z "$LATEST_VERSION" ]; then
+    LATEST_VERSION="v3.0.0-RC2"
+    warn "Could not detect version; defaulting to ${LATEST_VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi
+  VERSION="${LATEST_VERSION#v}"
+else
+  LATEST_VERSION="v${VERSION}"
 fi
 
-BINARY_NAME="ASF-v${VERSION}-${OS_FINAL}-${ARCH_FINAL}"
-DIRECT_DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${BINARY_NAME}"
-DIRECT_CHECKSUMS_URL="https://github.com/${REPO}/releases/download/v${VERSION}/checksums.txt"
+ASSET_VERSION="${VERSION}"
+BINARY_NAME="ASF-${LATEST_VERSION}-${OS_FINAL}-${ARCH_FINAL}"
+DIRECT_DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/${BINARY_NAME}"
+DIRECT_CHECKSUMS_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/checksums.txt"
+
+# Validate URL before download
+if printf '%s' "$DIRECT_DOWNLOAD_URL" | grep -q '[[:space:]]'; then
+  err "Download URL contains whitespace or newlines: ${DIRECT_DOWNLOAD_URL}"
+fi
+if ! printf '%s' "$BINARY_NAME" | grep -q "^ASF-"; then
+  err "Invalid binary name: ${BINARY_NAME}"
+fi
 
 # ─── Download ──────────────────────────────────────────────
 TMP_DIR="$(mktemp -d)"

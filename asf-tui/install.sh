@@ -14,6 +14,8 @@ set -euo pipefail
 
 ASF_VERSION="3.0.0-RC2"
 ASF_REPO="moksh5936-2/asfassumption"
+LATEST_VERSION="v${ASF_VERSION}"
+ASSET_VERSION="${ASF_VERSION}"
 
 # ─── Parse flags ──────────────────────────────────────────
 UPGRADE=false
@@ -37,15 +39,15 @@ ARCH="$(uname -m)"
 case "$OS" in
   Darwin)
     case "$ARCH" in
-      arm64) BINARY="ASF-v${ASF_VERSION}-darwin-arm64" ;;
-      x86_64) BINARY="ASF-v${ASF_VERSION}-darwin-amd64" ;;
+      arm64) BINARY="ASF-${LATEST_VERSION}-darwin-arm64" ;;
+      x86_64) BINARY="ASF-${LATEST_VERSION}-darwin-amd64" ;;
       *) echo "Unsupported arch: $ARCH"; exit 1 ;;
     esac
     ;;
   Linux)
     case "$ARCH" in
-      aarch64|arm64) BINARY="ASF-v${ASF_VERSION}-linux-arm64" ;;
-      x86_64) BINARY="ASF-v${ASF_VERSION}-linux-amd64" ;;
+      aarch64|arm64) BINARY="ASF-${LATEST_VERSION}-linux-arm64" ;;
+      x86_64) BINARY="ASF-${LATEST_VERSION}-linux-amd64" ;;
       *) echo "Unsupported arch: $ARCH"; exit 1 ;;
     esac
     ;;
@@ -120,9 +122,19 @@ if [ "$NEED_DOWNLOAD" = true ]; then
     cp "$LOCAL_BINARY" "${ASF_HOME}/asf"
     echo "  ✓ Using local binary: ${LOCAL_BINARY}"
   else
-    DOWNLOAD_URL="https://github.com/${ASF_REPO}/releases/download/v${ASF_VERSION}/${BINARY}"
+    DOWNLOAD_URL="https://github.com/${ASF_REPO}/releases/download/${LATEST_VERSION}/${BINARY}"
     echo "  Downloading from: ${DOWNLOAD_URL}"
     echo ""
+
+    # Validate URL before download
+    if printf '%s' "$DOWNLOAD_URL" | grep -q '[[:space:]]'; then
+      echo "  ✗ Download URL contains whitespace or newlines: ${DOWNLOAD_URL}"
+      exit 1
+    fi
+    if ! printf '%s' "$BINARY" | grep -q "^ASF-"; then
+      echo "  ✗ Invalid binary name: ${BINARY}"
+      exit 1
+    fi
 
     HTTP_CODE="000"
     if command -v curl &>/dev/null; then
