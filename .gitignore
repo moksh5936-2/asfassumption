@@ -28,6 +28,7 @@ bin/
 
 # ─── Coverage ────────────────────────────────────────
 coverage/
+!asf-tui/asf/coverage/
 *.cover.out
 *.coverprofile
 
