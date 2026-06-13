@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,8 +19,6 @@ import (
 	"asf-tui/asf/verify"
 	"asf-tui/intelligence"
 )
-
-var debugLog = log.New(os.Stderr, "[asf-debug] ", log.Ltime|log.Lshortfile)
 
 const (
 	MaxFileSize             = 50 * 1024 * 1024

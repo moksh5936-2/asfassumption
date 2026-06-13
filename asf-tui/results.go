@@ -102,6 +102,14 @@ func (m mainModel) viewResults() string {
 	}
 
 	result := r.result
+
+	if result.TotalAssumptions == 0 {
+		return lipgloss.JoinVertical(lipgloss.Left,
+			s.Title.Render(fmt.Sprintf("Results: %s", result.ArchitectureName)),
+			s.Subtitle.Render("No assumptions found."),
+			s.Subtitle.Render("No risks detected."),
+		)
+	}
 	aiBadge := ""
 	if result.AnalysisMode == ModeASFAndAI {
 		aiCount := 0

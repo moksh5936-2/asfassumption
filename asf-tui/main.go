@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -45,7 +46,8 @@ func printUsage() {
 
 func main() {
 	if err := initLogger(); err != nil {
-		asfLog = log.New(os.Stderr, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
+		asfLog = log.New(io.Discard, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
+		debugLog = log.New(io.Discard, "[asf-debug] ", log.Ltime|log.Lshortfile)
 	}
 	asfLog.Printf("ASF v%s starting", ASFVersion)
 

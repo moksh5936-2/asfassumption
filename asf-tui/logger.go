@@ -8,9 +8,13 @@ import (
 )
 
 var asfLog *log.Logger
+var debugLog *log.Logger
 
 func initLogger() error {
 	logPath := asfLogPath()
+	if p := os.Getenv("ASF_LOG_FILE"); p != "" {
+		logPath = p
+	}
 	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
 		return err
 	}
@@ -18,7 +22,17 @@ func initLogger() error {
 	if err != nil {
 		return err
 	}
-	multi := io.MultiWriter(f, os.Stderr)
-	asfLog = log.New(multi, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
+
+	var asfWriter io.Writer = f
+	var debugWriter io.Writer = f
+
+	debug := os.Getenv("ASF_DEBUG")
+	if debug != "" && debug != "0" && debug != "false" && debug != "no" {
+		asfWriter = io.MultiWriter(f, os.Stderr)
+		debugWriter = io.MultiWriter(f, os.Stderr)
+	}
+
+	asfLog = log.New(asfWriter, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
+	debugLog = log.New(debugWriter, "[asf-debug] ", log.Ltime|log.Lshortfile)
 	return nil
 }
