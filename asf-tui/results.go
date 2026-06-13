@@ -34,6 +34,8 @@ func newResultsModel() resultsModel {
 			{name: "Blind Spots"},
 			{name: "Controls"},
 			{name: "Reports"},
+			{name: "SDRI"},
+			{name: "Security Design Review"},
 		},
 		tabScroll: make(map[int]int),
 	}
@@ -86,6 +88,10 @@ func (m mainModel) viewResults() string {
 		content = renderResultControls(s, r, query)
 	case 8:
 		content = renderResultReports(s, r)
+	case 9:
+		content = renderResultSDRI(s, r)
+	case 10:
+		content = renderResultSecurityDesignReview(s, r)
 	}
 
 	searchBar := ""
@@ -167,6 +173,19 @@ func resultTabCount(r *AnalysisResult, tab int) int {
 		}
 		if r.ReviewOutput != nil {
 			c++
+		}
+		return c
+	case 9:
+		c := 0
+		if r.SDRISummary != "" {
+			c++
+		}
+		c += len(r.SDRIControls)
+		return c
+	case 10:
+		c := len(r.SDRIDesignFindings) + len(r.SDRIAchitecturalWeaknesses) + len(r.SDRIRemediations)
+		if c == 0 {
+			c = len(r.SDRIComplianceAlignments)
 		}
 		return c
 	}
@@ -626,6 +645,153 @@ func renderResultReports(s StyleSet, r *AnalysisResult) string {
 	rows = append(rows, s.Section.Render("Export"))
 	rows = append(rows, "  Press 'e' to open export dialog.")
 	rows = append(rows, "  Available formats: JSON, Markdown, HTML, CSV, PDF")
+
+	return strings.Join(rows, "\n")
+}
+
+func renderResultSDRI(s StyleSet, r *AnalysisResult) string {
+	if r.SDRISummary == "" && len(r.SDRIControls) == 0 {
+		return s.EmptyState.Render("No SDRI data available.")
+	}
+	var rows []string
+	rows = append(rows, s.Section.Render("Security Design Review Intelligence (SDRI)"))
+	rows = append(rows, "")
+
+	if r.SDRISummary != "" {
+		rows = append(rows, s.Subtitle.Render("Executive Summary"))
+		rows = append(rows, "  "+r.SDRISummary)
+		rows = append(rows, "")
+	}
+
+	if len(r.SDRIControls) > 0 {
+		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Control Inventory (%d)", len(r.SDRIControls))))
+		byStatus := map[string]int{}
+		for _, c := range r.SDRIControls {
+			status := c.Status
+			if status == "" {
+				status = "unknown"
+			}
+			byStatus[status]++
+		}
+		for st, n := range byStatus {
+			style := s.Value
+			switch st {
+			case "implemented", "partial":
+				style = s.StatusGood
+			case "planned", "in-progress":
+				style = s.StatusWarn
+			case "missing", "none":
+				style = s.StatusBad
+			}
+			rows = append(rows, fmt.Sprintf("  %s %s: %d", style.Render("●"), st, n))
+		}
+		rows = append(rows, "")
+	}
+
+	if len(r.SDRICoverageByCategory) > 0 {
+		rows = append(rows, s.Subtitle.Render("Coverage by Category"))
+		for _, c := range r.SDRICoverageByCategory {
+			style := s.StatusGood
+			if c.Coverage < 50 {
+				style = s.StatusBad
+			} else if c.Coverage < 80 {
+				style = s.StatusWarn
+			}
+			rows = append(rows, fmt.Sprintf("  %s %s: %.0f%% (%d/%d)",
+				style.Render("●"), c.Category, c.Coverage*100, c.Observed, c.Expected))
+		}
+		rows = append(rows, "")
+	}
+
+	if r.SDRICoverageDashboard != nil && len(r.SDRICoverageDashboard) > 0 {
+		rows = append(rows, s.Subtitle.Render("Coverage Dashboard"))
+		for k, v := range r.SDRICoverageDashboard {
+			pct := int(v * 100)
+			style := confidenceStyle(s, pct)
+			rows = append(rows, fmt.Sprintf("  %s: %s", k, style.Render(fmt.Sprintf("%d%%", pct))))
+		}
+		rows = append(rows, "")
+	}
+
+	return strings.Join(rows, "\n")
+}
+
+func renderResultSecurityDesignReview(s StyleSet, r *AnalysisResult) string {
+	if len(r.SDRIDesignFindings) == 0 && len(r.SDRIAchitecturalWeaknesses) == 0 &&
+		len(r.SDRIRemediations) == 0 && len(r.SDRIComplianceAlignments) == 0 {
+		return s.EmptyState.Render("No security design review data available.")
+	}
+	var rows []string
+	rows = append(rows, s.Section.Render("Security Design Review"))
+	rows = append(rows, "")
+
+	if len(r.SDRIDesignFindings) > 0 {
+		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Design Findings (%d)", len(r.SDRIDesignFindings))))
+		for _, f := range r.SDRIDesignFindings {
+			severityStyle := s.StatusWarn
+			switch f.Severity {
+			case "Critical", "High":
+				severityStyle = s.StatusBad
+			case "Low":
+				severityStyle = s.StatusGood
+			}
+			rows = append(rows, fmt.Sprintf("  %s [%s] %s", severityStyle.Render("●"), f.Severity, f.Title))
+			if f.Description != "" {
+				rows = append(rows, fmt.Sprintf("    %s", f.Description))
+			}
+			if f.Recommendation != "" {
+				rows = append(rows, fmt.Sprintf("    → %s", f.Recommendation))
+			}
+			rows = append(rows, "")
+		}
+	}
+
+	if len(r.SDRIAchitecturalWeaknesses) > 0 {
+		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Architectural Weaknesses (%d)", len(r.SDRIAchitecturalWeaknesses))))
+		for _, w := range r.SDRIAchitecturalWeaknesses {
+			severityStyle := s.StatusWarn
+			switch w.Severity {
+			case "Critical", "High":
+				severityStyle = s.StatusBad
+			case "Low":
+				severityStyle = s.StatusGood
+			}
+			rows = append(rows, fmt.Sprintf("  %s [%s] %s", severityStyle.Render("●"), w.Severity, w.Pattern))
+			if w.Description != "" {
+				rows = append(rows, fmt.Sprintf("    %s", w.Description))
+			}
+			if w.Recommendation != "" {
+				rows = append(rows, fmt.Sprintf("    → %s", w.Recommendation))
+			}
+			rows = append(rows, "")
+		}
+	}
+
+	if len(r.SDRIRemediations) > 0 {
+		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Remediations (%d)", len(r.SDRIRemediations))))
+		for _, rem := range r.SDRIRemediations {
+			rows = append(rows, fmt.Sprintf("  #%d [%.0f] %s", rem.Priority, rem.RiskScore, rem.Description))
+			if rem.Recommendation != "" {
+				rows = append(rows, fmt.Sprintf("    → %s (effort: %s)", rem.Recommendation, rem.Effort))
+			}
+			rows = append(rows, "")
+		}
+	}
+
+	if len(r.SDRIComplianceAlignments) > 0 {
+		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Compliance Alignments (%d)", len(r.SDRIComplianceAlignments))))
+		for _, m := range r.SDRIComplianceAlignments {
+			style := s.StatusGood
+			if m.Coverage < 50 {
+				style = s.StatusBad
+			} else if m.Coverage < 80 {
+				style = s.StatusWarn
+			}
+			rows = append(rows, fmt.Sprintf("  %s %s: %.0f%% (%s)",
+				style.Render("●"), m.Framework, m.Coverage, m.Status))
+		}
+		rows = append(rows, "")
+	}
 
 	return strings.Join(rows, "\n")
 }

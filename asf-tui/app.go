@@ -38,6 +38,35 @@ var viewNames = map[view]string{
 	helpView:        "Help",
 }
 
+type sidebarEntry struct {
+	name string
+	vid  view
+	tab  int
+}
+
+type focusManager struct {
+	activeView view
+	subFocus   string
+}
+
+type layoutManager struct {
+	sidebarWidth    int
+	topBarHeight    int
+	bottomBarHeight int
+}
+
+func newFocusManager() focusManager {
+	return focusManager{}
+}
+
+func newLayoutManager() layoutManager {
+	return layoutManager{
+		sidebarWidth:    23,
+		topBarHeight:    1,
+		bottomBarHeight: 1,
+	}
+}
+
 type errorMsg string
 
 func (e errorMsg) Error() string { return string(e) }
@@ -46,8 +75,13 @@ type viewHistory struct {
 	views []view
 }
 
+const maxHistory = 50
+
 func (v *viewHistory) push(vw view) {
 	v.views = append(v.views, vw)
+	if len(v.views) > maxHistory {
+		v.views = v.views[len(v.views)-maxHistory:]
+	}
 }
 
 func (v *viewHistory) pop() (view, bool) {
@@ -63,17 +97,15 @@ type mainModel struct {
 	ready        bool
 	width        int
 	height       int
-	currentView  view
+	router       Router
 	styles       StyleSet
 	config       *Config
 	engine       *Engine
-	history      viewHistory
 	quitting     bool
 	err          error
 	statusMsg    string
 	currentFile  string
 	sidebarOpen  bool
-	sidebarSel   int
 	searchActive bool
 	searchQuery  string
 	recentFiles  []string
@@ -91,41 +123,40 @@ type mainModel struct {
 	validate   validationModel
 	help       helpModel
 
-	vp      viewport.Model
-	scrollY map[view]int
+	vp        viewport.Model
+	scrollY   map[view]int
+	focusMgr  focusManager
+	layoutMgr layoutManager
 }
 
 type navigateMsg struct {
 	to view
 }
 
-var sidebarItems = []string{
-	"Dashboard",
-	"Analyze",
-	"Results",
-	"File Explorer",
-	"AI Models",
-	"Settings",
-	"About",
-	"Help",
-}
-
-var sidebarViews = []view{
-	dashboardView,
-	analyzeView,
-	resultsView,
-	fileBrowserView,
-	localaiView,
-	settingsView,
-	aboutView,
-	helpView,
+var sidebarEntries = []sidebarEntry{
+	{"Dashboard", dashboardView, -1},
+	{"File Explorer", fileBrowserView, -1},
+	{"Analyze", analyzeView, -1},
+	{"Assumptions", resultsView, 1},
+	{"Verification", resultsView, 2},
+	{"Contradictions", resultsView, 3},
+	{"Trust Chains", resultsView, 4},
+	{"Single Points of Trust", resultsView, 4},
+	{"Assumption Impact Analysis", resultsView, 5},
+	{"Blind Spots", resultsView, 6},
+	{"SDRI", resultsView, 9},
+	{"Recommended Controls", resultsView, 7},
+	{"Security Design Review", resultsView, 10},
+	{"Reports / Exports", resultsView, 8},
+	{"Settings", settingsView, -1},
+	{"Help", helpView, -1},
 }
 
 func newMainModel(cfg *Config) *mainModel {
 	s := NewStyles(Themes[cfg.Appearance.Theme])
 	e := NewEngine(cfg)
 	return &mainModel{
-		currentView: startupView,
+		router:      newRouter(),
 		styles:      s,
 		config:      cfg,
 		engine:      e,
@@ -144,6 +175,8 @@ func newMainModel(cfg *Config) *mainModel {
 		review:      newReviewModel(),
 		validate:    newValidationModel(),
 		help:        newHelpModel(),
+		focusMgr:    newFocusManager(),
+		layoutMgr:   newLayoutManager(),
 	}
 }
 
@@ -160,10 +193,15 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.styles = NewStyles(m.styles.Theme())
 		m.vp.Width = m.mainWidth()
 		m.vp.Height = m.mainHeight()
-		return m, nil
 
 	case tea.KeyMsg:
-		return m.handleKeyMsg(msg)
+		if m.searchActive {
+			return m.handleSearchInput(msg)
+		}
+		handled, model, cmd := m.handleGlobalKey(msg)
+		if handled {
+			return model, cmd
+		}
 
 	case tea.MouseMsg:
 		switch msg.Type {
@@ -197,7 +235,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case errorMsg:
 		m.statusMsg = string(msg)
-		switch m.currentView {
+		switch m.router.currentView {
 		case analyzeView:
 			m.analyze.running = false
 			m.analyze.statusMsg = fmt.Sprintf("Error: %s", string(msg))
@@ -214,8 +252,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusMsg = "Analysis complete"
 		m.addRecentFile(m.currentFile)
 		m.saveScroll()
-		m.history.push(m.currentView)
-		m.currentView = resultsView
+		m.router.NavigateTo(resultsView)
 		m.vp.YOffset = 0
 		m.scrollY[resultsView] = 0
 		return m, nil
@@ -226,14 +263,13 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusMsg = "File selected: " + string(msg)
 		m.addRecentFile(string(msg))
 		m.saveScroll()
-		m.history.push(m.currentView)
-		m.currentView = analyzeView
+		m.router.NavigateTo(analyzeView)
 		m.vp.YOffset = 0
 		m.scrollY[analyzeView] = 0
 		return m, nil
 	}
 
-	switch m.currentView {
+	switch m.router.currentView {
 	case startupView:
 		return m.updateStartup(msg)
 	case dashboardView:
@@ -262,126 +298,168 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m mainModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if m.searchActive {
-		return m.handleSearchInput(msg)
-	}
-
+func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c", "Q":
 		m.quitting = true
-		return m, tea.Quit
+		return true, m, tea.Quit
 	case "q":
-		if m.currentView == startupView {
+		if m.router.currentView == startupView {
 			m.quitting = true
-			return m, tea.Quit
+			return true, m, tea.Quit
 		}
 		m.navigateBack()
-		return m, nil
+		return true, m, nil
 	case "?":
 		m.navigateTo(helpView)
-		return m, nil
+		return true, m, nil
 	case "esc":
-		return m.handleBack()
+		switch m.router.currentView {
+		case analyzeView:
+			if m.analyze.running || m.analyze.inputMode != "" {
+				return false, m, nil
+			}
+		case settingsView:
+			if m.settings.editing {
+				return false, m, nil
+			}
+		case localaiView:
+			if m.localai.showActions {
+				return false, m, nil
+			}
+		case exportView:
+			if m.exportV.showConfirmation || m.exportV.done {
+				return false, m, nil
+			}
+		case reviewView:
+			if m.review.editing {
+				return false, m, nil
+			}
+		}
+		m.navigateBack()
+		return true, m, nil
 	case "tab":
-		if m.currentView == resultsView {
-			break
+		switch m.router.currentView {
+		case resultsView, fileBrowserView:
+			return false, m, nil
 		}
-		m.cycleSidebar(1)
-		target := viewForSidebar(m.sidebarSel)
-		if target != m.currentView {
-			m.navigateTo(target)
+		m.saveScroll()
+		m.router.CycleSidebar(1)
+		m.router.ActivateSidebar()
+		tab := m.router.ActivateSidebarTab()
+		if tab >= 0 {
+			m.results.resultTab = tab
 		}
-		return m, nil
+		m.restoreScroll()
+		return true, m, nil
 	case "shift+tab":
-		if m.currentView == resultsView {
-			break
+		switch m.router.currentView {
+		case resultsView, fileBrowserView:
+			return false, m, nil
 		}
-		m.cycleSidebar(-1)
-		target := viewForSidebar(m.sidebarSel)
-		if target != m.currentView {
-			m.navigateTo(target)
+		m.saveScroll()
+		m.router.CycleSidebar(-1)
+		m.router.ActivateSidebar()
+		tab := m.router.ActivateSidebarTab()
+		if tab >= 0 {
+			m.results.resultTab = tab
 		}
-		return m, nil
+		m.restoreScroll()
+		return true, m, nil
 	case "up", "k":
-		m.vp.LineUp(1)
-		return m, nil
+		switch m.router.currentView {
+		case resultsView, helpView, aboutView:
+			m.vp.LineUp(1)
+			return true, m, nil
+		}
+		return false, m, nil
 	case "down", "j":
-		m.vp.LineDown(1)
-		return m, nil
+		switch m.router.currentView {
+		case resultsView, helpView, aboutView:
+			m.vp.LineDown(1)
+			return true, m, nil
+		}
+		return false, m, nil
 	case "pgup", "b":
 		m.vp.HalfViewUp()
-		return m, nil
-	case "pgdn", " ":
-		if m.currentView == resultsView && msg.String() == " " {
-			break
+		return true, m, nil
+	case "pgdown", " ":
+		if m.router.currentView == resultsView && msg.String() == " " {
+			return false, m, nil
 		}
 		m.vp.HalfViewDown()
-		return m, nil
+		return true, m, nil
 	case "ctrl+u":
 		m.vp.ViewUp()
-		return m, nil
+		return true, m, nil
 	case "ctrl+d":
 		m.vp.ViewDown()
-		return m, nil
+		return true, m, nil
 	case "home", "g":
 		m.vp.GotoTop()
-		return m, nil
+		return true, m, nil
 	case "end", "G":
 		m.vp.GotoBottom()
-		return m, nil
+		return true, m, nil
 	case "f":
 		m.fileBrowse.path, _ = getDefaultPath(m.config)
 		m.navigateTo(fileBrowserView)
-		return m, nil
+		return true, m, nil
 	case "r":
-		if m.currentView == resultsView {
+		if m.router.currentView == reviewView {
+			return false, m, nil
+		}
+		if m.router.currentView == resultsView {
 			if m.results.result != nil && len(m.results.result.Assumptions) > 0 {
 				m.review.assumptions = m.results.result.Assumptions
 				m.review.currentIdx = 0
 				m.review.mode = "browse"
 				m.navigateTo(reviewView)
-				return m, nil
+				return true, m, nil
 			}
 		} else {
 			m.navigateTo(analyzeView)
-			return m, nil
+			return true, m, nil
 		}
 	case "v":
-		if m.currentView == resultsView && m.results.result != nil && len(m.results.result.Assumptions) > 0 {
+		if m.router.currentView == resultsView && m.results.result != nil && len(m.results.result.Assumptions) > 0 {
 			m.validate.assumptions = m.results.result.Assumptions
 			m.validate.currentIdx = 0
 			m.navigateTo(validationView)
-			return m, nil
+			return true, m, nil
 		}
-		if m.currentView == reviewView && len(m.review.assumptions) > 0 {
+		if m.router.currentView == reviewView && len(m.review.assumptions) > 0 {
 			m.validate.assumptions = m.review.assumptions
 			m.validate.currentIdx = 0
 			m.navigateTo(validationView)
-			return m, nil
+			return true, m, nil
 		}
 	case "c":
-		if m.currentView == resultsView && m.results.result != nil {
+		if m.router.currentView == resultsView && m.results.result != nil {
 			m.results.result = nil
 			m.statusMsg = "Results cleared"
 			m.navigateTo(analyzeView)
-			return m, nil
+			return true, m, nil
 		}
 	case "e":
-		if m.currentView == resultsView && m.results.result != nil {
-			return m, func() tea.Msg { return navigateMsg{to: exportView} }
+		if m.router.currentView == resultsView && m.results.result != nil {
+			return true, m, func() tea.Msg { return navigateMsg{to: exportView} }
 		}
 	case "s":
-		if m.currentView == settingsView && !m.settings.editing {
+		if m.router.currentView == settingsView && !m.settings.editing {
 			m.config.Save(ConfigPath())
 			m.statusMsg = "Settings saved"
+			return true, m, nil
 		}
 	case "/":
+		if m.router.currentView == fileBrowserView {
+			return false, m, nil
+		}
 		m.searchActive = true
 		m.searchQuery = ""
-		return m, nil
+		return true, m, nil
 	}
-	return m, nil
+	return false, m, nil
 }
 
 func (m *mainModel) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -408,11 +486,11 @@ func (m *mainModel) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *mainModel) saveScroll() {
-	m.scrollY[m.currentView] = m.vp.YOffset
+	m.scrollY[m.router.currentView] = m.vp.YOffset
 }
 
 func (m *mainModel) restoreScroll() {
-	if y, ok := m.scrollY[m.currentView]; ok {
+	if y, ok := m.scrollY[m.router.currentView]; ok {
 		m.vp.YOffset = y
 	} else {
 		m.vp.YOffset = 0
@@ -421,21 +499,13 @@ func (m *mainModel) restoreScroll() {
 
 func (m *mainModel) navigateTo(to view) {
 	m.saveScroll()
-	m.history.push(m.currentView)
-	m.currentView = to
+	m.router.NavigateTo(to)
 	m.restoreScroll()
 }
 
 func (m *mainModel) navigateBack() {
 	m.saveScroll()
-	if prev, ok := m.history.pop(); ok {
-		m.currentView = prev
-	} else {
-		switch m.currentView {
-		case fileBrowserView, dashboardView, analyzeView, resultsView, localaiView, settingsView, aboutView, exportView, reviewView, validationView, helpView:
-			m.currentView = dashboardView
-		}
-	}
+	m.router.NavigateBack()
 	m.restoreScroll()
 }
 
@@ -456,16 +526,11 @@ func (m *mainModel) addRecentFile(path string) {
 	m.recentFiles = dedup
 }
 
-func (m *mainModel) cycleSidebar(dir int) {
-	total := len(sidebarItems)
-	m.sidebarSel = (m.sidebarSel + dir + total) % total
-}
-
 func (m *mainModel) sidebarWidth() int {
 	if !m.sidebarOpen {
 		return 0
 	}
-	return 23
+	return m.layoutMgr.sidebarWidth
 }
 
 func (m *mainModel) mainWidth() int {
@@ -482,11 +547,6 @@ func (m *mainModel) mainHeight() int {
 		h = 3
 	}
 	return h
-}
-
-func (m mainModel) handleBack() (tea.Model, tea.Cmd) {
-	m.navigateBack()
-	return m, nil
 }
 
 func (m mainModel) View() string {
@@ -556,13 +616,21 @@ func (m mainModel) renderTopBar() string {
 }
 
 func (m mainModel) renderSidebar() string {
-	items := sidebarItems
 	var rendered []string
-	for i, item := range items {
-		if i == m.sidebarSel && viewForSidebar(i) == m.currentView {
-			rendered = append(rendered, m.styles.SidebarActive.Render(" "+item))
+	for i, e := range sidebarEntries {
+		active := i == m.router.sidebarSel && e.vid == m.router.currentView
+		if e.vid == resultsView && m.router.currentView == resultsView {
+			for j, se := range sidebarEntries {
+				if se.vid == resultsView && se.tab == m.results.resultTab {
+					active = i == j
+					break
+				}
+			}
+		}
+		if active {
+			rendered = append(rendered, m.styles.SidebarActive.Render(" "+e.name))
 		} else {
-			rendered = append(rendered, m.styles.SidebarItem.Render(" "+item))
+			rendered = append(rendered, m.styles.SidebarItem.Render(" "+e.name))
 		}
 	}
 	sidebarContent := lipgloss.JoinVertical(lipgloss.Left, rendered...)
@@ -574,30 +642,22 @@ func (m mainModel) renderSidebar() string {
 	return m.styles.Sidebar.Render(sidebarContent)
 }
 
-func viewForSidebar(i int) view {
-	if i >= len(sidebarViews) {
-		return dashboardView
-	}
-	return sidebarViews[i]
-}
-
 func (m mainModel) renderBottomBar() string {
 	var hints []string
-	hints = append(hints, "Tab:Nav")
-	if m.currentView == startupView {
-		hints = append(hints, "↑↓:Navigate", "Enter:Select", "q:Quit")
+	if m.router.currentView == startupView {
+		hints = append(hints, "↑↓=Navigate", "Enter=Select", "Q=Quit")
 	} else {
-		hints = append(hints, "q:Back", "?:Help", "f:File Explorer", "r:Run")
-	}
-	switch m.currentView {
-	case resultsView:
-		hints = append(hints, "e:Export", "c:Clear", "r:Review", "v:Validate", "PgUp/Dn:Scroll")
-	case dashboardView:
-		hints = append(hints, "Enter:Select")
-	case analyzeView:
-		hints = append(hints, "Enter:Select")
-	case reviewView:
-		hints = append(hints, "s:Accept", "r:Reject", "m:Modified", "n:Note")
+		hints = append(hints, "F=Files", "R=Analyze", "/=Search", "?=Help", "Q=Quit")
+		switch m.router.currentView {
+		case resultsView:
+			hints = append(hints, "Tab=Tabs", "E=Export", "C=Clear")
+		case fileBrowserView:
+			hints = append(hints, "Tab=Preview", ".=Hidden")
+		case settingsView:
+			hints = append(hints, "Enter=Edit", "S=Save")
+		case reviewView:
+			hints = append(hints, "S=Accept", "R=Reject", "M=Mod", "N=Note")
+		}
 	}
 
 	scrollPct := m.viewportScrollPercent()
@@ -605,7 +665,7 @@ func (m mainModel) renderBottomBar() string {
 		hints = append(hints, scrollPct)
 	}
 
-	hintStr := strings.Join(hints, "  •  ")
+	hintStr := strings.Join(hints, "  ")
 	fill := m.width - lipgloss.Width(hintStr) - 4
 	if fill > 0 {
 		hintStr = hintStr + strings.Repeat(" ", fill)
@@ -633,7 +693,7 @@ func (m mainModel) viewportScrollPercent() string {
 }
 
 func (m mainModel) renderContent() string {
-	switch m.currentView {
+	switch m.router.currentView {
 	case startupView:
 		return m.viewStartup()
 	case dashboardView:

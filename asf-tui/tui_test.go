@@ -171,24 +171,34 @@ func TestAddRecentFile(t *testing.T) {
 }
 
 func TestViewForSidebar(t *testing.T) {
-	expected := []view{dashboardView, analyzeView, resultsView, fileBrowserView, localaiView, settingsView, aboutView, helpView}
-	for i, v := range expected {
-		if got := viewForSidebar(i); got != v {
-			t.Errorf("viewForSidebar(%d) = %d, want %d", i, got, v)
+	r := newRouter()
+	for i, e := range sidebarEntries {
+		if got := r.ViewForSidebar(i); got != e.vid {
+			t.Errorf("ViewForSidebar(%d) = %d, want %d", i, got, e.vid)
 		}
 	}
 	// Out of range should fall back to dashboard
-	if got := viewForSidebar(100); got != dashboardView {
-		t.Errorf("viewForSidebar(100) = %d, want dashboardView", got)
+	if got := r.ViewForSidebar(100); got != dashboardView {
+		t.Errorf("ViewForSidebar(100) = %d, want dashboardView", got)
 	}
 }
 
 func TestSidebarItems(t *testing.T) {
-	if len(sidebarItems) != 8 {
-		t.Errorf("sidebar has %d items, want 8", len(sidebarItems))
+	expected := 16
+	if len(sidebarEntries) != expected {
+		t.Errorf("sidebar has %d entries, want %d", len(sidebarEntries), expected)
 	}
-	if len(sidebarViews) != len(sidebarItems) {
-		t.Errorf("sidebarViews (%d) != sidebarItems (%d)", len(sidebarViews), len(sidebarItems))
+	// Verify all entries have valid views
+	for i, e := range sidebarEntries {
+		if e.vid < startupView || e.vid > helpView {
+			t.Errorf("sidebarEntries[%d] has invalid view %d", i, e.vid)
+		}
+	}
+	// Verify entries that map to resultsView have valid tab indices
+	for i, e := range sidebarEntries {
+		if e.vid == resultsView && (e.tab < 0 || e.tab > 10) {
+			t.Errorf("sidebarEntries[%d] (%s) has invalid tab %d", i, e.name, e.tab)
+		}
 	}
 }
 
@@ -241,10 +251,10 @@ func TestScrollPercentLogic(t *testing.T) {
 
 func TestNewResultsModel(t *testing.T) {
 	rm := newResultsModel()
-	if len(rm.tabs) != 9 {
-		t.Errorf("results has %d tabs, want 9", len(rm.tabs))
+	if len(rm.tabs) != 11 {
+		t.Errorf("results has %d tabs, want 11", len(rm.tabs))
 	}
-	expected := []string{"Summary", "Assumptions", "Verification", "Contradictions", "Trust", "Impact", "Blind Spots", "Controls", "Reports"}
+	expected := []string{"Summary", "Assumptions", "Verification", "Contradictions", "Trust", "Impact", "Blind Spots", "Controls", "Reports", "SDRI", "Security Design Review"}
 	for i, name := range expected {
 		if rm.tabs[i].name != name {
 			t.Errorf("tab[%d] = %q, want %q", i, rm.tabs[i].name, name)
