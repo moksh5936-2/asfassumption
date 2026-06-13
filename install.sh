@@ -358,11 +358,21 @@ fi
 # ─── Determine version ─────────────────────────────────────
 if [ -z "$VERSION" ]; then
   info "Detecting latest version..."
-  API_URL="https://api.github.com/repos/${REPO}/releases/latest"
-  VERSION="$(curl_get "$API_URL" | grep '"tag_name":' | sed 's/.*"tag_name": "v\(.*\)",.*/\1/' || echo "")"
+  API_URL="https://api.github.com/repos/${REPO}/releases?per_page=10"
+  VERSION="$(curl_get "$API_URL" | python3 -c "
+import json,sys
+try:
+    releases = json.load(sys.stdin)
+    for r in releases:
+        if not r.get('draft', True):
+            print(r['tag_name'].lstrip('v'))
+            sys.exit(0)
+except: pass
+print('3.0.0-RC2')
+" 2>/dev/null || echo "3.0.0-RC2")"
   if [ -z "$VERSION" ]; then
-    VERSION="2.2.0"
-    warn "Could not detect latest version; defaulting to ${VERSION}"
+    VERSION="3.0.0-RC2"
+    warn "Could not detect version; defaulting to ${VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi
 fi

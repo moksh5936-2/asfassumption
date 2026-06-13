@@ -73,13 +73,18 @@ $OsArch = "windows-amd64"
 if (-not $Version) {
     Write-Host "  Detecting latest version..." -ForegroundColor Cyan
     try {
-        $apiUrl = "https://api.github.com/repos/${Repo}/releases/latest"
+        $apiUrl = "https://api.github.com/repos/${Repo}/releases?per_page=10"
         $headers = @{"Accept"="application/vnd.github.v3+json"} + $AuthHeader
-        $response = Invoke-RestMethod -Uri $apiUrl -Headers $headers -ErrorAction Stop
-        $Version = $response.tag_name -replace "^v", ""
+        $releases = Invoke-RestMethod -Uri $apiUrl -Headers $headers -ErrorAction Stop
+        $release = $releases | Where-Object { -not $_.draft } | Select-Object -First 1
+        if ($release) {
+            $Version = $release.tag_name -replace "^v", ""
+        } else {
+            throw "no non-draft release found"
+        }
         Write-Host "  ✓ Latest: v${Version}" -ForegroundColor Green
     } catch {
-        $Version = "2.2.0"
+        $Version = "3.0.0-RC2"
         Write-Host "  ⚠  Could not detect version, defaulting to v${Version}" -ForegroundColor Yellow
         if (-not $Token) { Write-Host "  ⚠  Set GITHUB_TOKEN env var for private repos" -ForegroundColor Yellow }
     }
