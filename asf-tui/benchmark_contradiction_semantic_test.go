@@ -140,6 +140,8 @@ func TestSemanticContradictionCleanArchitecture(t *testing.T) {
 	t.Logf("Total CIEContradictions: %d", len(result.CIEContradictions))
 	for _, c := range result.CIEContradictions {
 		t.Logf("  [%s] %s: %s", c.Type, c.Severity, c.Summary)
+		t.Logf("    A: [%s] %s", c.StatementA.Source, c.StatementA.OriginalText)
+		t.Logf("    B: [%s] %s", c.StatementB.Source, c.StatementB.OriginalText)
 	}
 
 	if len(result.CIEContradictions) > 0 {
