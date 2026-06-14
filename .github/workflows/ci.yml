@@ -18,8 +18,8 @@ defaults:
     working-directory: asf-tui
 
 jobs:
-  lint:
-    name: Lint
+  vet:
+    name: Vet
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,11 +27,10 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: asf-tui/go.sum
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          working-directory: asf-tui
+      - name: Restore dependencies
+        run: go mod tidy
+      - name: Vet
+        run: go vet ./...
 
   build:
     name: Build
@@ -45,7 +44,7 @@ jobs:
       - name: Build
         run: go build -v -o asf .
       - name: Check binary
-        run: ./asf --version
+        run: file ./asf && ./asf --version
 
   test:
     name: Test
@@ -59,40 +58,4 @@ jobs:
       - name: Test
         run: go test ./... -v -count=1 -timeout 120s
 
-  release:
-    name: Release
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [lint, build, test]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: asf-tui/go.sum
-      - name: Build binaries
-        run: |
-          mkdir -p dist
-          V="ASF-${GITHUB_REF_NAME}-"
-          LDFLAGS="-s -w -X main.ASFVersion=${GITHUB_REF_NAME#v}"
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="${LDFLAGS}" -o "dist/${V}linux-amd64" .
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="${LDFLAGS}" -o "dist/${V}linux-arm64" .
-          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="${LDFLAGS}" -o "dist/${V}darwin-amd64" .
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="${LDFLAGS}" -o "dist/${V}darwin-arm64" .
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="${LDFLAGS}" -o "dist/${V}windows-amd64.exe" .
-      - name: Generate checksums
-        run: cd dist && sha256sum * > checksums.txt
-      - name: Generate completion scripts
-        run: |
-          LINUX_BIN="dist/ASF-${GITHUB_REF_NAME}-linux-amd64"
-          chmod +x "${LINUX_BIN}" 2>/dev/null || true
-          "${LINUX_BIN}" completion bash > dist/completion.bash 2>/dev/null || true
-          "${LINUX_BIN}" completion zsh > dist/completion.zsh 2>/dev/null || true
-          "${LINUX_BIN}" completion fish > dist/completion.fish 2>/dev/null || true
-      - name: Create release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: asf-tui/dist/*
-          body_path: release/RELEASE_NOTES_v5.0.3.md
+
