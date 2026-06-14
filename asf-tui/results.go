@@ -29,13 +29,14 @@ func newResultsModel() resultsModel {
 			{name: "Assumptions"},
 			{name: "Verification"},
 			{name: "Contradictions"},
-			{name: "Trust"},
+			{name: "Trust Chains"},
 			{name: "Impact"},
 			{name: "Blind Spots"},
 			{name: "Controls"},
 			{name: "Reports"},
 			{name: "SDRI"},
 			{name: "Security Design Review"},
+			{name: "SPOFs"},
 		},
 		tabScroll: make(map[int]int),
 	}
@@ -92,17 +93,13 @@ func (m mainModel) viewResults() string {
 		content = renderResultSDRI(s, r)
 	case 10:
 		content = renderResultSecurityDesignReview(s, r)
-	}
-
-	searchBar := ""
-	if m.searchActive {
-		searchBar = s.StatusWarn.Render(fmt.Sprintf("  Search: %s█  [n/N: next/prev match]", m.searchQuery))
+	case 11:
+		content = renderResultSPOFs(s, r)
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		s.Title.Render("Analysis Results"),
 		tabBar,
-		searchBar,
 		content,
 	)
 }
@@ -188,6 +185,10 @@ func resultTabCount(r *AnalysisResult, tab int) int {
 			c = len(r.SDRIComplianceAlignments)
 		}
 		return c
+	case 11:
+		if r.TrustOutput != nil {
+			return len(r.TrustOutput.SinglePointsOfTrust)
+		}
 	}
 	return 0
 }
@@ -459,36 +460,20 @@ func renderResultTrust(s StyleSet, r *AnalysisResult, searchQuery string) string
 		rows = append(rows, chainRows...)
 	}
 
-	if len(r.TrustOutput.SinglePointsOfTrust) > 0 {
-		total := len(r.TrustOutput.SinglePointsOfTrust)
-		matchCount := 0
-		var spofRows []string
-
-		for _, spof := range r.TrustOutput.SinglePointsOfTrust {
-			if searchQuery != "" {
-				if !strings.Contains(strings.ToLower(spof.AssumptionText), q) {
-					continue
-				}
-			}
-			matchCount++
-			spofRows = append(spofRows, fmt.Sprintf("  ⚠ %s", spof.AssumptionText))
-		}
-
-		sectionTitle := fmt.Sprintf("Single Points of Trust Failure (%d)", total)
-		if searchQuery != "" {
-			sectionTitle = fmt.Sprintf("SPOFs (%d of %d matching \"%s\")", matchCount, total, searchQuery)
-		}
-		if matchCount > 0 {
-			rows = append(rows, s.Section.Render(sectionTitle))
-			rows = append(rows, spofRows...)
-			rows = append(rows, "")
-		} else if searchQuery == "" {
-			rows = append(rows, s.Section.Render(sectionTitle))
-		}
-	}
-
 	if len(rows) == 0 {
-		return s.EmptyState.Render("No trust data found.")
+		return s.EmptyState.Render("No trust chain data found.")
+	}
+	return strings.Join(rows, "\n")
+}
+
+func renderResultSPOFs(s StyleSet, r *AnalysisResult) string {
+	if r.TrustOutput == nil || len(r.TrustOutput.SinglePointsOfTrust) == 0 {
+		return s.EmptyState.Render("No single points of trust failure identified.")
+	}
+	var rows []string
+	rows = append(rows, s.Section.Render(fmt.Sprintf("Single Points of Trust Failure (%d)", len(r.TrustOutput.SinglePointsOfTrust))))
+	for _, spof := range r.TrustOutput.SinglePointsOfTrust {
+		rows = append(rows, fmt.Sprintf("  ⚠ %s", spof.AssumptionText))
 	}
 	return strings.Join(rows, "\n")
 }

@@ -54,11 +54,19 @@ func asfLicensePath() string {
 }
 
 func asfLogPath() string {
-	return filepath.Join(asfCacheDir(), "asf.log")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(asfCacheDir(), "asf.log")
+	}
+	return filepath.Join(home, ".asf", "logs", "asf.log")
+}
+
+func asfLogsDir() string {
+	return filepath.Dir(asfLogPath())
 }
 
 func ensureRuntimeDirs() error {
-	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir(), asfEngineDir()} {
+	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir(), asfEngineDir(), asfLogsDir()} {
 		if err := os.MkdirAll(d, 0755); err != nil {
 			return err
 		}

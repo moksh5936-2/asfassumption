@@ -129,6 +129,9 @@ func TestResultTabCount(t *testing.T) {
 	if got := resultTabCount(r, 4); got != 1 {
 		t.Errorf("Trust chains count = %d, want 1", got)
 	}
+	if got := resultTabCount(r, 11); got != 1 {
+		t.Errorf("SPOFs count = %d, want 1", got)
+	}
 }
 
 func TestSupportedExts(t *testing.T) {
@@ -184,7 +187,7 @@ func TestViewForSidebar(t *testing.T) {
 }
 
 func TestSidebarItems(t *testing.T) {
-	expected := 16
+	expected := 18
 	if len(sidebarEntries) != expected {
 		t.Errorf("sidebar has %d entries, want %d", len(sidebarEntries), expected)
 	}
@@ -196,7 +199,7 @@ func TestSidebarItems(t *testing.T) {
 	}
 	// Verify entries that map to resultsView have valid tab indices
 	for i, e := range sidebarEntries {
-		if e.vid == resultsView && (e.tab < 0 || e.tab > 10) {
+		if e.vid == resultsView && (e.tab < 0 || e.tab > 11) {
 			t.Errorf("sidebarEntries[%d] (%s) has invalid tab %d", i, e.name, e.tab)
 		}
 	}
@@ -251,10 +254,10 @@ func TestScrollPercentLogic(t *testing.T) {
 
 func TestNewResultsModel(t *testing.T) {
 	rm := newResultsModel()
-	if len(rm.tabs) != 11 {
-		t.Errorf("results has %d tabs, want 11", len(rm.tabs))
+	if len(rm.tabs) != 12 {
+		t.Errorf("results has %d tabs, want 12", len(rm.tabs))
 	}
-	expected := []string{"Summary", "Assumptions", "Verification", "Contradictions", "Trust", "Impact", "Blind Spots", "Controls", "Reports", "SDRI", "Security Design Review"}
+	expected := []string{"Summary", "Assumptions", "Verification", "Contradictions", "Trust Chains", "Impact", "Blind Spots", "Controls", "Reports", "SDRI", "Security Design Review", "SPOFs"}
 	for i, name := range expected {
 		if rm.tabs[i].name != name {
 			t.Errorf("tab[%d] = %q, want %q", i, rm.tabs[i].name, name)

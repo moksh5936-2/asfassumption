@@ -44,19 +44,10 @@ type sidebarEntry struct {
 	tab  int
 }
 
-type focusManager struct {
-	activeView view
-	subFocus   string
-}
-
 type layoutManager struct {
 	sidebarWidth    int
 	topBarHeight    int
 	bottomBarHeight int
-}
-
-func newFocusManager() focusManager {
-	return focusManager{}
 }
 
 func newLayoutManager() layoutManager {
@@ -125,7 +116,6 @@ type mainModel struct {
 
 	vp        viewport.Model
 	scrollY   map[view]int
-	focusMgr  focusManager
 	layoutMgr layoutManager
 }
 
@@ -137,11 +127,12 @@ var sidebarEntries = []sidebarEntry{
 	{"Dashboard", dashboardView, -1},
 	{"File Explorer", fileBrowserView, -1},
 	{"Analyze", analyzeView, -1},
+	{"Summary", resultsView, 0},
 	{"Assumptions", resultsView, 1},
 	{"Verification", resultsView, 2},
 	{"Contradictions", resultsView, 3},
 	{"Trust Chains", resultsView, 4},
-	{"Single Points of Trust", resultsView, 4},
+	{"Single Points of Trust", resultsView, 11},
 	{"Assumption Impact Analysis", resultsView, 5},
 	{"Blind Spots", resultsView, 6},
 	{"SDRI", resultsView, 9},
@@ -150,6 +141,7 @@ var sidebarEntries = []sidebarEntry{
 	{"Reports / Exports", resultsView, 8},
 	{"Settings", settingsView, -1},
 	{"Help", helpView, -1},
+	{"About", aboutView, -1},
 }
 
 func newMainModel(cfg *Config) *mainModel {
@@ -175,7 +167,6 @@ func newMainModel(cfg *Config) *mainModel {
 		review:      newReviewModel(),
 		validate:    newValidationModel(),
 		help:        newHelpModel(),
-		focusMgr:    newFocusManager(),
 		layoutMgr:   newLayoutManager(),
 	}
 }
@@ -251,9 +242,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentFile = m.analyze.docPath()
 		m.statusMsg = "Analysis complete"
 		m.addRecentFile(m.currentFile)
-		m.saveScroll()
-		m.router.NavigateTo(resultsView)
-		m.vp.YOffset = 0
+		m.navigateTo(resultsView)
 		m.scrollY[resultsView] = 0
 		return m, nil
 
@@ -262,9 +251,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentFile = string(msg)
 		m.statusMsg = "File selected: " + string(msg)
 		m.addRecentFile(string(msg))
-		m.saveScroll()
-		m.router.NavigateTo(analyzeView)
-		m.vp.YOffset = 0
+		m.navigateTo(analyzeView)
 		m.scrollY[analyzeView] = 0
 		return m, nil
 	}
@@ -564,6 +551,12 @@ func (m mainModel) View() string {
 	}
 
 	content := m.renderContent()
+
+	if m.searchActive {
+		searchPrompt := fmt.Sprintf("Search: %s█", m.searchQuery)
+		content = m.styles.StatusWarn.Render(searchPrompt) + "\n" + content
+	}
+
 	sidebar := m.renderSidebar()
 
 	m.vp.Width = m.mainWidth()
@@ -647,10 +640,10 @@ func (m mainModel) renderBottomBar() string {
 	if m.router.currentView == startupView {
 		hints = append(hints, "↑↓=Navigate", "Enter=Select", "Q=Quit")
 	} else {
-		hints = append(hints, "F=Files", "R=Analyze", "/=Search", "?=Help", "Q=Quit")
+		hints = append(hints, "F=Files", "R=Analyze", "?=Help", "Q=Quit")
 		switch m.router.currentView {
 		case resultsView:
-			hints = append(hints, "Tab=Tabs", "E=Export", "C=Clear")
+			hints = append(hints, "/=Search", "Tab=Tabs", "E=Export", "C=Clear")
 		case fileBrowserView:
 			hints = append(hints, "Tab=Preview", ".=Hidden")
 		case settingsView:

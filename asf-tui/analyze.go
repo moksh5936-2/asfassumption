@@ -332,18 +332,6 @@ func (m mainModel) viewAnalyzeProgress() string {
 }
 
 func (m mainModel) updateAnalyze(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case analysisCompleteMsg:
-		m.analyze.running = false
-		m.analyze.result = msg.result
-		m.analyze.progress = 100
-		if m.analyze.cancelled {
-			m.analyze.cancelled = false
-			return m, nil
-		}
-		return m, func() tea.Msg { return navigateMsg{to: resultsView} }
-	}
-
 	var cmd tea.Cmd
 	m.analyze, cmd = m.analyze.Update(msg)
 	return m, cmd

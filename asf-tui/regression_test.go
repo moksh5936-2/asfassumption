@@ -314,8 +314,8 @@ func TestNavigateToUpdatesSidebarSel(t *testing.T) {
 		{"filebrowser", fileBrowserView, 1},
 		{"analyze", analyzeView, 2},
 		{"results", resultsView, 3},
-		{"settings", settingsView, 14},
-		{"help", helpView, 15},
+		{"settings", settingsView, 15},
+		{"help", helpView, 16},
 	}
 
 	for _, tt := range tests {
@@ -357,8 +357,8 @@ func TestNavigateBackUpdatesSidebarSel(t *testing.T) {
 	if m.router.currentView != settingsView {
 		t.Errorf("after second navigateBack: currentView = %v, want settingsView", m.router.currentView)
 	}
-	if m.router.sidebarSel != 14 {
-		t.Errorf("after navigateBack to settings: sidebarSel = %d, want 14", m.router.sidebarSel)
+	if m.router.sidebarSel != 15 {
+		t.Errorf("after navigateBack to settings: sidebarSel = %d, want 15", m.router.sidebarSel)
 	}
 }
 

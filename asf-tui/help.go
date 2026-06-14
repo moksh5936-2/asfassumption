@@ -104,6 +104,7 @@ func (m mainModel) viewHelp() string {
 			"Dashboard                    Quick actions overview",
 			"File Explorer                Browse and select files",
 			"Analyze                      Run architecture analysis",
+			"Summary                      Analysis summary",
 			"Assumptions                  List all extracted assumptions",
 			"Verification                 Verification status & evidence",
 			"Contradictions               Detected contradictions",
@@ -117,6 +118,7 @@ func (m mainModel) viewHelp() string {
 			"Reports / Exports            Export & report options",
 			"Settings                     Application settings",
 			"Help                         Keyboard reference",
+			"About                        Version & project info",
 		}},
 	}
 
