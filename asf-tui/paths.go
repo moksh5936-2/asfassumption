@@ -6,39 +6,24 @@ import (
 	"runtime"
 )
 
-func asfConfigDir() string {
-	configDir, err := os.UserConfigDir()
+func asfRootDir() string {
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(os.TempDir(), "asf", "config")
+		return filepath.Join(os.TempDir(), "asf")
 	}
-	switch runtime.GOOS {
-	case "linux":
-		return filepath.Join(configDir, "asf")
-	case "darwin":
-		return filepath.Join(configDir, "asf")
-	default:
-		return filepath.Join(configDir, "ASF")
-	}
+	return filepath.Join(home, ".asf")
+}
+
+func asfConfigDir() string {
+	return filepath.Join(asfRootDir(), "config")
 }
 
 func asfCacheDir() string {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return filepath.Join(os.TempDir(), "asf", "cache")
-	}
-	return filepath.Join(cacheDir, "asf")
+	return filepath.Join(asfRootDir(), "cache")
 }
 
 func asfDataDir() string {
-	switch runtime.GOOS {
-	case "linux":
-		home, _ := os.UserHomeDir()
-		return filepath.Join(home, ".local", "share", "asf")
-	case "darwin":
-		return asfConfigDir()
-	default:
-		return asfConfigDir()
-	}
+	return filepath.Join(asfRootDir(), "data")
 }
 
 func asfEngineDir() string {
@@ -46,27 +31,27 @@ func asfEngineDir() string {
 }
 
 func asfConfigPath() string {
-	return filepath.Join(asfConfigDir(), "config.yaml")
+	return filepath.Join(asfConfigDir(), "config.json")
 }
 
 func asfLicensePath() string {
-	return filepath.Join(asfConfigDir(), "license.key")
+	return filepath.Join(asfRootDir(), "license.key")
 }
 
 func asfLogPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return filepath.Join(asfCacheDir(), "asf.log")
-	}
-	return filepath.Join(home, ".asf", "logs", "asf.log")
+	return filepath.Join(asfRootDir(), "logs", "asf.log")
 }
 
 func asfLogsDir() string {
 	return filepath.Dir(asfLogPath())
 }
 
+func asfTelemetryPath() string {
+	return filepath.Join(asfConfigDir(), "telemetry.json")
+}
+
 func ensureRuntimeDirs() error {
-	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir(), asfEngineDir(), asfLogsDir()} {
+	for _, d := range []string{asfCacheDir(), asfConfigDir(), asfDataDir(), asfEngineDir(), asfLogsDir(), asfRootDir()} {
 		if err := os.MkdirAll(d, 0755); err != nil {
 			return err
 		}
@@ -82,12 +67,17 @@ func legacyConfigPath() string {
 	return filepath.Join(home, ".config", "asf", "config.yaml")
 }
 
-func oldConfigPath() string {
-	home, err := os.UserHomeDir()
+func xdgConfigPath() string {
+	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".asf", "config.yaml")
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		return filepath.Join(configDir, "asf", "config.yaml")
+	default:
+		return filepath.Join(configDir, "ASF", "config.yaml")
+	}
 }
 
 func oldLicensePath() string {
@@ -96,6 +86,10 @@ func oldLicensePath() string {
 		return ""
 	}
 	return filepath.Join(home, ".asf", "license.key")
+}
+
+func oldLicenseAtRootPath() string {
+	return filepath.Join(asfRootDir(), "license.key")
 }
 
 func ensureDir(path string) error {

@@ -654,6 +654,9 @@ relationships: []
 
 	result, err := engine.RunAnalysis(tmpFile.Name(), "", ModeASFOnly, progress)
 	if err != nil {
+		if strings.Contains(err.Error(), "empty") {
+			return // parser correctly rejects empty components
+		}
 		t.Fatalf("RunAnalysis failed: %v", err)
 	}
 

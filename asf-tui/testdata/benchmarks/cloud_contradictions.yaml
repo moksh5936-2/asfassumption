@@ -1,0 +1,39 @@
+metadata:
+  name: Cloud Infrastructure with Contradictions
+  version: "1.0"
+  purpose: Benchmark for contradiction detection - cloud infrastructure domain
+system:
+  name: CloudNativePlatform
+  description: Cloud infrastructure with known security contradictions
+components:
+  - name: WebApp
+    type: web_application
+    description: Cloud web application
+  - name: CloudStorage
+    type: storage
+    description: Cloud object storage
+  - name: BackupBucket
+    type: storage
+    description: Cloud backup bucket
+  - name: VPC
+    type: network
+    description: Virtual private cloud
+  - name: IAM
+    type: security_service
+    description: Identity and access management
+relationships:
+  - source: WebApp
+    target: CloudStorage
+    protocol: HTTPS
+  - source: CloudStorage
+    target: BackupBucket
+    protocol: HTTPS
+assumptions:
+  - All data encrypted at rest in cloud storage using AES-256
+  - Cloud backup buckets are publicly accessible with no encryption
+  - Private VPC with no public access to any resource
+  - Web application has public internet endpoint for all users
+  - Least privilege access control enforced for all cloud resources
+  - All cloud users have full admin role with unrestricted permissions
+  - CloudTrail logging enabled for all API access
+  - CloudTrail logging is disabled for cost savings on storage

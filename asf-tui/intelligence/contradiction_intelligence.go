@@ -29,6 +29,7 @@ const (
 	ContradictionTypeDATA_CLASSIFICATION ContradictionType = "DATA_CLASSIFICATION"
 	ContradictionTypeIDENTITY            ContradictionType = "IDENTITY"
 	ContradictionTypeGENERAL             ContradictionType = "GENERAL"
+	ContradictionTypeTRUST               ContradictionType = "TRUST"
 	ContradictionTypeTRUST_BOUNDARY      ContradictionType = "TRUST_BOUNDARY"
 	ContradictionTypeCONTROL             ContradictionType = "CONTROL"
 )
@@ -207,12 +208,14 @@ func (ce *ClaimExtractor) extractFromRawText(rawText string) []Statement {
 // CIEEngine (Contradiction Intelligence Engine) is the main contradiction engine.
 type CIEEngine struct {
 	claimExtractor *ClaimExtractor
+	semanticEngine *SemanticEngine
 }
 
 // NewCIEEngine creates a new contradiction intelligence engine.
 func NewCIEEngine() *CIEEngine {
 	return &CIEEngine{
 		claimExtractor: NewClaimExtractor(),
+		semanticEngine: NewSemanticEngine(),
 	}
 }
 
@@ -249,6 +252,13 @@ func (cie *CIEEngine) DetectAllContradictions(arch *ArchDescription, assumptions
 	for i := range contradictions {
 		contradictions[i] = cie.scoreContradiction(contradictions[i], assumptions, arch)
 	}
+
+	// Phase 9 — Semantic contradiction detection
+	semantic := cie.semanticEngine.DetectSemanticContradictions(claims)
+	for i := range semantic {
+		semantic[i] = cie.scoreContradiction(semantic[i], assumptions, arch)
+	}
+	contradictions = append(contradictions, semantic...)
 
 	return contradictions
 }
@@ -1145,6 +1155,21 @@ func (cie *CIEEngine) findClaims(claims []Statement, subjects, predicates []stri
 	return cie.findClaimsFiltered(claims, subjects, predicates, nil)
 }
 
+func matchWord(text, word string) bool {
+	lower := strings.ToLower(word)
+	text = strings.ToLower(text)
+	if len(strings.Fields(lower)) > 1 {
+		return strings.Contains(text, lower)
+	}
+	idx := strings.Index(text, lower)
+	if idx < 0 {
+		return false
+	}
+	beforeOK := idx == 0 || !isWordChar(text[idx-1])
+	afterOK := idx+len(lower) >= len(text) || !isWordChar(text[idx+len(lower)])
+	return beforeOK && afterOK
+}
+
 func (cie *CIEEngine) findClaimsFiltered(claims []Statement, subjects, predicates, exclude []string) []Statement {
 	var matches []Statement
 	for _, c := range claims {
@@ -1152,13 +1177,13 @@ func (cie *CIEEngine) findClaimsFiltered(claims []Statement, subjects, predicate
 		subjMatch := len(subjects) == 0
 		predMatch := len(predicates) == 0
 		for _, s := range subjects {
-			if strings.Contains(text, strings.ToLower(s)) {
+			if matchWord(text, s) {
 				subjMatch = true
 				break
 			}
 		}
 		for _, p := range predicates {
-			if strings.Contains(text, strings.ToLower(p)) {
+			if matchWord(text, p) {
 				predMatch = true
 				break
 			}
@@ -1187,13 +1212,13 @@ func (cie *CIEEngine) hasAssumption(assumptions []Assumption, subjects, predicat
 		subjMatch := len(subjects) == 0
 		predMatch := len(predicates) == 0
 		for _, s := range subjects {
-			if strings.Contains(text, strings.ToLower(s)) {
+			if matchWord(text, s) {
 				subjMatch = true
 				break
 			}
 		}
 		for _, p := range predicates {
-			if strings.Contains(text, strings.ToLower(p)) {
+			if matchWord(text, p) {
 				predMatch = true
 				break
 			}

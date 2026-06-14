@@ -35,7 +35,7 @@ type layoutManager struct {
 
 func newLayoutManager() layoutManager {
 	return layoutManager{
-		sidebarWidth:     28,
+		sidebarWidth:     26,
 		headerHeight:     1,
 		breadcrumbHeight: 1,
 		hintsHeight:      1,
@@ -667,37 +667,30 @@ func (m *mainModel) addRecentFile(path string) {
 func (m mainModel) viewStartup() string {
 	s := m.styles
 
-	foxArt := lipgloss.JoinVertical(lipgloss.Center,
-		s.Fox.Render("             /\\_/\\"),
-		s.Fox.Render("            ( o.o )"),
-		s.Fox.Render("             > ^ <"),
-	)
-
+	fox := s.Fox.Render(` /\_/\  `)
 	title := s.Title.Render("ASF0")
 	subtitle := s.Subtitle.Render("Assumption Security Framework Zero")
-
+	slogans := lipgloss.JoinVertical(lipgloss.Left,
+		s.DimText.Render("     Discover assumptions."),
+		s.DimText.Render("     Verify assumptions."),
+		s.DimText.Render("     Expose contradictions."),
+		s.DimText.Render("     Model trust."),
+	)
 	sep := s.SectionRule.Render(strings.Repeat("─", 40))
 
-	enterKey := s.Accent.Render("  Enter  ") + s.DimText.Render("Start")
-	quitKey := s.Accent.Render("  q     ") + s.DimText.Render("Quit")
-	helpKey := s.Accent.Render("  ?     ") + s.DimText.Render("Help")
-
-	keys := lipgloss.JoinVertical(lipgloss.Left,
-		enterKey,
-		quitKey,
-		helpKey,
-	)
+	enterKey := s.Accent.Render("  Enter  ") + s.DimText.Render("  Start ASF0")
+	helpKey := s.Accent.Render("  ?      ") + s.DimText.Render("  Help")
+	quitKey := s.Accent.Render("  q      ") + s.DimText.Render("  Quit")
+	keys := lipgloss.JoinVertical(lipgloss.Left, enterKey, helpKey, quitKey)
 
 	content := lipgloss.JoinVertical(lipgloss.Center,
 		"",
-		"",
-		"",
-		foxArt,
-		"",
-		"",
+		fox,
 		title,
+		"",
 		subtitle,
 		"",
+		slogans,
 		"",
 		sep,
 		"",
@@ -717,11 +710,43 @@ func (m *mainModel) sidebarWidth() int {
 }
 
 func (m *mainModel) mainWidth() int {
-	w := m.width - m.sidebarWidth() - 1
+	w := m.width - m.sidebarWidth()
 	if w < 20 {
 		w = 20
 	}
 	return w
+}
+
+func (m *mainModel) caseTabName() string {
+	names := []string{"Overview", "Assumptions", "Verification", "Contradictions", "Trust", "Controls", "SDRI"}
+	if m.router.currentView == caseView && m.results.result != nil {
+		idx := m.results.resultTab
+		if idx >= 0 && idx < len(names) {
+			return names[idx]
+		}
+	}
+	return ""
+}
+
+func (m *mainModel) renderBreadcrumbBar() string {
+	if m.router.currentView != caseView || m.results.result == nil {
+		return ""
+	}
+	s := m.styles
+	parts := []string{}
+	parts = append(parts, s.Breadcrumb.Render("ASF0"))
+	parts = append(parts, s.BreadcrumbSep.Render(" / "))
+	fileLabel := filepath.Base(m.activeCase)
+	if fileLabel == "" {
+		fileLabel = "case"
+	}
+	parts = append(parts, s.Breadcrumb.Render(fileLabel))
+	tabName := m.caseTabName()
+	if tabName != "" {
+		parts = append(parts, s.BreadcrumbSep.Render(" / "))
+		parts = append(parts, s.DimText.Render(tabName))
+	}
+	return s.HeaderBar.Render(strings.Join(parts, ""))
 }
 
 func (m *mainModel) mainHeight() int {
@@ -770,20 +795,34 @@ func (m mainModel) View() string {
 	m.vp.Height = m.mainHeight()
 	m.vp.SetContent(content)
 
+	if m.router.currentView == caseView && m.results.resultTab > 0 {
+		ts := m.results.tabStateFor(m.results.resultTab)
+		targetLine := ts.contentOffset + ts.selectedLine
+		if targetLine > 0 {
+			visibleTop := m.vp.YOffset
+			visibleBot := visibleTop + m.vp.Height
+			if targetLine < visibleTop || targetLine >= visibleBot-1 {
+				m.vp.YOffset = targetLine
+			}
+		}
+	}
+
 	mainArea := m.styles.App.Render(m.vp.View())
 
 	body := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainArea)
 
 	headerBar := m.renderHeaderBar()
+	breadcrumbBar := m.renderBreadcrumbBar()
 	hintsBar := m.renderHintsBar()
 	statusBar := m.renderStatusBar()
 
-	return lipgloss.JoinVertical(lipgloss.Top,
-		headerBar,
-		body,
-		hintsBar,
-		statusBar,
-	)
+	views := []string{headerBar}
+	if breadcrumbBar != "" {
+		views = append(views, breadcrumbBar)
+	}
+	views = append(views, body, hintsBar, statusBar)
+
+	return lipgloss.JoinVertical(lipgloss.Top, views...)
 }
 
 func (m mainModel) renderHeaderBar() string {
@@ -872,14 +911,18 @@ func (s StyleSet) sidebarInnerWidth() int {
 func (m mainModel) renderHintsBar() string {
 	s := m.styles
 	var hints []string
+
+	guidance := ""
 	switch m.router.currentView {
 	case analyzeView:
+		guidance = "New Analysis — Select an architecture document to begin analysis"
 		if m.analyze.running {
 			hints = append(hints, s.DimText.Render("Esc Cancel"))
 		} else {
 			hints = append(hints, s.DimText.Render("Enter Select"))
 		}
 	case caseView:
+		guidance = "Case Workspace — Explore findings across tabs"
 		if m.results.resultTab > 0 {
 			ts := m.results.tabStateFor(m.results.resultTab)
 			hints = append(hints, s.DimText.Render("↑↓ Select"))
@@ -897,6 +940,7 @@ func (m mainModel) renderHintsBar() string {
 		hints = append(hints, s.DimText.Render("e Reports"))
 		hints = append(hints, s.DimText.Render("c Clear"))
 	case reviewView:
+		guidance = "Review Queue — Human analyst approval workflow for assumptions"
 		if m.review.editing {
 			hints = append(hints, s.DimText.Render("Enter Save"))
 			hints = append(hints, s.DimText.Render("Esc Cancel"))
@@ -911,9 +955,11 @@ func (m mainModel) renderHintsBar() string {
 			hints = append(hints, s.DimText.Render("Tab Sidebar"))
 		}
 	case validationView:
+		guidance = "Validation Queue — Evidence-backed verification workflow for assumptions"
 		hints = append(hints, s.DimText.Render("↑↓ Navigate"))
 		hints = append(hints, s.DimText.Render("Enter Detail"))
 	case settingsView:
+		guidance = "Settings — Configure analysis engine, output, and preferences"
 		if m.settings.editing {
 			hints = append(hints, s.DimText.Render("←→ Change"))
 			hints = append(hints, s.DimText.Render("Esc Done"))
@@ -922,6 +968,7 @@ func (m mainModel) renderHintsBar() string {
 			hints = append(hints, s.DimText.Render("s Save"))
 		}
 	case reportsView:
+		guidance = "Reports — Generate and export analysis results (PDF, HTML, JSON, CSV, Markdown)"
 		if m.reportsV.showConfirmation || m.reportsV.done {
 			hints = append(hints, s.DimText.Render("Esc Back"))
 		} else {
@@ -929,14 +976,20 @@ func (m mainModel) renderHintsBar() string {
 			hints = append(hints, s.DimText.Render("Enter Choose"))
 		}
 	case helpView:
+		guidance = "Help — Keyboard shortcuts, workflow guide, and documentation"
 		hints = append(hints, s.DimText.Render("↑↓ Scroll"))
 		hints = append(hints, s.DimText.Render("/ Search"))
 	case aboutView:
+		guidance = "About — Version, license, and system information"
 		hints = append(hints, s.DimText.Render("Q Quit"))
 	case localAIView:
+		guidance = "Local AI — Manage Ollama models for AI-assisted analysis"
 		hints = append(hints, s.DimText.Render("↑↓ Select"))
 		hints = append(hints, s.DimText.Render("Enter Action"))
 		hints = append(hints, s.DimText.Render("Esc Cancel"))
+	}
+	if guidance != "" {
+		hints = append(hints, s.Accent.Render(guidance))
 	}
 	if m.router.focus == focusSidebar {
 		hints = append(hints, s.Accent.Render(" [Sidebar]"))

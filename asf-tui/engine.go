@@ -51,6 +51,7 @@ const (
 	StrideElevationPriv   StrideCategory = "Elevation of Privilege"
 )
 
+// Assumption represents a single security assumption extracted during analysis.
 type Assumption struct {
 	ID          string
 	Description string
@@ -238,6 +239,7 @@ type ThreatModelSummary struct {
 	SummaryText        string         `json:"summary_text"`
 }
 
+// AnalysisResult is the complete output of a single architecture security analysis run.
 type AnalysisResult struct {
 	ArchitectureName   string
 	AnalysisDate       time.Time
@@ -341,6 +343,7 @@ type AnalysisProgress struct {
 	Complete bool
 }
 
+// Engine orchestrates the full ASF analysis pipeline.
 type Engine struct {
 	config       *Config
 	strideEngine *StrideEngine
@@ -348,6 +351,7 @@ type Engine struct {
 	archDesc     *ArchDescription
 }
 
+// NewEngine creates a new Engine with the given configuration.
 func NewEngine(cfg *Config) *Engine {
 	if err := ensureRuntimeDirs(); err != nil {
 		debugLog.Printf("runtime dirs: %v", err)

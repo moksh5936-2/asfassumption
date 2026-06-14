@@ -14,6 +14,8 @@ type tabState struct {
 	searchQuery   string
 	filterActive  bool
 	showHelp      bool
+	selectedLine  int // rendered line offset of selected item within tab content
+	contentOffset int // number of viewport lines before tab content starts
 }
 
 type resultsModel struct {
@@ -157,6 +159,7 @@ func (m mainModel) viewResults() string {
 		content = renderResultSDRI(s, r, ts, m.mainWidth()-4)
 	}
 
+	ts.selectedLine = 0
 	tabBar := m.renderResultTabs()
 	breadcrumb := m.renderBreadcrumb(tab, ts)
 	sectionName := m.results.tabs[tab].name
@@ -166,6 +169,7 @@ func (m mainModel) viewResults() string {
 		titleStr = sectionName + " — " + countStr
 	}
 	header := s.PremiumHeader(titleStr, m.mainWidth())
+	ts.contentOffset = strings.Count(lipgloss.JoinVertical(lipgloss.Left, header, tabBar, breadcrumb), "\n") + 1
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
 		tabBar,
@@ -220,13 +224,6 @@ func (m mainModel) renderResultTabs() string {
 	bar := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
 	sep := s.SectionRule.Render(strings.Repeat("─", max(1, m.mainWidth())))
 	return lipgloss.JoinVertical(lipgloss.Left, bar, sep)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func resultTabCount(r *AnalysisResult, tab int) int {
@@ -293,13 +290,11 @@ func (m mainModel) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "up", "k":
 				if !ts.filterActive && ts.selectedIndex > 0 {
 					ts.selectedIndex--
-					m.vp.LineUp(1)
 				}
 				return m, nil
 			case "down", "j":
 				if !ts.filterActive && ts.selectedIndex < maxIdx {
 					ts.selectedIndex++
-					m.vp.LineDown(1)
 				}
 				return m, nil
 			case "enter":
@@ -443,6 +438,8 @@ func renderResultSummary(s StyleSet, r *AnalysisResult, ts *tabState, width int)
 		}
 	}
 
+	wflow := s.renderWorkflow(r)
+
 	result := lipgloss.JoinVertical(lipgloss.Left,
 		infoCard,
 		riskCard,
@@ -450,6 +447,7 @@ func renderResultSummary(s StyleSet, r *AnalysisResult, ts *tabState, width int)
 		contradictCard,
 		trustCard,
 		coverageCard,
+		wflow,
 	)
 
 	if ts.showHelp {
@@ -506,6 +504,7 @@ func renderResultAssumptions(s StyleSet, r *AnalysisResult, ts *tabState, width 
 		if selected {
 			prefix = "▸ "
 			style = s.SelectedItem
+			ts.selectedLine = len(rows)
 		}
 		riskStyle := riskStyle(s, a.Risk)
 		confPct := int(a.Confidence * 100)
@@ -667,6 +666,9 @@ func renderResultVerification(s StyleSet, r *AnalysisResult, ts *tabState, width
 					prevGroup = item.group
 				}
 
+				if selected {
+					ts.selectedLine = len(rows)
+				}
 				rows = append(rows, style.Render(prefix+item.label))
 
 				if ts.detailOpen && selected {
@@ -739,6 +741,9 @@ func renderResultContradictions(s StyleSet, r *AnalysisResult, ts *tabState, wid
 			severityStyle = s.StatusBad
 		} else if c.Severity == RiskLow {
 			severityStyle = s.StatusGood
+		}
+		if selected {
+			ts.selectedLine = 1 + len(items)
 		}
 		items = append(items, style.Render(fmt.Sprintf("%s%s %s",
 			prefix,
@@ -919,6 +924,9 @@ func renderResultTrust(s StyleSet, r *AnalysisResult, ts *tabState, width int) s
 		case "ciso":
 			sectionTag = ""
 		}
+		if selected {
+			ts.selectedLine = len(rows)
+		}
 		rows = append(rows, style.Render(prefix+sectionTag+it.label))
 
 		if ts.detailOpen && selected {
@@ -1076,6 +1084,7 @@ func renderResultControls(s StyleSet, r *AnalysisResult, ts *tabState, width int
 		if selected {
 			prefix = "▸ "
 			style = s.SelectedItem
+			ts.selectedLine = len(rows)
 		}
 		rows = append(rows, style.Render(prefix+c.Description))
 
@@ -1253,6 +1262,7 @@ func renderResultSDRI(s StyleSet, r *AnalysisResult, ts *tabState, width int) st
 		if selected {
 			prefix = "▸ "
 			style = s.SelectedItem
+			ts.selectedLine = 1 + len(rows)
 		}
 		rows = append(rows, style.Render(prefix+it.label))
 		if ts.detailOpen && selected {

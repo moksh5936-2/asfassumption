@@ -27,6 +27,10 @@ type Router struct {
 var sidebarTreeBase = []*treeNode{
 	{label: "CASES", isSection: true},
 	{label: "+ New Analysis", vid: analyzeView, tab: -1},
+	{label: "WORK", isSection: true},
+	{label: "Review Queue", vid: reviewView, tab: -1},
+	{label: "Validation Queue", vid: validationView, tab: -1},
+	{label: "Reports", vid: reportsView, tab: -1},
 	{label: "AI", isSection: true},
 	{label: "🧠 Local AI", vid: localAIView, tab: -1},
 	{label: "SYSTEM", isSection: true},

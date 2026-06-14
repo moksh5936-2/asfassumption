@@ -670,6 +670,9 @@ func parseYAMLArch(path string) (*ArchDescription, error) {
 	if err := yaml.Unmarshal(data, &def); err != nil {
 		return nil, fmt.Errorf("parse yaml: %w", err)
 	}
+	if len(def.Components) == 0 && def.Description == "" && len(def.Assumptions) == 0 {
+		return nil, fmt.Errorf("yaml file %s is valid but contains no components, description, or assumptions; expected 'components' key with at least one entry", filepath.Base(path))
+	}
 	return buildFromDefinition(&def, path)
 }
 
@@ -681,6 +684,9 @@ func parseJSONArch(path string) (*ArchDescription, error) {
 	var def archDefinition
 	if err := json.Unmarshal(data, &def); err != nil {
 		return nil, fmt.Errorf("parse json: %w", err)
+	}
+	if len(def.Components) == 0 && def.Description == "" && len(def.Assumptions) == 0 {
+		return nil, fmt.Errorf("json file %s is valid but contains no components, description, or assumptions; expected 'components' key with at least one entry", filepath.Base(path))
 	}
 	return buildFromDefinition(&def, path)
 }

@@ -1,0 +1,46 @@
+metadata:
+  name: Healthcare PHI Architecture with Contradictions
+  version: "1.0"
+  purpose: Benchmark for contradiction detection - healthcare domain
+  compliance:
+    - HIPAA
+system:
+  name: HealthcareDataPlatform
+  description: Healthcare platform managing PHI with known security contradictions
+components:
+  - name: WebApp
+    type: web_application
+    description: Healthcare provider portal
+  - name: PHIDatabase
+    type: database
+    description: Database storing patient health records
+  - name: BackupService
+    type: storage
+    description: Backup storage service
+  - name: Auth0
+    type: identity_provider
+    description: Identity provider
+  - name: ThirdPartyAnalytics
+    type: external_service
+    description: Third-party analytics provider
+relationships:
+  - source: WebApp
+    target: PHIDatabase
+    protocol: TLS
+  - source: PHIDatabase
+    target: BackupService
+    protocol: TLS
+  - source: ThirdPartyAnalytics
+    target: PHIDatabase
+    protocol: TLS
+assumptions:
+  - All patient records are encrypted at rest in the database
+  - Backup storage keeps plaintext copies of patient records
+  - MFA is enforced for all user authentication
+  - Service accounts use password only with no multi-factor authentication
+  - Access is restricted to authorized medical staff only
+  - Third-party vendor has full database access with no restrictions
+  - Private subnet for all database servers with no public exposure
+  - Database is publicly accessible from the internet for API access
+  - HIPAA compliance is required for the platform
+  - PHI data is stored without encryption in backup archives

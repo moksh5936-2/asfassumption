@@ -204,7 +204,7 @@ func (m mainModel) viewSettings() string {
 
 	header := lipgloss.JoinVertical(lipgloss.Left,
 		s.Title.Render("Settings"),
-		s.Subtitle.Render("Press Enter to edit a value, ←→ to change it, S to save"),
+		s.Subtitle.Render("Configure analysis engine, output, and appearance"),
 	)
 
 	var rows []string

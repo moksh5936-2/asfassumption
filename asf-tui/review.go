@@ -39,8 +39,15 @@ func (m mainModel) viewReview() string {
 	rv := m.review
 
 	if rv.mode == "" || len(rv.assumptions) == 0 {
-		return s.Card("Review Mode",
-			s.EmptyState.Render("No assumptions to review. Run an analysis first."),
+		return s.Card("Review Queue",
+			lipgloss.JoinVertical(lipgloss.Left,
+				s.EmptyState.Render("No review items."),
+				"",
+				s.DimText.Render("  Analysis is fully reviewed."),
+				"",
+				s.DimText.Render("  Open a case from the sidebar and press 'r' to"),
+				s.DimText.Render("  review its assumptions."),
+			),
 			m.mainWidth())
 	}
 
