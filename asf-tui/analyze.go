@@ -128,6 +128,11 @@ func (m *analyzeModel) docPath() string {
 }
 
 func (m *analyzeModel) addEvidence(path string) {
+	for _, existing := range m.evidenceFiles {
+		if existing == path {
+			return
+		}
+	}
 	m.evidenceFiles = append(m.evidenceFiles, path)
 	for i := range m.items {
 		if m.items[i].typ == "evidence" {
@@ -303,8 +308,13 @@ func (m mainModel) viewAnalyze() string {
 	}
 
 	header := s.PremiumHeader("New Analysis", m.mainWidth())
+	breadcrumb := s.Breadcrumb.Render("ASF0") +
+		s.BreadcrumbSep.Render(" / ") +
+		s.BreadcrumbSep.Render("New Analysis / ") +
+		s.BreadcrumbSep.Render("Select Architecture")
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
+		breadcrumb,
 		s.Card("Configuration", strings.Join(rows, "\n"), m.mainWidth()-4),
 	)
 }
@@ -354,7 +364,7 @@ func (m mainModel) updateAnalyze(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.analyze.requestPicker {
 		m.analyze.requestPicker = false
 		m.filePicker = newFilePickerState()
-		m.filePicker.path, _ = getDefaultPath(m.config)
+		m.filePicker.path = m.pickerStartPath(m.analyze.pickerMode)
 		m.filePicker.mode = m.analyze.pickerMode
 		m.filePicker.refresh()
 		m.pickerActive = true

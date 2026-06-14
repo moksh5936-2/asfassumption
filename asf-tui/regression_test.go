@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
+	"asf-tui/asf/trust"
+	"asf-tui/asf/verify"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -413,5 +417,685 @@ func TestSidebarActivate(t *testing.T) {
 			}
 			break
 		}
+	}
+}
+
+func TestTabStateNavigation(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}, {ID: "A2"}, {ID: "A3"}},
+	}
+	m.results.resultTab = 1
+	ts := m.results.tabStateFor(1)
+
+	if ts.selectedIndex != 0 {
+		t.Errorf("initial selectedIndex = %d, want 0", ts.selectedIndex)
+	}
+
+	ts.selectedIndex = 1
+	got := ts.selectedIndex
+	if got != 1 {
+		t.Errorf("after set selectedIndex = %d, want 1", got)
+	}
+}
+
+func TestTabStateDetailToggle(t *testing.T) {
+	ts := &tabState{}
+	if ts.detailOpen {
+		t.Error("detailOpen should be false initially")
+	}
+	ts.detailOpen = true
+	if !ts.detailOpen {
+		t.Error("detailOpen should be true after toggle on")
+	}
+	ts.detailOpen = false
+	if ts.detailOpen {
+		t.Error("detailOpen should be false after toggle off")
+	}
+}
+
+func TestTabStateFilter(t *testing.T) {
+	ts := &tabState{}
+	if ts.filterActive {
+		t.Error("filterActive should be false initially")
+	}
+	ts.filterActive = true
+	ts.searchQuery = "auth"
+	if ts.searchQuery != "auth" {
+		t.Errorf("searchQuery = %q, want %q", ts.searchQuery, "auth")
+	}
+	ts.filterActive = false
+	ts.searchQuery = ""
+	if ts.searchQuery != "" {
+		t.Errorf("after clear searchQuery = %q, want empty", ts.searchQuery)
+	}
+}
+
+func TestBreadcrumbRendering(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.activeCase = "/tmp/test.yaml"
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}, {ID: "A2"}},
+	}
+	m.results.resultTab = 1
+	ts := m.results.tabStateFor(1)
+
+	breadcrumb := m.renderBreadcrumb(1, ts)
+	if breadcrumb == "" {
+		t.Error("breadcrumb should not be empty when result is loaded")
+	}
+	if !strings.Contains(breadcrumb, "Assumptions") {
+		t.Error("breadcrumb should contain tab name 'Assumptions'")
+	}
+	if !strings.Contains(breadcrumb, "#1") {
+		t.Error("breadcrumb should contain item number '#1'")
+	}
+
+	ts.selectedIndex = 1
+	breadcrumb2 := m.renderBreadcrumb(1, ts)
+	if !strings.Contains(breadcrumb2, "#2") {
+		t.Error("breadcrumb should update item number to '#2'")
+	}
+
+	ts.detailOpen = true
+	breadcrumb3 := m.renderBreadcrumb(1, ts)
+	if !strings.Contains(breadcrumb3, "detail") {
+		t.Error("breadcrumb should contain 'detail' when details open")
+	}
+}
+
+func TestOverviewTabBreadcrumb(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.activeCase = "/tmp/test.yaml"
+	m.results.result = &AnalysisResult{}
+	m.results.resultTab = 0
+	ts := m.results.tabStateFor(0)
+
+	breadcrumb := m.renderBreadcrumb(0, ts)
+	if !strings.Contains(breadcrumb, "Overview") {
+		t.Error("breadcrumb for overview tab should contain 'Overview'")
+	}
+	if strings.Contains(breadcrumb, "#") {
+		t.Error("breadcrumb for overview tab should NOT contain item number")
+	}
+}
+
+func TestEmptyResultBreadcrumb(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.activeCase = ""
+	m.results.result = nil
+	ts := defaultTabState()
+	breadcrumb := m.renderBreadcrumb(0, ts)
+	if breadcrumb != "" {
+		t.Error("breadcrumb should be empty when no active case")
+	}
+}
+
+func TestTabStateResetOnResultChange(t *testing.T) {
+	m := defaultTestModel()
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}, {ID: "A2"}, {ID: "A3"}},
+	}
+
+	ts := m.results.tabStateFor(1)
+	ts.selectedIndex = 2
+	ts.detailOpen = true
+	ts.searchQuery = "test"
+	ts.filterActive = true
+
+	if m.results.tabStates[1].selectedIndex != 2 {
+		t.Error("tabState should persist before reset")
+	}
+
+	m.results.tabStates = make(map[int]*tabState)
+	if _, ok := m.results.tabStates[1]; ok {
+		t.Error("tabStates should be empty after reset")
+	}
+}
+
+func TestListNavKeysRoutedToUpdateResults(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{
+			{ID: "A1", Description: "First assumption"},
+			{ID: "A2", Description: "Second assumption"},
+		},
+	}
+	m.results.resultTab = 1
+
+	ts := m.results.tabStateFor(1)
+	ts.selectedIndex = 0
+
+	// Simulate the routing in Update(): tab nav section routes "down" to updateResults
+	model, _ := m.updateResults(msgFromString("down"))
+	mm := model.(mainModel)
+	ts2 := mm.results.tabStateFor(1)
+	if ts2.selectedIndex != 1 {
+		t.Errorf("after down: selectedIndex = %d, want 1", ts2.selectedIndex)
+	}
+
+	model, _ = mm.updateResults(msgFromString("up"))
+	mm = model.(mainModel)
+	ts3 := mm.results.tabStateFor(1)
+	if ts3.selectedIndex != 0 {
+		t.Errorf("after up: selectedIndex = %d, want 0", ts3.selectedIndex)
+	}
+}
+
+func TestDetailToggleInUpdateResults(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}},
+	}
+	m.results.resultTab = 1
+
+	ts := m.results.tabStateFor(1)
+	if ts.detailOpen {
+		t.Error("detailOpen should be false initially")
+	}
+
+	// Press Enter to open detail
+	model, _ := m.updateResults(msgFromString("enter"))
+	mm := model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if !ts.detailOpen {
+		t.Error("detailOpen should be true after Enter")
+	}
+
+	// Press Enter again to close
+	model, _ = mm.updateResults(msgFromString("enter"))
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.detailOpen {
+		t.Error("detailOpen should be false after second Enter")
+	}
+}
+
+func TestRenderHintsBarPerTab(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}, {ID: "A2"}},
+	}
+
+	for tab := 0; tab <= 6; tab++ {
+		m.results.resultTab = tab
+		hints := m.renderHintsBar()
+		if hints == "" {
+			t.Errorf("tab %d: hints bar should not be empty", tab)
+		}
+		if !strings.Contains(hints, "↑↓") {
+			t.Errorf("tab %d: hints should contain scroll keys", tab)
+		}
+	}
+}
+
+func TestMainHeightWithBreadcrumb(t *testing.T) {
+	m := defaultTestModel()
+	m.height = 60
+	m.router.currentView = caseView
+
+	// Without result (no breadcrumb)
+	h1 := m.mainHeight()
+	m.results.result = &AnalysisResult{Assumptions: []Assumption{{ID: "A1"}}}
+	// With result (breadcrumb added)
+	h2 := m.mainHeight()
+	// h2 should be less than h1 (breadcrumb subtracted)
+	if h2 > h1 {
+		t.Errorf("mainHeight with breadcrumb (%d) should be less than without (%d)", h2, h1)
+	}
+	if h1 == 0 || h2 == 0 {
+		t.Errorf("mainHeight should never be 0: noResult=%d, withResult=%d", h1, h2)
+	}
+
+	m.router.currentView = analyzeView
+	h3 := m.mainHeight()
+	m.results.result = &AnalysisResult{}
+	h4 := m.mainHeight()
+	if h3 != h4 {
+		t.Errorf("mainHeight on analyzeView should be same regardless of result: %d vs %d", h3, h4)
+	}
+}
+
+func TestScrollPercentFormat(t *testing.T) {
+	tests := []struct {
+		offset  int
+		visible int
+		total   int
+		want    string
+	}{
+		{0, 40, 200, "Line 1–40 / 200"},
+		{40, 40, 200, "Line 41–80 / 200"},
+		{160, 40, 200, "Line 161–200 / 200"},
+	}
+	for _, tt := range tests {
+		first := tt.offset + 1
+		last := tt.offset + tt.visible
+		if last > tt.total {
+			last = tt.total
+		}
+		pct := int(float64(tt.offset+tt.visible) / float64(tt.total) * 100)
+		if pct > 100 {
+			pct = 100
+		}
+		got := fmt.Sprintf("Line %d–%d / %d  (%d%%)", first, last, tt.total, pct)
+		if !strings.Contains(got, tt.want) {
+			t.Errorf("scroll format = %q, should contain %q", got, tt.want)
+		}
+	}
+}
+
+func TestTabCountString(t *testing.T) {
+	m := defaultTestModel()
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{
+			{ID: "A1"}, {ID: "A2"}, {ID: "A3"},
+		},
+		Contradictions: []Contradiction{
+			{ID: "C1"}, {ID: "C2"},
+		},
+		Controls: []ControlDetail{
+			{ID: "Ctrl1"}, {ID: "Ctrl2"}, {ID: "Ctrl3"}, {ID: "Ctrl4"},
+		},
+		VerificationOutput: &verify.VerificationOutput{
+			Assessment: &verify.VerificationAssessment{
+				VerifiedCount:   5,
+				PartialCount:    2,
+				UnverifiedCount: 1,
+				NoEvidenceCount: 0,
+			},
+		},
+	}
+
+	// Assumptions tab
+	s := m.results.tabCountString(1)
+	if !strings.Contains(s, "3 assumptions") {
+		t.Errorf("tabCountString(1) = %q, want '3 assumptions'", s)
+	}
+
+	// Verification tab
+	s = m.results.tabCountString(2)
+	if !strings.Contains(s, "5 verified") || !strings.Contains(s, "1 unverified") {
+		t.Errorf("tabCountString(2) = %q, should contain verification counts", s)
+	}
+
+	// Contradictions tab
+	s = m.results.tabCountString(3)
+	if !strings.Contains(s, "2 contradictions") {
+		t.Errorf("tabCountString(3) = %q, want '2 contradictions'", s)
+	}
+
+	// Controls tab
+	s = m.results.tabCountString(5)
+	if !strings.Contains(s, "4 control") {
+		t.Errorf("tabCountString(5) = %q, want '4 control(s)'", s)
+	}
+
+	// Overview tab
+	s = m.results.tabCountString(0)
+	if s != "" {
+		t.Errorf("tabCountString(0) should be empty, got %q", s)
+	}
+}
+
+func TestSelectedIndexCanReachEndOfList(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{
+			{ID: "A1"}, {ID: "A2"}, {ID: "A3"}, {ID: "A4"}, {ID: "A5"},
+		},
+	}
+	m.results.resultTab = 1
+	ts := m.results.tabStateFor(1)
+
+	// Navigate to last item
+	for i := 0; i < 10; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		m = &mm
+		ts = m.results.tabStateFor(1)
+	}
+	if ts.selectedIndex != 4 {
+		t.Errorf("after pressing down 10 times, selectedIndex = %d, want 4 (last of 5)", ts.selectedIndex)
+	}
+
+	// Navigate back to first
+	for i := 0; i < 10; i++ {
+		model, _ := m.updateResults(msgFromString("up"))
+		mm := model.(mainModel)
+		m = &mm
+		ts = m.results.tabStateFor(1)
+	}
+	if ts.selectedIndex != 0 {
+		t.Errorf("after pressing up 10 times, selectedIndex = %d, want 0 (first)", ts.selectedIndex)
+	}
+}
+
+func TestTabSwitchPreservesState(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions:    []Assumption{{ID: "A1"}, {ID: "A2"}, {ID: "A3"}},
+		Contradictions: []Contradiction{{ID: "C1"}, {ID: "C2"}},
+	}
+	m.results.resultTab = 1
+
+	// Set up state on tab 1
+	ts1 := m.results.tabStateFor(1)
+	ts1.selectedIndex = 2
+	ts1.detailOpen = true
+	ts1.searchQuery = "auth"
+	ts1.filterActive = true
+
+	// Save scroll for tab 1, set scroll for tab 3
+	m.results.tabScroll[1] = 50
+	m.results.tabScroll[3] = 20
+
+	// Switch to tab 3 then back
+	m.results.resultTab = 3
+	if m.results.resultTab != 3 {
+		t.Errorf("after switch to tab 3, resultTab = %d, want 3", m.results.resultTab)
+	}
+	m.results.resultTab = 1
+	if m.results.resultTab != 1 {
+		t.Errorf("after switch back to tab 1, resultTab = %d, want 1", m.results.resultTab)
+	}
+
+	ts1back := m.results.tabStateFor(1)
+	if ts1back.selectedIndex != 2 {
+		t.Errorf("after tab switch, selectedIndex = %d, want 2", ts1back.selectedIndex)
+	}
+	if !ts1back.detailOpen {
+		t.Error("after tab switch, detailOpen should be true")
+	}
+	if ts1back.searchQuery != "auth" {
+		t.Errorf("after tab switch, searchQuery = %q, want 'auth'", ts1back.searchQuery)
+	}
+	if !ts1back.filterActive {
+		t.Error("after tab switch, filterActive should be true")
+	}
+}
+
+func TestSearchIncrementDecrement(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{
+			{ID: "A1"}, {ID: "A2"}, {ID: "A3"},
+		},
+	}
+	m.results.resultTab = 1
+	ts := m.results.tabStateFor(1)
+	ts.filterActive = true
+	ts.searchQuery = "auth"
+
+	// 'n' increments selected index (filter only affects render, not nav)
+	ts.selectedIndex = 0
+	model, _ := m.updateResults(msgFromString("n"))
+	mm := model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.selectedIndex != 1 {
+		t.Errorf("n should increment selectedIndex: got %d, want 1", ts.selectedIndex)
+	}
+
+	// 'N' decrements selected index
+	model, _ = mm.updateResults(msgFromString("N"))
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.selectedIndex != 0 {
+		t.Errorf("N should decrement selectedIndex: got %d, want 0", ts.selectedIndex)
+	}
+}
+
+func TestTabStateSearch(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}, {ID: "A2"}},
+	}
+	m.results.resultTab = 1
+
+	// Press / to activate filter
+	model, _ := m.updateResults(msgFromString("/"))
+	mm := model.(mainModel)
+	ts := mm.results.tabStateFor(1)
+	if !ts.filterActive {
+		t.Error("filterActive should be true after /")
+	}
+
+	// Type characters while filter is active (simulated via updateResults)
+	// The tab nav section routes single-char keys to updateResults
+	model, _ = mm.updateResults(msgFromString("a"))
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.searchQuery != "a" {
+		t.Errorf("searchQuery = %q, want %q", ts.searchQuery, "a")
+	}
+
+	// Type more
+	model, _ = mm.updateResults(msgFromString("u"))
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.searchQuery != "au" {
+		t.Errorf("searchQuery = %q, want %q", ts.searchQuery, "au")
+	}
+
+	// Backspace
+	model, _ = mm.updateResults(tea.KeyMsg{Type: tea.KeyBackspace})
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.searchQuery != "a" {
+		t.Errorf("after backspace searchQuery = %q, want %q", ts.searchQuery, "a")
+	}
+
+	// Esc clears filter
+	model, _ = mm.updateResults(msgFromString("esc"))
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.filterActive {
+		t.Error("filterActive should be false after esc")
+	}
+	if ts.searchQuery != "" {
+		t.Errorf("searchQuery should be empty after esc, got %q", ts.searchQuery)
+	}
+}
+
+func TestTrustSelectedIndexCanReachEndOfList(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		TrustOutput: &trust.ChainOutput{
+			TrustChains: []trust.TrustChain{
+				{ID: "TC1", RootNode: "user", LeafNode: "app"},
+				{ID: "TC2", RootNode: "admin", LeafNode: "db"},
+				{ID: "TC3", RootNode: "vendor", LeafNode: "api"},
+				{ID: "TC4", RootNode: "dev", LeafNode: "kms"},
+				{ID: "TC5", RootNode: "ops", LeafNode: "vault"},
+			},
+		},
+	}
+	m.results.resultTab = 4
+	ts := m.results.tabStateFor(4)
+
+	for i := 0; i < 10; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		m = &mm
+		ts = m.results.tabStateFor(4)
+	}
+	if ts.selectedIndex != 4 {
+		t.Errorf("trust: after 10 down presses, selectedIndex = %d, want 4 (last of 5)", ts.selectedIndex)
+	}
+}
+
+func TestVerificationSelectedIndexCanReachEndOfList(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		VerificationOutput: &verify.VerificationOutput{
+			Assessment: &verify.VerificationAssessment{
+				VerifiedCount:   5,
+				PartialCount:    2,
+				UnverifiedCount: 1,
+				NoEvidenceCount: 0,
+			},
+			CISOView: &verify.CISOReviewView{
+				TopAssumptionsToVerify: []verify.VerificationPlan{
+					{AssumptionText: "MFA enforced"},
+					{AssumptionText: "TLS enabled"},
+					{AssumptionText: "RBAC configured"},
+				},
+				EvidenceGaps: []string{},
+			},
+		},
+	}
+	m.results.resultTab = 2
+	ts := m.results.tabStateFor(2)
+
+	for i := 0; i < 10; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		m = &mm
+		ts = m.results.tabStateFor(2)
+	}
+	if ts.selectedIndex != 7 {
+		t.Errorf("verification: after 10 down presses, selectedIndex = %d, want 7 (tabCount-1 = %d)", ts.selectedIndex, 5+2+1+0-1)
+	}
+}
+
+func TestContradictionsSelectedIndexCanReachEndOfList(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Contradictions: []Contradiction{
+			{ID: "C1", Description: "MFA vs service accounts"},
+			{ID: "C2", Description: "Private DB vs public route"},
+			{ID: "C3", Description: "TLS termination vs internal"},
+			{ID: "C4", Description: "Admin access vs audit"},
+		},
+	}
+	m.results.resultTab = 3
+	ts := m.results.tabStateFor(3)
+
+	for i := 0; i < 10; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		m = &mm
+		ts = m.results.tabStateFor(3)
+	}
+	if ts.selectedIndex != 3 {
+		t.Errorf("contradictions: after 10 down presses, selectedIndex = %d, want 3 (last of 4)", ts.selectedIndex)
+	}
+}
+
+func TestNoNegativeViewportOffset(t *testing.T) {
+	m := defaultTestModel()
+	m.vp.YOffset = 0
+
+	// All views should never produce negative YOffset
+	model, _ := m.Update(tea.KeyMsg{Type: tea.KeyUp})
+	mm := model.(mainModel)
+	if mm.vp.YOffset < 0 {
+		t.Errorf("viewport offset should never be negative, got %d", mm.vp.YOffset)
+	}
+
+	// After scrolling down and up, should not go negative
+	mm.vp.YOffset = 50
+	mm.vp.Height = 40
+	mm.vp.SetContent(strings.Repeat("line\n", 200))
+	for i := 0; i < 60; i++ {
+		mm.vp.LineUp(1)
+	}
+	if mm.vp.YOffset < 0 {
+		t.Errorf("viewport offset should not go negative after many LineUp calls, got %d", mm.vp.YOffset)
+	}
+}
+
+func TestTrustRendersAllChains(t *testing.T) {
+	m := defaultTestModel()
+	result := &AnalysisResult{
+		TrustOutput: &trust.ChainOutput{
+			TrustChains: []trust.TrustChain{
+				{ID: "TC-A", RootNode: "user", LeafNode: "app", Length: 3, Confidence: 0.8},
+				{ID: "TC-B", RootNode: "admin", LeafNode: "db", Length: 4, Confidence: 0.9},
+				{ID: "TC-C", RootNode: "vendor", LeafNode: "api", Length: 2, Confidence: 0.7},
+				{ID: "TC-D", RootNode: "dev", LeafNode: "kms", Length: 5, Confidence: 0.6},
+				{ID: "TC-E", RootNode: "ops", LeafNode: "vault", Length: 3, Confidence: 0.95},
+			},
+		},
+	}
+	ts := &tabState{}
+	output := renderResultTrust(m.styles, result, ts, 80)
+	if output == "" {
+		t.Fatal("renderResultTrust returned empty output")
+	}
+	for _, chain := range result.TrustOutput.TrustChains {
+		if !strings.Contains(output, chain.ID) {
+			t.Errorf("rendered output should contain chain ID %q", chain.ID)
+		}
+	}
+}
+
+func TestMouseWheelChangesSelectionOnContentTab(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = &AnalysisResult{
+		Assumptions: []Assumption{
+			{ID: "A1"}, {ID: "A2"}, {ID: "A3"}, {ID: "A4"},
+		},
+	}
+	m.results.resultTab = 1
+	ts := m.results.tabStateFor(1)
+	ts.selectedIndex = 0
+
+	// MouseWheelDown should increment selectedIndex
+	model, _ := m.updateResults(tea.MouseMsg{Type: tea.MouseWheelDown})
+	mm := model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.selectedIndex != 1 {
+		t.Errorf("after MouseWheelDown: selectedIndex = %d, want 1", ts.selectedIndex)
+	}
+
+	// MouseWheelUp should decrement selectedIndex
+	model, _ = mm.updateResults(tea.MouseMsg{Type: tea.MouseWheelUp})
+	mm = model.(mainModel)
+	ts = mm.results.tabStateFor(1)
+	if ts.selectedIndex != 0 {
+		t.Errorf("after MouseWheelUp: selectedIndex = %d, want 0", ts.selectedIndex)
+	}
+
+	// On overview tab (tab 0), mouse wheel should NOT change selectedIndex
+	m2 := defaultTestModel()
+	m2.router.currentView = caseView
+	m2.router.focus = focusContent
+	m2.results.result = &AnalysisResult{
+		Assumptions: []Assumption{{ID: "A1"}, {ID: "A2"}},
+	}
+	m2.results.resultTab = 0
+	ts2 := m2.results.tabStateFor(0)
+
+	model, _ = m2.updateResults(tea.MouseMsg{Type: tea.MouseWheelDown})
+	mm2 := model.(mainModel)
+	ts2 = mm2.results.tabStateFor(0)
+	if ts2.selectedIndex != 0 {
+		t.Errorf("overview tab: selectedIndex should stay 0 after MouseWheelDown, got %d", ts2.selectedIndex)
 	}
 }

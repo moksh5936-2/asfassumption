@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -25,18 +26,20 @@ const (
 )
 
 type layoutManager struct {
-	sidebarWidth    int
-	headerHeight    int
-	hintsHeight     int
-	statusBarHeight int
+	sidebarWidth     int
+	headerHeight     int
+	breadcrumbHeight int
+	hintsHeight      int
+	statusBarHeight  int
 }
 
 func newLayoutManager() layoutManager {
 	return layoutManager{
-		sidebarWidth:    28,
-		headerHeight:    1,
-		hintsHeight:     1,
-		statusBarHeight: 1,
+		sidebarWidth:     28,
+		headerHeight:     1,
+		breadcrumbHeight: 1,
+		hintsHeight:      1,
+		statusBarHeight:  1,
 	}
 }
 
@@ -67,23 +70,24 @@ func (v *viewHistory) pop() (view, bool) {
 }
 
 type mainModel struct {
-	ready        bool
-	startup      bool
-	width        int
-	height       int
-	router       Router
-	styles       StyleSet
-	config       *Config
-	engine       *Engine
-	quitting     bool
-	err          error
-	statusMsg    string
-	currentFile  string
-	searchActive bool
-	searchQuery  string
-	recentFiles  []string
-	pickerActive bool
-	filePicker   filePickerState
+	ready           bool
+	startup         bool
+	width           int
+	height          int
+	router          Router
+	styles          StyleSet
+	config          *Config
+	engine          *Engine
+	quitting        bool
+	err             error
+	statusMsg       string
+	currentFile     string
+	searchActive    bool
+	searchQuery     string
+	recentFiles     []string
+	pickerActive    bool
+	filePicker      filePickerState
+	lastPickerPaths map[pickerMode]string
 
 	analyze  analyzeModel
 	results  resultsModel
@@ -116,25 +120,26 @@ func newMainModel(cfg *Config) *mainModel {
 	s := NewStyles(theme)
 	e := NewEngine(cfg)
 	m := &mainModel{
-		startup:     true,
-		router:      newRouter(),
-		styles:      s,
-		config:      cfg,
-		engine:      e,
-		vp:          viewport.New(0, 0),
-		scrollY:     make(map[view]int),
-		filePicker:  newFilePickerState(),
-		analyze:     newAnalyzeModel(e),
-		results:     newResultsModel(),
-		settings:    newSettingsModel(cfg),
-		about:       newAboutModel(),
-		reportsV:    newReportsModel(),
-		review:      newReviewModel(),
-		validate:    newValidationModel(),
-		help:        newHelpModel(),
-		localai:     newLocalAIModel(cfg),
-		layoutMgr:   newLayoutManager(),
-		caseResults: make(map[string]*AnalysisResult),
+		startup:         true,
+		router:          newRouter(),
+		styles:          s,
+		config:          cfg,
+		engine:          e,
+		vp:              viewport.New(0, 0),
+		scrollY:         make(map[view]int),
+		filePicker:      newFilePickerState(),
+		lastPickerPaths: make(map[pickerMode]string),
+		analyze:         newAnalyzeModel(e),
+		results:         newResultsModel(),
+		settings:        newSettingsModel(cfg),
+		about:           newAboutModel(),
+		reportsV:        newReportsModel(),
+		review:          newReviewModel(),
+		validate:        newValidationModel(),
+		help:            newHelpModel(),
+		localai:         newLocalAIModel(cfg),
+		layoutMgr:       newLayoutManager(),
+		caseResults:     make(map[string]*AnalysisResult),
 	}
 	m.router.rebuildCaseEntries(m.getCaseLabels())
 	return m
@@ -245,6 +250,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.activeCase = m.recentFiles[tab]
 					m.results.result = m.caseResults[m.activeCase]
 					m.results.resultTab = 0
+					m.results.tabStates = make(map[int]*tabState)
 				} else if tab >= 0 {
 					m.results.resultTab = tab
 				}
@@ -268,30 +274,45 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Tab navigation for case workspace
 		if m.router.currentView == caseView && m.results.result != nil {
 			switch msg.String() {
-			case "left":
+			case "left", "h":
 				if m.results.resultTab > 0 {
+					m.results.tabScroll[m.results.resultTab] = m.vp.YOffset
 					m.results.resultTab--
-					m.vp.YOffset = 0
+					if y, ok := m.results.tabScroll[m.results.resultTab]; ok {
+						m.vp.YOffset = y
+					} else {
+						m.vp.YOffset = 0
+					}
 				}
 				return m, nil
-			case "right":
+			case "right", "l":
 				if m.results.resultTab < len(m.results.tabs)-1 {
+					m.results.tabScroll[m.results.resultTab] = m.vp.YOffset
 					m.results.resultTab++
-					m.vp.YOffset = 0
+					if y, ok := m.results.tabScroll[m.results.resultTab]; ok {
+						m.vp.YOffset = y
+					} else {
+						m.vp.YOffset = 0
+					}
 				}
 				return m, nil
-			case "h":
-				if m.results.resultTab > 0 {
-					m.results.resultTab--
-					m.vp.YOffset = 0
+			case "up", "k", "down", "j", "enter", "/", "n", "N":
+				if m.results.resultTab > 0 && m.router.focus == focusContent {
+					return m.updateResults(msg)
 				}
-				return m, nil
-			case "l":
-				if m.results.resultTab < len(m.results.tabs)-1 {
-					m.results.resultTab++
-					m.vp.YOffset = 0
+			case "?":
+				if m.router.focus == focusContent {
+					ts := m.results.tabStateFor(m.results.resultTab)
+					ts.showHelp = !ts.showHelp
+					return m, nil
 				}
-				return m, nil
+			case "esc":
+				if m.results.resultTab > 0 && m.router.focus == focusContent {
+					ts := m.results.tabStateFor(m.results.resultTab)
+					if ts.detailOpen || ts.filterActive || ts.showHelp {
+						return m.updateResults(msg)
+					}
+				}
 			}
 		}
 
@@ -301,6 +322,11 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.MouseMsg:
+		// List tabs handle mouse wheel for selection
+		if m.router.currentView == caseView && m.router.focus == focusContent &&
+			m.results.result != nil && m.results.resultTab > 0 {
+			return m.updateResults(msg)
+		}
 		switch msg.Type {
 		case tea.MouseWheelUp:
 			m.vp, _ = m.vp.Update(msg)
@@ -349,6 +375,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.activeCase = docPath
 		m.results.result = msg.result
 		m.results.resultTab = 0
+		m.results.tabStates = make(map[int]*tabState)
 		m.statusMsg = "Analysis complete"
 		m.addRecentFile(docPath)
 		m.router.rebuildCaseEntries(m.getCaseLabels())
@@ -358,7 +385,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case openFilePickerMsg:
 		m.filePicker = newFilePickerState()
-		m.filePicker.path, _ = getDefaultPath(m.config)
+		m.filePicker.path = m.pickerStartPath(msg.mode)
 		m.filePicker.mode = msg.mode
 		m.filePicker.refresh()
 		m.pickerActive = true
@@ -396,12 +423,38 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m *mainModel) pickerStartPath(mode pickerMode) string {
+	if p, ok := m.lastPickerPaths[mode]; ok && p != "" {
+		return p
+	}
+	switch mode {
+	case pickerArchitecture:
+		if m.analyze.docPath() != "" {
+			return filepath.Dir(m.analyze.docPath())
+		}
+	case pickerEvidence:
+		if m.analyze.evPath() != "" {
+			return filepath.Dir(m.analyze.evPath())
+		}
+	}
+	cwd, err := os.Getwd()
+	if err == nil {
+		return cwd
+	}
+	home, err := os.UserHomeDir()
+	if err == nil {
+		return home
+	}
+	return "."
+}
+
 func (m *mainModel) handleFilePicked(msg filePickedMsg) {
 	m.pickerActive = false
-	m.currentFile = msg.path
+	m.lastPickerPaths[msg.mode] = filepath.Dir(msg.path)
 	m.addRecentFile(msg.path)
 	if msg.mode == pickerArchitecture {
 		m.analyze.setDocPath(msg.path)
+		m.currentFile = msg.path
 		m.statusMsg = "Architecture file selected: " + filepath.Base(msg.path)
 	} else {
 		m.analyze.addEvidence(msg.path)
@@ -513,6 +566,7 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 			delete(m.caseResults, m.activeCase)
 			m.results.result = nil
 			m.activeCase = ""
+			m.results.tabStates = make(map[int]*tabState)
 			m.router.rebuildCaseEntries(m.getCaseLabels())
 			m.statusMsg = "Case cleared"
 			m.navigateTo(analyzeView)
@@ -671,7 +725,11 @@ func (m *mainModel) mainWidth() int {
 }
 
 func (m *mainModel) mainHeight() int {
-	h := m.height - m.layoutMgr.headerHeight - m.layoutMgr.hintsHeight - m.layoutMgr.statusBarHeight
+	extra := 0
+	if m.router.currentView == caseView && m.results.result != nil {
+		extra = m.layoutMgr.breadcrumbHeight
+	}
+	h := m.height - m.layoutMgr.headerHeight - extra - m.layoutMgr.hintsHeight - m.layoutMgr.statusBarHeight
 	if h < 5 {
 		h = 5
 	}
@@ -817,68 +875,78 @@ func (m mainModel) renderHintsBar() string {
 	switch m.router.currentView {
 	case analyzeView:
 		if m.analyze.running {
-			hints = append(hints, s.DimText.Render("Esc=Cancel"))
+			hints = append(hints, s.DimText.Render("Esc Cancel"))
 		} else {
-			hints = append(hints, s.DimText.Render("Enter=Select"))
+			hints = append(hints, s.DimText.Render("Enter Select"))
 		}
 	case caseView:
-		hints = append(hints, s.DimText.Render("←→=Tabs"))
-		hints = append(hints, s.DimText.Render("r=Review"))
-		hints = append(hints, s.DimText.Render("v=Validate"))
-		hints = append(hints, s.DimText.Render("e=Reports"))
-		hints = append(hints, s.DimText.Render("c=Clear"))
-		hints = append(hints, s.DimText.Render("/=Search"))
+		if m.results.resultTab > 0 {
+			ts := m.results.tabStateFor(m.results.resultTab)
+			hints = append(hints, s.DimText.Render("↑↓ Select"))
+			hints = append(hints, s.DimText.Render("Enter Detail"))
+			if ts.filterActive || ts.searchQuery != "" {
+				hints = append(hints, s.Accent.Render(fmt.Sprintf("filter: %s", ts.searchQuery)))
+			}
+			hints = append(hints, s.DimText.Render("/ Search"))
+		} else {
+			hints = append(hints, s.DimText.Render("↑↓ Scroll"))
+		}
+		hints = append(hints, s.DimText.Render("←→ Tabs"))
+		hints = append(hints, s.DimText.Render("r Review"))
+		hints = append(hints, s.DimText.Render("v Validate"))
+		hints = append(hints, s.DimText.Render("e Reports"))
+		hints = append(hints, s.DimText.Render("c Clear"))
 	case reviewView:
 		if m.review.editing {
-			hints = append(hints, s.DimText.Render("Enter=Save"))
-			hints = append(hints, s.DimText.Render("Esc=Cancel"))
+			hints = append(hints, s.DimText.Render("Enter Save"))
+			hints = append(hints, s.DimText.Render("Esc Cancel"))
 		} else {
-			hints = append(hints, s.DimText.Render("↑↓=Navigate"))
-			hints = append(hints, s.DimText.Render("Enter=Detail"))
-			hints = append(hints, s.Accent.Render("s=Accept"))
-			hints = append(hints, s.DimText.Render("r=Reject"))
-			hints = append(hints, s.DimText.Render("m=Modify"))
-			hints = append(hints, s.DimText.Render("n=Notes"))
-			hints = append(hints, s.DimText.Render("v=Validate"))
-			hints = append(hints, s.DimText.Render("Tab=Sidebar"))
+			hints = append(hints, s.DimText.Render("↑↓ Navigate"))
+			hints = append(hints, s.DimText.Render("Enter Detail"))
+			hints = append(hints, s.Accent.Render("s Accept"))
+			hints = append(hints, s.DimText.Render("r Reject"))
+			hints = append(hints, s.DimText.Render("m Modify"))
+			hints = append(hints, s.DimText.Render("n Notes"))
+			hints = append(hints, s.DimText.Render("v Validate"))
+			hints = append(hints, s.DimText.Render("Tab Sidebar"))
 		}
 	case validationView:
-		hints = append(hints, s.DimText.Render("↑↓=Navigate"))
-		hints = append(hints, s.DimText.Render("Enter=Detail"))
+		hints = append(hints, s.DimText.Render("↑↓ Navigate"))
+		hints = append(hints, s.DimText.Render("Enter Detail"))
 	case settingsView:
 		if m.settings.editing {
-			hints = append(hints, s.DimText.Render("←→=Change"))
-			hints = append(hints, s.DimText.Render("Esc=Done"))
+			hints = append(hints, s.DimText.Render("←→ Change"))
+			hints = append(hints, s.DimText.Render("Esc Done"))
 		} else {
-			hints = append(hints, s.DimText.Render("Enter=Edit"))
-			hints = append(hints, s.DimText.Render("s=Save"))
+			hints = append(hints, s.DimText.Render("Enter Edit"))
+			hints = append(hints, s.DimText.Render("s Save"))
 		}
 	case reportsView:
 		if m.reportsV.showConfirmation || m.reportsV.done {
-			hints = append(hints, s.DimText.Render("Esc=Back"))
+			hints = append(hints, s.DimText.Render("Esc Back"))
 		} else {
-			hints = append(hints, s.DimText.Render("↑↓=Select"))
-			hints = append(hints, s.DimText.Render("Enter=Choose"))
+			hints = append(hints, s.DimText.Render("↑↓ Select"))
+			hints = append(hints, s.DimText.Render("Enter Choose"))
 		}
 	case helpView:
-		hints = append(hints, s.DimText.Render("↑↓=Scroll"))
-		hints = append(hints, s.DimText.Render("/=Search"))
+		hints = append(hints, s.DimText.Render("↑↓ Scroll"))
+		hints = append(hints, s.DimText.Render("/ Search"))
 	case aboutView:
-		hints = append(hints, s.DimText.Render("Q=Quit"))
+		hints = append(hints, s.DimText.Render("Q Quit"))
 	case localAIView:
-		hints = append(hints, s.DimText.Render("↑↓=Select"))
-		hints = append(hints, s.DimText.Render("Enter=Action"))
-		hints = append(hints, s.DimText.Render("Esc=Cancel"))
+		hints = append(hints, s.DimText.Render("↑↓ Select"))
+		hints = append(hints, s.DimText.Render("Enter Action"))
+		hints = append(hints, s.DimText.Render("Esc Cancel"))
 	}
 	if m.router.focus == focusSidebar {
 		hints = append(hints, s.Accent.Render(" [Sidebar]"))
-		hints = append(hints, s.DimText.Render("Tab=Content"))
+		hints = append(hints, s.DimText.Render("Tab Content"))
 	} else {
-		hints = append(hints, s.DimText.Render("Tab=Sidebar"))
+		hints = append(hints, s.DimText.Render("Tab Sidebar"))
 	}
-	hints = append(hints, s.DimText.Render("?=Help"))
-	hints = append(hints, s.DimText.Render("q=Back"))
-	hints = append(hints, s.DimText.Render("Q=Quit"))
+	hints = append(hints, s.DimText.Render("? Help"))
+	hints = append(hints, s.DimText.Render("q Back"))
+	hints = append(hints, s.DimText.Render("Q Quit"))
 
 	scrollPct := m.viewportScrollPercent()
 	if scrollPct != "" {
@@ -929,7 +997,12 @@ func (m mainModel) viewportScrollPercent() string {
 	if pct > 100 {
 		pct = 100
 	}
-	return fmt.Sprintf("%d%%", pct)
+	first := offset + 1
+	last := offset + visible
+	if last > total {
+		last = total
+	}
+	return fmt.Sprintf("Line %d–%d / %d  (%d%%)", first, last, total, pct)
 }
 
 func (m mainModel) renderContent() string {

@@ -70,6 +70,11 @@ func (m mainModel) viewHelp() string {
 			".           Toggle hidden files",
 			"Tab         Toggle preview panel",
 			"/           Search files",
+			"~           Jump to home directory",
+			"g           Jump to root directory",
+			"d           Jump to Downloads",
+			"D           Jump to Desktop",
+			"r           Refresh current directory",
 			"Esc         Cancel / close picker",
 		}},
 		{"Sidebar Tree", []string{

@@ -119,6 +119,14 @@ type StyleSet struct {
 	RiskHigh         lipgloss.Style
 	RiskMedium       lipgloss.Style
 	RiskLow          lipgloss.Style
+
+	SelectedItem  lipgloss.Style
+	DetailBox     lipgloss.Style
+	Breadcrumb    lipgloss.Style
+	BreadcrumbSep lipgloss.Style
+	SearchActive  lipgloss.Style
+	SearchMatch   lipgloss.Style
+	FilterPrompt  lipgloss.Style
 }
 
 func NewStyles(t Theme) StyleSet {
@@ -415,6 +423,38 @@ func NewStyles(t Theme) StyleSet {
 		RiskLow: lipgloss.NewStyle().
 			Foreground(t.RiskLow).
 			Bold(true),
+
+		SelectedItem: lipgloss.NewStyle().
+			Foreground(t.Accent).
+			Bold(true),
+
+		DetailBox: lipgloss.NewStyle().
+			Foreground(t.Text).
+			Background(t.CardBg).
+			Padding(0, 1).
+			MarginTop(1).
+			MarginBottom(1),
+
+		Breadcrumb: lipgloss.NewStyle().
+			Foreground(t.Accent).
+			Bold(true),
+
+		BreadcrumbSep: lipgloss.NewStyle().
+			Foreground(t.DimText),
+
+		SearchActive: lipgloss.NewStyle().
+			Foreground(t.Warning).
+			Bold(true),
+
+		SearchMatch: lipgloss.NewStyle().
+			Foreground(t.Accent).
+			Background(t.CardBg).
+			Bold(true),
+
+		FilterPrompt: lipgloss.NewStyle().
+			Foreground(t.Accent).
+			Background(t.CardBg).
+			Padding(0, 1),
 	}
 }
 

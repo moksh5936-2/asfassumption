@@ -70,18 +70,23 @@ func TestCountRisk(t *testing.T) {
 	}
 }
 
+func defaultTabState() *tabState {
+	return &tabState{}
+}
+
 func TestEmptyResultRendersEmptyStates(t *testing.T) {
 	s := NewStyles(Themes["ASF0"])
 	r := &AnalysisResult{}
+	ts := defaultTabState()
 
 	cases := []struct {
 		name string
 		fn   func() string
 	}{
-		{"Assumptions", func() string { return renderResultAssumptions(s, r, "", 80) }},
-		{"Verification", func() string { return renderResultVerification(s, r, 80) }},
-		{"Contradictions", func() string { return renderResultContradictions(s, r, "", 80) }},
-		{"Controls", func() string { return renderResultControls(s, r, "", 80) }},
+		{"Assumptions", func() string { return renderResultAssumptions(s, r, ts, 80) }},
+		{"Verification", func() string { return renderResultVerification(s, r, ts, 80) }},
+		{"Contradictions", func() string { return renderResultContradictions(s, r, ts, 80) }},
+		{"Controls", func() string { return renderResultControls(s, r, ts, 80) }},
 		{"BlindSpots", func() string { return renderResultBlindSpots(s, r, 80) }},
 		{"Impact", func() string { return renderResultImpact(s, r, 80) }},
 	}
@@ -132,16 +137,22 @@ func TestResultTabCount(t *testing.T) {
 }
 
 func TestSupportedExts(t *testing.T) {
-	exts := []string{".yaml", ".yml", ".json", ".md", ".mmd", ".drawio", ".svg", ".pdf", ".docx", ".txt"}
-	for _, ext := range exts {
-		if !supportedExts[ext] {
-			t.Errorf("expected %q to be supported", ext)
+	archList := []string{".yaml", ".yml", ".json", ".md", ".mmd", ".drawio", ".svg", ".pdf", ".docx", ".txt"}
+	for _, ext := range archList {
+		if !archExts[ext] {
+			t.Errorf("expected %q to be in archExts", ext)
 		}
 	}
-	if supportedExts[".exe"] {
+	evList := []string{".csv", ".json", ".yaml", ".yml", ".txt", ".md", ".pdf", ".docx"}
+	for _, ext := range evList {
+		if !evidenceExts[ext] {
+			t.Errorf("expected %q to be in evidenceExts", ext)
+		}
+	}
+	if archExts[".exe"] || evidenceExts[".exe"] {
 		t.Error("expected .exe to be unsupported")
 	}
-	if supportedExts[".go"] {
+	if archExts[".go"] || evidenceExts[".go"] {
 		t.Error("expected .go to be unsupported")
 	}
 }
