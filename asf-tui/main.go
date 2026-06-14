@@ -21,7 +21,7 @@ const (
 )
 
 func printUsage() {
-	fmt.Printf("ASF v%s — Architecture Security Framework\n", ASFVersion)
+	fmt.Printf("ASF0 v%s — Security Assumption Framework\n", ASFVersion)
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  asf                        Launch the TUI")
@@ -49,14 +49,14 @@ func main() {
 		asfLog = log.New(io.Discard, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
 		debugLog = log.New(io.Discard, "[asf-debug] ", log.Ltime|log.Lshortfile)
 	}
-	asfLog.Printf("ASF v%s starting", ASFVersion)
+	asfLog.Printf("ASF0 v%s starting", ASFVersion)
 
 	args := os.Args[1:]
 
 	if len(args) > 0 {
 		switch args[0] {
 		case "--version", "-v":
-			fmt.Printf("ASF v%s\n", ASFVersion)
+			fmt.Printf("ASF0 v%s\n", ASFVersion)
 			if msg := VersionCheckMessage(); msg != "" {
 				fmt.Println(msg)
 			}
@@ -65,7 +65,7 @@ func main() {
 			if msg := VersionCheckMessage(); msg != "" {
 				fmt.Println(msg)
 			} else {
-				fmt.Printf("ASF v%s is up to date.\n", ASFVersion)
+				fmt.Printf("ASF0 v%s is up to date.\n", ASFVersion)
 			}
 			os.Exit(ExitSuccess)
 		case "--license":

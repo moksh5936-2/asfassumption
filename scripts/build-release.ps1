@@ -3,7 +3,7 @@
 # Requires: Go 1.24+
 
 param(
-    [string]$Version = "1.0.0"
+    [string]$Version = "5.0.0"
 )
 
 $ErrorActionPreference = "Stop"

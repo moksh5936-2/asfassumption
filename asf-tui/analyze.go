@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,7 +17,7 @@ type analysisCompleteMsg struct {
 type menuItem struct {
 	label string
 	value string
-	typ   string // "path", "mode", "action"
+	typ   string // "path", "mode", "evidence", "action"
 }
 
 type analyzeModel struct {
@@ -25,6 +26,12 @@ type analyzeModel struct {
 
 	inputMode string
 	inputBuf  string
+
+	architectureFile string
+	evidenceFiles    []string
+
+	requestPicker bool
+	pickerMode    pickerMode
 
 	mode      string
 	running   bool
@@ -39,8 +46,8 @@ type analyzeModel struct {
 func newAnalyzeModel(engine *Engine) analyzeModel {
 	return analyzeModel{
 		items: []menuItem{
-			{label: "Document Path", value: "", typ: "path"},
-			{label: "Evidence Path", value: "", typ: "path"},
+			{label: "Architecture File", value: "", typ: "path"},
+			{label: "Evidence Files", value: "0 files", typ: "evidence"},
 			{label: "", value: "", typ: "sep"},
 			{label: ModeASFOnly, value: ModeASFOnly, typ: "mode"},
 			{label: ModeASFAndAI, value: ModeASFAndAI, typ: "mode"},
@@ -65,10 +72,6 @@ func (m *analyzeModel) Update(msg tea.Msg) (analyzeModel, tea.Cmd) {
 				m.statusMsg = "Analysis cancelled"
 			}
 			return *m, nil
-		}
-
-		if m.inputMode != "" {
-			return m.handleTextInput(msg)
 		}
 
 		switch msg.String() {
@@ -109,70 +112,76 @@ func (m *analyzeModel) moveSel(dir int) {
 	}
 }
 
-func (m *analyzeModel) handleTextInput(msg tea.KeyMsg) (analyzeModel, tea.Cmd) {
-	switch msg.String() {
-	case "enter":
-		for i := range m.items {
-			if m.items[i].typ == "path" && m.inputMode == m.items[i].label {
-				m.items[i].value = m.inputBuf
-				if m.inputMode == "Document Path" {
-					m.docPath() // just to sync
-				}
-				break
-			}
-		}
-		m.inputMode = ""
-		m.inputBuf = ""
-	case "esc":
-		m.inputMode = ""
-		m.inputBuf = ""
-	case "backspace":
-		if len(m.inputBuf) > 0 {
-			m.inputBuf = m.inputBuf[:len(m.inputBuf)-1]
-		}
-	case "space":
-		m.inputBuf += " "
-	default:
-		if len(msg.String()) == 1 {
-			m.inputBuf += msg.String()
-		}
-	}
-	return *m, nil
-}
-
 func (m *analyzeModel) setDocPath(path string) {
+	m.architectureFile = path
 	for i := range m.items {
-		if m.items[i].typ == "path" && m.items[i].label == "Document Path" {
-			m.items[i].value = path
+		if m.items[i].typ == "path" && m.items[i].label == "Architecture File" {
+			if path != "" {
+				m.items[i].value = filepath.Base(path)
+			} else {
+				m.items[i].value = ""
+			}
 			return
 		}
 	}
 }
 
 func (m *analyzeModel) docPath() string {
-	for _, it := range m.items {
-		if it.typ == "path" && it.label == "Document Path" {
-			return it.value
+	return m.architectureFile
+}
+
+func (m *analyzeModel) addEvidence(path string) {
+	m.evidenceFiles = append(m.evidenceFiles, path)
+	for i := range m.items {
+		if m.items[i].typ == "evidence" {
+			m.items[i].value = fmt.Sprintf("%d files", len(m.evidenceFiles))
+			return
 		}
 	}
-	return ""
+}
+
+func (m *analyzeModel) removeEvidence(idx int) {
+	if idx >= 0 && idx < len(m.evidenceFiles) {
+		m.evidenceFiles = append(m.evidenceFiles[:idx], m.evidenceFiles[idx+1:]...)
+		for i := range m.items {
+			if m.items[i].typ == "evidence" {
+				if len(m.evidenceFiles) == 0 {
+					m.items[i].value = "0 files"
+				} else {
+					m.items[i].value = fmt.Sprintf("%d files", len(m.evidenceFiles))
+				}
+				return
+			}
+		}
+	}
+}
+
+func (m *analyzeModel) clearEvidence() {
+	m.evidenceFiles = nil
+	for i := range m.items {
+		if m.items[i].typ == "evidence" {
+			m.items[i].value = "0 files"
+			return
+		}
+	}
 }
 
 func (m *analyzeModel) evPath() string {
-	for _, it := range m.items {
-		if it.typ == "path" && it.label == "Evidence Path" {
-			return it.value
-		}
+	if len(m.evidenceFiles) == 0 {
+		return ""
 	}
-	return ""
+	return m.evidenceFiles[0]
 }
 
 func (m *analyzeModel) handleEnter() (analyzeModel, tea.Cmd) {
 	item := m.items[m.selected]
 	switch item.typ {
 	case "path":
-		m.inputMode = item.label
-		m.inputBuf = item.value
+		m.requestPicker = true
+		m.pickerMode = pickerArchitecture
+	case "evidence":
+		m.requestPicker = true
+		m.pickerMode = pickerEvidence
 	case "mode":
 		m.mode = item.value
 	case "action":
@@ -184,7 +193,7 @@ func (m *analyzeModel) handleEnter() (analyzeModel, tea.Cmd) {
 func (m *analyzeModel) startAnalysis() (analyzeModel, tea.Cmd) {
 	path := m.docPath()
 	if path == "" {
-		m.statusMsg = "Please set a document path first (select Document Path, press Enter)"
+		m.statusMsg = "Please select an architecture file first"
 		return *m, nil
 	}
 	m.running = true
@@ -251,7 +260,7 @@ func (m mainModel) viewAnalyze() string {
 			continue
 		}
 
-		if i == am.selected && am.inputMode == item.label {
+		if i == am.selected && am.inputMode == item.label && item.typ == "path" {
 			editStr := fmt.Sprintf("  %s: %s█", item.label, am.inputBuf)
 			rows = append(rows, s.MenuSelected.Render("▸ "+editStr))
 			continue
@@ -263,19 +272,26 @@ func (m mainModel) viewAnalyze() string {
 
 		if i == am.selected {
 			style = s.MenuSelected
-			prefix = "▸ "
+			prefix = s.Fox.Render("▶ ")
 		}
 
 		switch item.typ {
 		case "path":
 			if display == "" {
-				display = "Select an architecture file to begin."
+				display = s.DimText.Render("[ Select Architecture File ]")
 			}
 			rows = append(rows, style.Render(fmt.Sprintf("%s%s: %s", prefix, item.label, display)))
+		case "evidence":
+			rows = append(rows, style.Render(fmt.Sprintf("%s%s: %s", prefix, item.label, display)))
+			if i == am.selected && len(am.evidenceFiles) > 0 {
+				for _, ef := range am.evidenceFiles {
+					rows = append(rows, s.DimText.Render("    "+s.StatusGood.Render("✓")+" "+filepath.Base(ef)))
+				}
+			}
 		case "mode":
 			marker := ""
 			if am.mode == item.value {
-				marker = s.StatusGood.Render(" ✓")
+				marker = " " + s.StatusGood.Render("●")
 			}
 			rows = append(rows, style.Render(fmt.Sprintf("%s%s%s", prefix, item.label, marker)))
 		case "action":
@@ -283,14 +299,22 @@ func (m mainModel) viewAnalyze() string {
 		}
 	}
 
-	if am.statusMsg != "" {
-		rows = append(rows, "", s.StatusWarn.Render("  "+am.statusMsg))
+	if len(am.evidenceFiles) > 0 {
+		if am.selected < 0 || am.items[am.selected].typ != "evidence" {
+			for _, ef := range am.evidenceFiles {
+				rows = append(rows, s.DimText.Render("  "+s.StatusGood.Render("✓")+" "+filepath.Base(ef)))
+			}
+		}
 	}
 
+	if am.statusMsg != "" {
+		rows = append(rows, "", s.CardAccent("", "  "+s.StatusWarn.Render(am.statusMsg), 40))
+	}
+
+	header := s.PremiumHeader("New Analysis", m.mainWidth())
 	return lipgloss.JoinVertical(lipgloss.Left,
-		s.Title.Render("Analyze Architecture"),
-		s.Subtitle.Render("Set document path, select mode, then Start Analysis"),
-		s.BorderBox.Render(lipgloss.JoinVertical(lipgloss.Left, rows...)),
+		header,
+		s.Card("Configuration", strings.Join(rows, "\n"), m.mainWidth()-4),
 	)
 }
 
@@ -298,41 +322,51 @@ func (m mainModel) viewAnalyzeProgress() string {
 	s := m.styles
 
 	if m.analyze.cancelled {
-		return lipgloss.JoinVertical(lipgloss.Center,
-			s.Title.Render("Analyze Architecture"),
+		return s.Card("", lipgloss.JoinVertical(lipgloss.Center,
 			s.StatusWarn.Render("Analysis cancelled."),
-			s.SectionItem.Render("Press Esc or select a different view."),
-		)
+			s.DimText.Render("Press Esc or select a different view."),
+		), m.mainWidth()-4)
 	}
 
-	barWidth := 50
-	if m.width > 80 {
-		barWidth = m.width - 20
+	progress := m.analyze.progress
+	if progress < 0 {
+		progress = 0
 	}
-	filled := int(float64(barWidth) * m.analyze.progress / 100.0)
-	if filled > barWidth {
-		filled = barWidth
+	if progress > 100 {
+		progress = 100
 	}
-	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
 
-	pctStr := fmt.Sprintf("%.0f%%", m.analyze.progress)
+	fox := s.Fox.Render(FoxLogoSmall())
 
 	return lipgloss.JoinVertical(lipgloss.Center,
-		s.Title.Render("Analyzing Architecture"),
-		s.Subtitle.Render("Press Esc to cancel"),
-		s.BorderBox.Render(
-			lipgloss.JoinVertical(lipgloss.Center,
-				s.SectionItem.Render(m.analyze.stage),
-				"",
-				s.ProgressBar.Render(bar),
-				s.Value.Render(pctStr),
-			),
-		),
+		"",
+		fox,
+		"",
+		s.PremiumHeader("Analysis in Progress", m.mainWidth()),
+		"",
+		s.Card("", lipgloss.JoinVertical(lipgloss.Center,
+			"",
+			s.DimText.Render(m.analyze.stage),
+			"",
+			"  "+s.ProgressWithLabel(progress, 40)+"  ",
+			"",
+			s.Accent.Render(fmt.Sprintf("%.0f%%", progress)),
+		), m.mainWidth()-4),
+		"",
+		s.DimText.Render("  Press Esc to cancel  "),
 	)
 }
 
 func (m mainModel) updateAnalyze(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.analyze, cmd = m.analyze.Update(msg)
+	if m.analyze.requestPicker {
+		m.analyze.requestPicker = false
+		m.filePicker = newFilePickerState()
+		m.filePicker.path, _ = getDefaultPath(m.config)
+		m.filePicker.mode = m.analyze.pickerMode
+		m.filePicker.refresh()
+		m.pickerActive = true
+	}
 	return m, cmd
 }

@@ -30,76 +30,55 @@ func (m mainModel) viewValidation() string {
 	v := m.validate
 
 	if len(v.assumptions) == 0 {
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Validation Mode"),
-			s.Subtitle.Render("No assumptions to validate. Run an analysis first."),
-		)
+		return s.Card("Validation Mode",
+			s.EmptyState.Render("No assumptions to validate. Run an analysis first."),
+			m.mainWidth())
 	}
 
 	switch v.mode {
 	case "browse":
-		return v.renderValidationBrowse(s)
+		return v.renderValidationBrowse(s, m.mainWidth()-4)
 	case "detail":
-		return v.renderValidationDetail(s)
+		return v.renderValidationDetail(s, m.mainWidth()-4)
 	default:
 		return "Unknown validation mode"
 	}
 }
 
-func (v *validationModel) renderValidationBrowse(s StyleSet) string {
-	header := s.Title.Render("Validation Mode")
-	sub := s.Subtitle.Render("Developer evaluation view — every assumption shown with full traceability.")
+func (v *validationModel) renderValidationBrowse(s StyleSet, width int) string {
+	header := s.PremiumHeader("Validation Queue", width+4)
 
 	var items []string
 	for i, a := range v.assumptions {
-		prefix := "  "
-		style := s.SectionItem
-		if i == v.currentIdx {
-			prefix = "▸ "
-			style = s.MenuSelected
-		}
-
 		confPct := int(a.Confidence * 100)
-		confStyle := s.Value
-		if confPct >= 80 {
-			confStyle = s.StatusGood
-		} else if confPct >= 50 {
-			confStyle = s.StatusWarn
+		done := confPct >= 80
+		taskCard := s.TaskCard(a.ID, a.Description, done, width)
+		if i == v.currentIdx {
+			items = append(items, s.Fox.Render("▶ ")+taskCard)
 		} else {
-			confStyle = s.StatusBad
+			items = append(items, "  "+taskCard)
 		}
-
-		riskStyle := riskStyle(s, a.Risk)
-
-		label := fmt.Sprintf("%s[%s] %s %s %s",
-			prefix,
-			a.ID,
-			riskStyle.Render(padRight(string(a.Risk), 10)),
-			truncateStr(a.Description, 50),
-			confStyle.Render(fmt.Sprintf("(%d%% conf)", confPct)),
-		)
-		items = append(items, style.Render(label))
 	}
 
-	list := lipgloss.JoinVertical(lipgloss.Left, items...)
+	list := strings.Join(items, "\n")
+	help := s.SectionRule.Render(strings.Repeat("─", max(1, width)))
+	help += "\n" + s.DimText.Render("  ↑↓ Navigate  |  Enter Detail  |  Esc=Back")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
-		header, sub, "",
-		s.BorderBox.Render(list), "",
-		s.SectionItem.Render("↑↓ navigate | Enter detail | Esc back"),
+		header,
+		"",
+		list,
+		"",
+		help,
 	)
 }
 
-func (v *validationModel) renderValidationDetail(s StyleSet) string {
+func (v *validationModel) renderValidationDetail(s StyleSet, width int) string {
 	if v.currentIdx >= len(v.assumptions) {
-		return "No assumption selected."
+		return s.Card("", "No assumption selected.", width)
 	}
 	a := v.assumptions[v.currentIdx]
 
-	header := s.Title.Render(fmt.Sprintf("Validation: %s — %s", a.ID, a.Risk))
-
-	dim := lipgloss.NewStyle().Foreground(s.Theme().DimText)
-	sectionLabel := lipgloss.NewStyle().Foreground(s.Theme().Primary).Bold(true)
 	confPct := int(a.Confidence * 100)
 	confStyle := s.Value
 	if confPct >= 80 {
@@ -110,82 +89,77 @@ func (v *validationModel) renderValidationDetail(s StyleSet) string {
 		confStyle = s.StatusBad
 	}
 
-	var b strings.Builder
+	var body []string
 
-	// ── Assumption ──
-	b.WriteString(sectionLabel.Render("Assumption") + "\n")
-	b.WriteString(fmt.Sprintf("  %s\n\n", a.Description))
+	body = append(body, "  "+s.SubSectionTitle.Render("Assumption"))
+	body = append(body, "  "+s.DimText.Render(a.Description))
+	body = append(body, "")
 
-	// ── Evidence Traceability ──
-	b.WriteString(sectionLabel.Render("Evidence") + "\n")
+	body = append(body, "  "+s.SubSectionTitle.Render("Evidence Traceability"))
 	if a.SourceNode != "" {
-		b.WriteString(fmt.Sprintf("  Source Node: %s\n", dim.Render(a.SourceNode)))
+		body = append(body, "  Source Node: "+s.DimText.Render(a.SourceNode))
 	}
 	if a.SourceLine > 0 {
-		b.WriteString(fmt.Sprintf("  Source Line: %d\n", a.SourceLine))
+		body = append(body, "  Source Line: "+s.DimText.Render(fmt.Sprintf("%d", a.SourceLine)))
 	}
 	for _, ev := range a.EvidenceSources {
-		b.WriteString(fmt.Sprintf("  %s\n", dim.Render(ev)))
+		body = append(body, "  • "+s.DimText.Render(ev))
 	}
-	b.WriteString("\n")
+	body = append(body, "")
 
-	// ── STRIDE Mapping ──
 	strideStrs := make([]string, len(a.Stride))
 	for i, st := range a.Stride {
 		strideStrs[i] = string(st)
 	}
-	b.WriteString(sectionLabel.Render("STRIDE Mapping") + "\n")
-	b.WriteString(fmt.Sprintf("  %s\n", strings.Join(strideStrs, ", ")))
+	body = append(body, "  "+s.SubSectionTitle.Render("STRIDE Mapping"))
+	body = append(body, "  "+s.Value.Render(strings.Join(strideStrs, ", ")))
 	if len(a.StrideJustifications) > 0 {
 		for _, sj := range a.StrideJustifications {
 			sjConf := int(sj.Confidence * 100)
-			b.WriteString(fmt.Sprintf("  %s %s\n", s.StatusGood.Render(string(sj.Category)+":"), sj.Reason))
+			body = append(body, "  "+s.StatusGood.Render(string(sj.Category)+":")+" "+sj.Reason)
 			if len(sj.MatchedKeywords) > 0 {
-				b.WriteString(fmt.Sprintf("    Triggered by: %s\n", dim.Render(strings.Join(sj.MatchedKeywords, ", "))))
+				body = append(body, "    Triggered by: "+s.DimText.Render(strings.Join(sj.MatchedKeywords, ", ")))
 			}
-			b.WriteString(fmt.Sprintf("    Confidence: %d%% — %s\n", sjConf, dim.Render(sj.ConfidenceReason)))
+			body = append(body, "    Confidence: "+s.DimText.Render(fmt.Sprintf("%d%% — %s", sjConf, sj.ConfidenceReason)))
 		}
 	}
-	b.WriteString("\n")
+	body = append(body, "")
 
-	// ── Risk Assessment ──
-	b.WriteString(sectionLabel.Render("Risk Assessment") + "\n")
-	b.WriteString(fmt.Sprintf("  Level: %s\n", riskStyle(s, a.Risk).Render(string(a.Risk))))
+	body = append(body, "  "+s.SubSectionTitle.Render("Risk Assessment"))
+	body = append(body, "  Level: "+riskStyle(s, a.Risk).Render(string(a.Risk)))
 	if a.RiskJustification != nil {
 		rj := a.RiskJustification
-		b.WriteString(fmt.Sprintf("  Score: %d/25 (Likelihood %d × Impact %d)\n", rj.RiskScore, rj.Likelihood, rj.Impact))
-		b.WriteString(fmt.Sprintf("  Reason: %s\n", dim.Render(rj.RiskReason)))
-		b.WriteString(fmt.Sprintf("  Likelihood: %d/5 — %s\n", rj.Likelihood, dim.Render(rj.LikelihoodReason)))
+		body = append(body, fmt.Sprintf("  Score: %d/25 (Likelihood %d × Impact %d)", rj.RiskScore, rj.Likelihood, rj.Impact))
+		body = append(body, "  Reason: "+s.DimText.Render(rj.RiskReason))
+		body = append(body, fmt.Sprintf("  Likelihood: %d/5 — %s", rj.Likelihood, s.DimText.Render(rj.LikelihoodReason)))
 		if len(rj.LikelihoodFactors) > 0 {
 			for _, lf := range rj.LikelihoodFactors {
-				b.WriteString(fmt.Sprintf("    • %s: %d — %s\n", lf.Factor, lf.Value, dim.Render(lf.Reason)))
+				body = append(body, "    • "+s.DimText.Render(fmt.Sprintf("%s: %d — %s", lf.Factor, lf.Value, lf.Reason)))
 			}
 		}
-		b.WriteString(fmt.Sprintf("  Impact: %d/5 — %s\n", rj.Impact, dim.Render(rj.ImpactReason)))
+		body = append(body, fmt.Sprintf("  Impact: %d/5 — %s", rj.Impact, s.DimText.Render(rj.ImpactReason)))
 		if len(rj.ImpactFactors) > 0 {
 			for _, ifa := range rj.ImpactFactors {
-				b.WriteString(fmt.Sprintf("    • %s: %d — %s\n", ifa.Factor, ifa.Value, dim.Render(ifa.Reason)))
+				body = append(body, "    • "+s.DimText.Render(fmt.Sprintf("%s: %d — %s", ifa.Factor, ifa.Value, ifa.Reason)))
 			}
 		}
 	}
-	b.WriteString("\n")
+	body = append(body, "")
 
-	// ── Confidence ──
-	b.WriteString(sectionLabel.Render("Confidence") + "\n")
-	b.WriteString(fmt.Sprintf("  Overall: %s\n", confStyle.Render(fmt.Sprintf("%d%%", confPct))))
+	body = append(body, "  "+s.SubSectionTitle.Render("Confidence"))
+	body = append(body, "  Overall: "+confStyle.Render(fmt.Sprintf("%d%%", confPct)))
 	if a.RiskJustification != nil && a.RiskJustification.ConfidenceReason != "" {
-		b.WriteString(fmt.Sprintf("  Factors: %s\n", dim.Render(a.RiskJustification.ConfidenceReason)))
+		body = append(body, "  Factors: "+s.DimText.Render(a.RiskJustification.ConfidenceReason))
 	}
-	b.WriteString("\n")
 
-	// ── Recommended Controls ──
-	// (Controls are not stored per-assumption in the result, skip here)
-
-	body := s.BorderBox.Render(b.String())
+	card := s.Card(fmt.Sprintf("Validation: %s — %s", a.ID, a.Risk), strings.Join(body, "\n"), width)
+	help := s.SectionRule.Render(strings.Repeat("─", max(1, width)))
+	help += "\n" + s.DimText.Render("  Enter=Back to list  |  Esc=Exit validation")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
-		header, body, "",
-		s.SectionItem.Render("Enter: Back to list | Esc: Exit validation"),
+		card,
+		"",
+		help,
 	)
 }
 

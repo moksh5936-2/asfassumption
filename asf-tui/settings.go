@@ -23,14 +23,8 @@ type settingItem struct {
 }
 
 func newSettingsModel(cfg *Config) settingsModel {
+	themes := []string{"ASF0"}
 	themeIdx := 0
-	themes := []string{"Dark", "Midnight", "Cyber", "Minimal"}
-	for i, t := range themes {
-		if t == cfg.Appearance.Theme {
-			themeIdx = i
-			break
-		}
-	}
 
 	depthIdx := 0
 	depths := []string{"light", "standard", "deep"}
@@ -257,6 +251,10 @@ func (m mainModel) viewSettings() string {
 func (m mainModel) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.settings, cmd = m.settings.Update(msg)
-	m.styles = NewStyles(Themes[m.config.Appearance.Theme])
+	theme, ok := Themes[m.config.Appearance.Theme]
+	if !ok {
+		theme = Themes["ASF0"]
+	}
+	m.styles = NewStyles(theme)
 	return m, cmd
 }

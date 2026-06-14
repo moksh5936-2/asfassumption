@@ -39,7 +39,7 @@ type Config struct {
 
 func DefaultConfig() Config {
 	c := Config{}
-	c.General.Theme = "Dark"
+	c.General.Theme = "ASF0"
 	c.General.FoxStyle = "Classic"
 	c.General.Debug = false
 	c.Analysis.Depth = "deep"
@@ -51,7 +51,7 @@ func DefaultConfig() Config {
 	c.AI.InstalledModels = []string{}
 	c.Output.Default = "markdown"
 	c.Output.Directory = "./reports"
-	c.Appearance.Theme = "Dark"
+	c.Appearance.Theme = "ASF0"
 	c.Appearance.FoxStyle = "Classic"
 	c.Engine.UseNativeEngine = true
 	return c

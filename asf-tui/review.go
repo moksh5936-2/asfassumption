@@ -39,120 +39,130 @@ func (m mainModel) viewReview() string {
 	rv := m.review
 
 	if rv.mode == "" || len(rv.assumptions) == 0 {
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Review Mode"),
-			s.Subtitle.Render("No assumptions to review. Run an analysis first."),
-		)
+		return s.Card("Review Mode",
+			s.EmptyState.Render("No assumptions to review. Run an analysis first."),
+			m.mainWidth())
 	}
 
 	switch rv.mode {
 	case "browse":
-		return rv.renderBrowse(s)
+		return rv.renderBrowse(s, m.mainWidth()-4)
 	case "detail":
-		return rv.renderDetail(s)
+		return rv.renderDetail(s, m.mainWidth()-4)
 	default:
 		return "Unknown review mode"
 	}
 }
 
-func (rv *reviewModel) renderBrowse(s StyleSet) string {
-	header := s.Title.Render("Architect Review")
-	sub := s.Subtitle.Render("Select an assumption to review. Press Enter for details, R to mark status.")
+func (rv *reviewModel) renderBrowse(s StyleSet, width int) string {
+	header := s.PremiumHeader("Review Queue", width+4)
 
-	var items []string
+	var cards []string
 	for i, a := range rv.assumptions {
 		prefix := "  "
-		style := s.SectionItem
 		if i == rv.currentIdx {
-			prefix = "▸ "
-			style = s.MenuSelected
+			prefix = s.Fox.Render("▶ ")
 		}
-
-		statusMarker := ""
-		statusStyle := s.Value
-		switch a.ReviewStatus {
-		case "Accepted":
-			statusMarker = " ✓"
-			statusStyle = s.StatusGood
-		case "Rejected":
-			statusMarker = " ✗"
-			statusStyle = s.StatusBad
-		case "Modified":
-			statusMarker = " ~"
-			statusStyle = s.StatusWarn
-		default:
-			statusMarker = " ?"
-		}
-
-		label := fmt.Sprintf("%s%s [%s] %s%s", prefix, a.ID, a.Risk, truncateStr(a.Description, 60), statusStyle.Render(statusMarker))
-		items = append(items, style.Render(label))
+		cardContent := s.ReviewCard(a.ID, a.Description, string(a.Risk), a.ReviewStatus, width)
+		cards = append(cards, prefix+cardContent)
 	}
 
-	list := lipgloss.JoinVertical(lipgloss.Left, items...)
+	list := strings.Join(cards, "\n")
 
-	help := s.SectionItem.Render("↑↓ navigate | Enter detail | R toggle status | Esc back")
+	help := s.SectionRule.Render(strings.Repeat("─", max(1, width)))
+	help += "\n" + s.DimText.Render("  ↑↓ Navigate  |  Enter Detail  |  s=Accept  r=Reject  m=Modify  n=Notes  v=Validate  Esc=Back")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
-		header, sub, "",
-		s.BorderBox.Render(list), "",
+		header,
+		"",
+		list,
+		"",
 		help,
 	)
 }
 
-func (rv *reviewModel) renderDetail(s StyleSet) string {
+func (rv *reviewModel) renderDetail(s StyleSet, width int) string {
 	if rv.currentIdx >= len(rv.assumptions) {
-		return "No assumption selected."
+		return s.Card("", "No assumption selected.", width)
 	}
 	a := rv.assumptions[rv.currentIdx]
-
-	header := s.Title.Render(fmt.Sprintf("Review: %s", a.ID))
 
 	statusStr := a.ReviewStatus
 	if statusStr == "" {
 		statusStr = "Proposed"
 	}
 
-	detail := fmt.Sprintf("Description: %s\n", a.Description)
-	detail += fmt.Sprintf("Risk: %s (L:%d I:%d Score:%d)\n", a.Risk, a.Likelihood, a.Impact, riskScoreFromJust(a.RiskJustification))
+	var bodyRows []string
+	bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("Description"))
+	bodyRows = append(bodyRows, "  "+s.DimText.Render(a.Description))
+	bodyRows = append(bodyRows, "")
+
+	riskLine := fmt.Sprintf("  %s  L:%d  I:%d  Score:%d",
+		s.RiskBadge(string(a.Risk)), a.Likelihood, a.Impact, riskScoreFromJust(a.RiskJustification))
+	bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("Risk"))
+	bodyRows = append(bodyRows, "  "+riskLine)
+	bodyRows = append(bodyRows, "")
+
 	if len(a.Stride) > 0 {
 		strideStrs := make([]string, len(a.Stride))
-		for i, s := range a.Stride {
-			strideStrs[i] = string(s)
+		for i, st := range a.Stride {
+			strideStrs[i] = string(st)
 		}
-		detail += fmt.Sprintf("STRIDE: %s\n", strings.Join(strideStrs, ", "))
+		bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("STRIDE"))
+		bodyRows = append(bodyRows, "  "+s.Value.Render(strings.Join(strideStrs, ", ")))
+		bodyRows = append(bodyRows, "")
 	}
-	detail += fmt.Sprintf("Status: %s\n", statusStr)
 
-	if rv.editing {
-		detail += fmt.Sprintf("Notes: [EDITING] %s█\n", rv.note)
-	} else if a.ReviewNotes != "" {
-		detail += fmt.Sprintf("Notes: %s\n", a.ReviewNotes)
+	statusStyle := s.Value
+	switch a.ReviewStatus {
+	case "Accepted":
+		statusStyle = s.StatusGood
+	case "Rejected":
+		statusStyle = s.StatusBad
+	case "Modified":
+		statusStyle = s.StatusWarn
 	}
+	bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("Status"))
+	if rv.editing {
+		bodyRows = append(bodyRows, "  "+statusStyle.Render(statusStr)+"  "+s.DimText.Render("[EDITING] "+rv.note+"█"))
+	} else {
+		bodyRows = append(bodyRows, "  "+statusStyle.Render(statusStr))
+		if a.ReviewNotes != "" {
+			bodyRows = append(bodyRows, "  "+s.DimText.Render("Notes: "+a.ReviewNotes))
+		}
+	}
+	bodyRows = append(bodyRows, "")
 
 	if len(a.EvidenceSources) > 0 {
-		detail += "\nEvidence:\n"
+		bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("Evidence"))
 		for _, ev := range a.EvidenceSources {
-			detail += fmt.Sprintf("  %s\n", ev)
+			bodyRows = append(bodyRows, "  • "+s.DimText.Render(ev))
 		}
+		bodyRows = append(bodyRows, "")
 	}
 
 	if a.Rationale != "" {
-		detail += fmt.Sprintf("\nRationale: %s\n", a.Rationale)
+		bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("Rationale"))
+		bodyRows = append(bodyRows, "  "+s.DimText.Render(a.Rationale))
+		bodyRows = append(bodyRows, "")
 	}
 
 	if a.RiskJustification != nil {
-		detail += fmt.Sprintf("\nRisk Justification:\n")
-		detail += fmt.Sprintf("  Likelihood %d/5: %s\n", a.RiskJustification.Likelihood, a.RiskJustification.LikelihoodReason)
-		detail += fmt.Sprintf("  Impact %d/5: %s\n", a.RiskJustification.Impact, a.RiskJustification.ImpactReason)
-		detail += fmt.Sprintf("  Score: %d/25 → %s\n", a.RiskJustification.RiskScore, a.RiskJustification.RiskLevel)
+		bodyRows = append(bodyRows, "  "+s.SubSectionTitle.Render("Risk Justification"))
+		rj := a.RiskJustification
+		bodyRows = append(bodyRows, fmt.Sprintf("  Likelihood %d/5: %s", rj.Likelihood, s.DimText.Render(rj.LikelihoodReason)))
+		bodyRows = append(bodyRows, fmt.Sprintf("  Impact %d/5: %s", rj.Impact, s.DimText.Render(rj.ImpactReason)))
+		bodyRows = append(bodyRows, fmt.Sprintf("  %s → %s",
+			s.Value.Render(fmt.Sprintf("Score: %d/25", rj.RiskScore)),
+			s.RiskBadge(string(rj.RiskLevel))))
 	}
 
-	body := s.BorderBox.Render(s.SectionItem.Render(detail))
-
-	help := s.SectionItem.Render("S:Accept | R:Reject | M:Modified | N:Edit note | Enter back | Esc:cancel edit")
+	card := s.Card(fmt.Sprintf("Review: %s", a.ID), strings.Join(bodyRows, "\n"), width)
+	help := s.SectionRule.Render(strings.Repeat("─", max(1, width)))
+	help += "\n" + s.DimText.Render("  s=Accept  r=Reject  m=Modify  n=Edit Note  Enter=Back  Esc=Cancel")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
-		header, body, "",
+		card, "",
 		help,
 	)
 }

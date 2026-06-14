@@ -1,11 +1,9 @@
 package main
 
-import (
-	"github.com/charmbracelet/lipgloss"
-)
+import "github.com/charmbracelet/lipgloss"
 
 type Theme struct {
-	Name      string
+	Name      lipgloss.Color
 	Primary   lipgloss.Color
 	Secondary lipgloss.Color
 	Accent    lipgloss.Color
@@ -19,72 +17,40 @@ type Theme struct {
 	Highlight lipgloss.Color
 	Bg        lipgloss.Color
 	SidebarBg lipgloss.Color
+
+	RiskCritical lipgloss.Color
+	RiskHigh     lipgloss.Color
+	RiskMedium   lipgloss.Color
+	RiskLow      lipgloss.Color
+	RiskInfo     lipgloss.Color
+	CardBg       lipgloss.Color
+	Glow         lipgloss.Color
 }
 
 var Themes = map[string]Theme{
-	"Dark": {
-		Name:      "Dark",
-		Primary:   lipgloss.Color("#7C3AED"),
-		Secondary: lipgloss.Color("#10B981"),
-		Accent:    lipgloss.Color("#F59E0B"),
-		Success:   lipgloss.Color("#22C55E"),
-		Warning:   lipgloss.Color("#EAB308"),
-		Error:     lipgloss.Color("#EF4444"),
-		Info:      lipgloss.Color("#3B82F6"),
-		Text:      lipgloss.Color("#E2E8F0"),
-		DimText:   lipgloss.Color("#64748B"),
-		Border:    lipgloss.Color("#334155"),
-		Highlight: lipgloss.Color("#6366F1"),
-		Bg:        lipgloss.Color("#1E293B"),
-		SidebarBg: lipgloss.Color("#0F172A"),
-	},
-	"Midnight": {
-		Name:      "Midnight",
-		Primary:   lipgloss.Color("#818CF8"),
-		Secondary: lipgloss.Color("#34D399"),
-		Accent:    lipgloss.Color("#F472B6"),
-		Success:   lipgloss.Color("#22C55E"),
-		Warning:   lipgloss.Color("#FBBF24"),
-		Error:     lipgloss.Color("#F87171"),
-		Info:      lipgloss.Color("#60A5FA"),
-		Text:      lipgloss.Color("#C7D2FE"),
-		DimText:   lipgloss.Color("#6B7280"),
-		Border:    lipgloss.Color("#374151"),
-		Highlight: lipgloss.Color("#A78BFA"),
-		Bg:        lipgloss.Color("#111827"),
-		SidebarBg: lipgloss.Color("#0B0F19"),
-	},
-	"Cyber": {
-		Name:      "Cyber",
-		Primary:   lipgloss.Color("#00FF41"),
-		Secondary: lipgloss.Color("#00BFFF"),
-		Accent:    lipgloss.Color("#FF00FF"),
-		Success:   lipgloss.Color("#00FF41"),
-		Warning:   lipgloss.Color("#FFFF00"),
-		Error:     lipgloss.Color("#FF0000"),
-		Info:      lipgloss.Color("#00BFFF"),
-		Text:      lipgloss.Color("#00FF41"),
-		DimText:   lipgloss.Color("#008F20"),
-		Border:    lipgloss.Color("#004D14"),
-		Highlight: lipgloss.Color("#FF00FF"),
-		Bg:        lipgloss.Color("#0D0D0D"),
-		SidebarBg: lipgloss.Color("#050505"),
-	},
-	"Minimal": {
-		Name:      "Minimal",
-		Primary:   lipgloss.Color("#FFFFFF"),
-		Secondary: lipgloss.Color("#888888"),
-		Accent:    lipgloss.Color("#AAAAAA"),
-		Success:   lipgloss.Color("#66BB6A"),
-		Warning:   lipgloss.Color("#FFD54F"),
-		Error:     lipgloss.Color("#E57373"),
-		Info:      lipgloss.Color("#64B5F6"),
-		Text:      lipgloss.Color("#FFFFFF"),
-		DimText:   lipgloss.Color("#666666"),
-		Border:    lipgloss.Color("#444444"),
-		Highlight: lipgloss.Color("#FFFFFF"),
-		Bg:        lipgloss.Color("#1A1A1A"),
-		SidebarBg: lipgloss.Color("#111111"),
+	"ASF0": {
+		Name:      "ASF0",
+		Primary:   lipgloss.Color("#FF6B35"),
+		Secondary: lipgloss.Color("#4CAF50"),
+		Accent:    lipgloss.Color("#FFB300"),
+		Success:   lipgloss.Color("#4CAF50"),
+		Warning:   lipgloss.Color("#FFB300"),
+		Error:     lipgloss.Color("#FF4444"),
+		Info:      lipgloss.Color("#FF6B35"),
+		Text:      lipgloss.Color("#E8E8E8"),
+		DimText:   lipgloss.Color("#888888"),
+		Border:    lipgloss.Color("#333333"),
+		Highlight: lipgloss.Color("#FF8C5A"),
+		Bg:        lipgloss.Color("#1A1D23"),
+		SidebarBg: lipgloss.Color("#131518"),
+
+		RiskCritical: lipgloss.Color("#FF4444"),
+		RiskHigh:     lipgloss.Color("#FF8C5A"),
+		RiskMedium:   lipgloss.Color("#FFB300"),
+		RiskLow:      lipgloss.Color("#4CAF50"),
+		RiskInfo:     lipgloss.Color("#00BCD4"),
+		CardBg:       lipgloss.Color("#1E2128"),
+		Glow:         lipgloss.Color("#FF6B35"),
 	},
 }
 
@@ -116,8 +82,11 @@ type StyleSet struct {
 	Sidebar       lipgloss.Style
 	SidebarItem   lipgloss.Style
 	SidebarActive lipgloss.Style
-	TopBar        lipgloss.Style
-	BottomBar     lipgloss.Style
+	SidebarParent lipgloss.Style
+	SidebarChild  lipgloss.Style
+	HeaderBar     lipgloss.Style
+	HintsBar      lipgloss.Style
+	StatusBar     lipgloss.Style
 	Tab           lipgloss.Style
 	TabActive     lipgloss.Style
 	ScrollHint    lipgloss.Style
@@ -128,10 +97,31 @@ type StyleSet struct {
 	BadgeMedium   lipgloss.Style
 	BadgeLow      lipgloss.Style
 	DimText       lipgloss.Style
+	Accent        lipgloss.Style
+
+	CardBorder       lipgloss.Style
+	CardBorderAccent lipgloss.Style
+	CardContainer    lipgloss.Style
+	CardTitle        lipgloss.Style
+	PremiumTitle     lipgloss.Style
+	SectionTitle     lipgloss.Style
+	SectionRule      lipgloss.Style
+	SubSectionTitle  lipgloss.Style
+	Shadow           lipgloss.Style
+	Texture          lipgloss.Style
+	ProgressFill     lipgloss.Style
+	ProgressEmpty    lipgloss.Style
+	DiagramNode      lipgloss.Style
+	DiagramBox       lipgloss.Style
+	DiagramConnector lipgloss.Style
+	RiskCritical     lipgloss.Style
+	RiskHigh         lipgloss.Style
+	RiskMedium       lipgloss.Style
+	RiskLow          lipgloss.Style
 }
 
 func NewStyles(t Theme) StyleSet {
-	sb := lipgloss.Color("#0F172A")
+	sb := lipgloss.Color("#131518")
 	if t.SidebarBg != "" {
 		sb = t.SidebarBg
 	}
@@ -240,40 +230,60 @@ func NewStyles(t Theme) StyleSet {
 			MarginBottom(1),
 
 		Fox: lipgloss.NewStyle().
-			Foreground(t.Secondary).
+			Foreground(t.Primary).
 			Bold(true),
 
 		Sidebar: lipgloss.NewStyle().
 			Background(sb).
 			Padding(0, 1).
-			Width(22),
+			Width(26),
 
 		SidebarItem: lipgloss.NewStyle().
 			Background(sb).
 			Foreground(t.DimText).
 			Padding(0, 1).
-			Width(20),
+			Width(24),
 
 		SidebarActive: lipgloss.NewStyle().
 			Background(t.Primary).
 			Foreground(t.Bg).
 			Bold(true).
 			Padding(0, 1).
-			Width(20),
+			Width(24),
 
-		TopBar: lipgloss.NewStyle().
-			Background(t.Border).
+		SidebarParent: lipgloss.NewStyle().
+			Background(sb).
 			Foreground(t.Text).
+			Bold(true).
+			Padding(0, 1).
+			Width(24),
+
+		SidebarChild: lipgloss.NewStyle().
+			Background(sb).
+			Foreground(t.DimText).
+			Padding(0, 1).
+			Width(22),
+
+		HeaderBar: lipgloss.NewStyle().
+			Background(t.Primary).
+			Foreground(t.Bg).
+			Bold(true).
 			Padding(0, 1),
 
-		BottomBar: lipgloss.NewStyle().
+		HintsBar: lipgloss.NewStyle().
 			Background(t.Border).
+			Foreground(t.DimText).
+			Padding(0, 1),
+
+		StatusBar: lipgloss.NewStyle().
+			Background(sb).
 			Foreground(t.DimText).
 			Padding(0, 1),
 
 		Tab: lipgloss.NewStyle().
 			Foreground(t.DimText).
 			Padding(0, 1),
+
 		TabActive: lipgloss.NewStyle().
 			Foreground(t.Text).
 			Background(t.Border).
@@ -320,8 +330,86 @@ func NewStyles(t Theme) StyleSet {
 		DimText: lipgloss.NewStyle().
 			Foreground(t.DimText).
 			Italic(true),
+
+		Accent: lipgloss.NewStyle().
+			Foreground(t.Accent).
+			Bold(true),
+
+		CardBorder: lipgloss.NewStyle().
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(t.Primary).
+			Padding(0, 1),
+
+		CardBorderAccent: lipgloss.NewStyle().
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(t.Accent).
+			Padding(0, 1),
+
+		CardContainer: lipgloss.NewStyle().
+			MarginTop(1).
+			MarginBottom(1),
+
+		CardTitle: lipgloss.NewStyle().
+			Foreground(t.Primary).
+			Bold(true),
+
+		PremiumTitle: lipgloss.NewStyle().
+			Foreground(t.Primary).
+			Bold(true),
+
+		SectionTitle: lipgloss.NewStyle().
+			Foreground(t.Primary).
+			Bold(true),
+
+		SectionRule: lipgloss.NewStyle().
+			Foreground(t.Border),
+
+		SubSectionTitle: lipgloss.NewStyle().
+			Foreground(t.Accent).
+			Bold(true).
+			MarginTop(1).
+			MarginBottom(1),
+
+		Shadow: lipgloss.NewStyle().
+			Foreground(t.Border),
+
+		Texture: lipgloss.NewStyle().
+			Foreground(t.Primary).
+			Bold(true),
+
+		ProgressFill: lipgloss.NewStyle().
+			Foreground(t.Primary),
+
+		ProgressEmpty: lipgloss.NewStyle().
+			Foreground(t.Border),
+
+		DiagramNode: lipgloss.NewStyle().
+			Foreground(t.Text).
+			Bold(true),
+
+		DiagramBox: lipgloss.NewStyle().
+			Foreground(t.Primary),
+
+		DiagramConnector: lipgloss.NewStyle().
+			Foreground(t.DimText),
+
+		RiskCritical: lipgloss.NewStyle().
+			Foreground(t.RiskCritical).
+			Bold(true),
+
+		RiskHigh: lipgloss.NewStyle().
+			Foreground(t.RiskHigh).
+			Bold(true),
+
+		RiskMedium: lipgloss.NewStyle().
+			Foreground(t.RiskMedium).
+			Bold(true),
+
+		RiskLow: lipgloss.NewStyle().
+			Foreground(t.RiskLow).
+			Bold(true),
 	}
 }
 
-func (s StyleSet) ThemeName() string { return s.t.Name }
+func (s StyleSet) ThemeName() string { return string(s.t.Name) }
 func (s StyleSet) Theme() Theme      { return s.t }

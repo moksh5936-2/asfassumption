@@ -2,27 +2,25 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// InstalledModelInfo represents a model discovered from Ollama.
 type InstalledModelInfo struct {
 	Name       string
 	Size       string
 	ModifiedAt string
 }
 
-// CatalogEntry is a model in the ASF catalog.
 type CatalogEntry struct {
 	Info      ModelInfo
 	Installed bool
 	Active    bool
 }
 
-// OtherModel is a model found in Ollama but not in the ASF catalog.
 type OtherModel struct {
 	Info   InstalledModelInfo
 	Active bool
@@ -43,7 +41,7 @@ type localaiModel struct {
 	catalog        []CatalogEntry
 	otherModels    []OtherModel
 	selected       int
-	section        int // 0 = catalog, 1 = other, 2 = actions
+	section        int
 	actionSelected int
 	showActions    bool
 	downloading    bool
@@ -81,7 +79,6 @@ func newLocalAIModel(cfg *Config) localaiModel {
 	}
 }
 
-// refreshFromOllama queries Ollama and merges with the ASF catalog.
 func (m localaiModel) refreshFromOllama() refreshResult {
 	var result refreshResult
 	if !m.modelMgr.CheckAvailable() || !m.modelMgr.CheckRunning() {
@@ -277,7 +274,6 @@ func (m *localaiModel) moveUp() {
 		m.updateSection()
 		return
 	}
-	// Wrap to end
 	total := m.totalItems()
 	if total > 0 {
 		m.selected = total - 1
@@ -306,7 +302,7 @@ func (m *localaiModel) moveDown() {
 func (m *localaiModel) totalItems() int {
 	n := len(m.catalog)
 	if len(m.otherModels) > 0 {
-		n++ // section gap
+		n++
 		n += len(m.otherModels)
 	}
 	return n
@@ -427,32 +423,21 @@ func (m localaiModel) startRefreshCmd() tea.Cmd {
 func (m mainModel) viewLocalAI() string {
 	s := m.styles
 	lm := m.localai
+	width := m.mainWidth() - 4
 
 	if lm.downloading {
-		barWidth := 40
-		filled := int(float64(barWidth) * lm.downloadProg / 100.0)
-		bar := ""
-		for i := 0; i < barWidth; i++ {
-			if i < filled {
-				bar += "█"
-			} else {
-				bar += "░"
-			}
-		}
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Local AI Models"),
-			s.BorderBox.Render(
+		return s.PremiumHeader("Local AI", m.mainWidth()) + "\n" +
+			s.Card("Downloading",
 				lipgloss.JoinVertical(lipgloss.Center,
-					s.SectionItem.Render(fmt.Sprintf("Downloading: %s", lm.downloadModel)),
-					s.ProgressBar.Render(bar),
-					s.Value.Render(fmt.Sprintf("%.0f%%", lm.downloadProg)),
-					s.SectionItem.Render(lm.downloadStage),
-				),
-			),
-		)
+					"",
+					s.Accent.Render(fmt.Sprintf("  %s  ", lm.downloadModel)),
+					"",
+					s.ProgressWithLabel(lm.downloadProg, 40),
+					"",
+					s.DimText.Render(lm.downloadStage),
+				), width)
 	}
 
-	// Ollama status header
 	ollamaStatus := s.StatusWarn.Render("Ollama is not running")
 	if lm.ollamaRunning {
 		ollamaStatus = s.StatusGood.Render("Ollama is running")
@@ -461,31 +446,35 @@ func (m mainModel) viewLocalAI() string {
 		ollamaStatus = s.SectionItem.Render("Checking Ollama...")
 	}
 
-	var rows []string
-	rows = append(rows,
-		s.Title.Render("Local AI Models"),
-		s.Subtitle.Render("Download and manage local AI models for enhanced analysis"),
-		s.BorderBox.Render(
-			lipgloss.JoinVertical(lipgloss.Left,
-				ollamaStatus,
-			),
-		),
-	)
-
-	if !lm.ollamaRunning && lm.ollamaChecked {
-		rows = append(rows, "",
-			s.StatusWarn.Render("  Ollama is not running. Install from https://ollama.ai and start with: ollama serve"),
-		)
+	activeModel := s.DimText.Render("None selected")
+	if lm.activeModel != "" {
+		activeModel = s.Value.Render(lm.activeModel)
 	}
 
-	// Recommended ASF Models section
+	statusItems := []string{
+		fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Provider:"), s.Value.Render("Ollama")),
+		fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Endpoint:"), s.Value.Render("http://localhost:11434")),
+		fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Status:"), ollamaStatus),
+		fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Selected Model:"), activeModel),
+	}
+
+	var rows []string
+	rows = append(rows, s.PremiumHeader("Local AI", m.mainWidth()))
+	rows = append(rows, s.Card("Connection", strings.Join(statusItems, "\n"), width))
+
+	if !lm.ollamaRunning && lm.ollamaChecked {
+		rows = append(rows, s.CardAccent("",
+			s.StatusWarn.Render("  Ollama is not running. Install from https://ollama.ai and start with: ollama serve"),
+			width))
+	}
+
 	var catalogItems []string
 	for i, entry := range lm.catalog {
 		style := s.SectionItem
 		prefix := "  "
 		if !lm.showActions && lm.section == 0 && i == lm.selected {
 			style = s.MenuSelected
-			prefix = "▸ "
+			prefix = s.Fox.Render("▶ ")
 		}
 		status := ""
 		if entry.Installed {
@@ -499,13 +488,10 @@ func (m mainModel) viewLocalAI() string {
 	}
 
 	if len(catalogItems) > 0 {
-		rows = append(rows, "",
-			s.Section.Render("Recommended ASF Models"),
-			lipgloss.JoinVertical(lipgloss.Left, catalogItems...),
-		)
+		rows = append(rows, s.Card("Recommended ASF Models",
+			strings.Join(catalogItems, "\n"), width))
 	}
 
-	// Other installed models section
 	if len(lm.otherModels) > 0 {
 		var otherItems []string
 		for i, om := range lm.otherModels {
@@ -514,7 +500,7 @@ func (m mainModel) viewLocalAI() string {
 			prefix := "  "
 			if !lm.showActions && lm.section == 1 && idx == lm.selected {
 				style = s.MenuSelected
-				prefix = "▸ "
+				prefix = s.Fox.Render("▶ ")
 			}
 			status := ""
 			if om.Active {
@@ -529,13 +515,10 @@ func (m mainModel) viewLocalAI() string {
 			}
 			otherItems = append(otherItems, style.Render(line+status))
 		}
-		rows = append(rows, "",
-			s.Section.Render("Other Installed Ollama Models"),
-			lipgloss.JoinVertical(lipgloss.Left, otherItems...),
-		)
+		rows = append(rows, s.Card("Other Installed Ollama Models",
+			strings.Join(otherItems, "\n"), width))
 	}
 
-	// Action menu
 	if lm.showActions && !lm.downloading {
 		var actionItems []string
 		actions := lm.actionsForModel()
@@ -544,7 +527,7 @@ func (m mainModel) viewLocalAI() string {
 			prefix := "  "
 			if i == lm.actionSelected {
 				style = s.MenuSelected
-				prefix = "▸ "
+				prefix = s.Fox.Render("▶ ")
 			}
 			actionItems = append(actionItems, style.Render(prefix+action))
 		}
@@ -559,15 +542,13 @@ func (m mainModel) viewLocalAI() string {
 			}
 		}
 		if modelDisplay != "" {
-			rows = append(rows, "",
-				s.Section.Render(fmt.Sprintf("Actions for %s:", modelDisplay)),
-				lipgloss.JoinVertical(lipgloss.Left, actionItems...),
-			)
+			rows = append(rows, s.Card(fmt.Sprintf("Actions for %s", modelDisplay),
+				strings.Join(actionItems, "\n"), width))
 		}
 	}
 
 	if lm.statusMsg != "" {
-		rows = append(rows, "", s.StatusGood.Render("  "+lm.statusMsg))
+		rows = append(rows, s.CardAccent("", s.StatusGood.Render("  "+lm.statusMsg), width))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, rows...)

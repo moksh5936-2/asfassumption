@@ -85,8 +85,8 @@ if (-not $Version) {
         }
         Write-Host "  ✓ Latest: ${LatestTag}" -ForegroundColor Green
     } catch {
-        $LatestTag = "v4.0.0"
-        $Version = "4.0.0"
+        $LatestTag = "v5.0.0"
+        $Version = "5.0.0"
         Write-Host "  ⚠  Could not detect version, defaulting to ${LatestTag}" -ForegroundColor Yellow
         if (-not $Token) { Write-Host "  ⚠  Set GITHUB_TOKEN env var for private repos" -ForegroundColor Yellow }
     }

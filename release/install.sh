@@ -369,11 +369,11 @@ try:
             print(r['tag_name'])
             sys.exit(0)
 except Exception: pass
-print('v3.0.0')
-" 2>/dev/null || echo "v3.0.0")"
+print('v5.0.0')
+" 2>/dev/null || echo "v5.0.0")"
   LATEST_VERSION="$(echo "$LATEST_VERSION" | tr -d '\r\n' | xargs)"
   if [ -z "$LATEST_VERSION" ]; then
-    LATEST_VERSION="v3.0.0"
+    LATEST_VERSION="v5.0.0"
     warn "Could not detect version; defaulting to ${LATEST_VERSION}"
     [ -z "$AUTH_HEADER" ] && warn "For private repos, set GITHUB_TOKEN environment variable"
   fi

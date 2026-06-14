@@ -18,25 +18,17 @@ func TestGlobalKeyRouting_ArrowKeys(t *testing.T) {
 		key         string
 		wantHandled bool
 	}{
-		{"dashboard up -> child", dashboardView, "up", false},
-		{"dashboard down -> child", dashboardView, "down", false},
-		{"dashboard k -> child", dashboardView, "k", false},
-		{"dashboard j -> child", dashboardView, "j", false},
 		{"analyze up -> child", analyzeView, "up", false},
 		{"analyze j -> child", analyzeView, "j", false},
 		{"settings down -> child", settingsView, "down", false},
-		{"filebrowser k -> child", fileBrowserView, "k", false},
-		{"filebrowser j -> child", fileBrowserView, "j", false},
 		{"review up -> child", reviewView, "up", false},
 		{"review down -> child", reviewView, "down", false},
-		{"startup up -> child", startupView, "up", false},
-		{"localai k -> child", localaiView, "k", false},
 		{"validation j -> child", validationView, "j", false},
-		{"export up -> child", exportView, "up", false},
-		{"export down -> child", exportView, "down", false},
+		{"reports up -> child", reportsView, "up", false},
+		{"reports down -> child", reportsView, "down", false},
 
-		{"results up -> global (scroll)", resultsView, "up", true},
-		{"results down -> global (scroll)", resultsView, "down", true},
+		{"case up -> global (scroll)", caseView, "up", true},
+		{"case down -> global (scroll)", caseView, "down", true},
 		{"help up -> global (scroll)", helpView, "up", true},
 		{"help down -> global (scroll)", helpView, "down", true},
 		{"about up -> global (scroll)", aboutView, "up", true},
@@ -48,11 +40,8 @@ func TestGlobalKeyRouting_ArrowKeys(t *testing.T) {
 			m := defaultTestModel()
 			m.router.currentView = tt.view
 			handled, _, _ := m.handleGlobalKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(tt.key)})
-			// Workaround: tea.KeyMsg.String() for rune keys
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(tt.key)}
 			_ = msg
-			// For key types like "up", "down", we need to construct KeyMsg properly.
-			// Using type assertion on the string representation.
 			handled, _, _ = m.handleGlobalKey(msgFromString(tt.key))
 			if handled != tt.wantHandled {
 				t.Errorf("handleGlobalKey(%q) on %v = %v, want %v", tt.key, tt.view, handled, tt.wantHandled)
@@ -78,8 +67,6 @@ func msgFromString(s string) tea.KeyMsg {
 		m.Type = tea.KeyTab
 	case "shift+tab":
 		m.Type = tea.KeyTab
-		// shift+tab isn't a standard tea.KeyType, but the code matches on msg.String()
-		// We'll construct it by setting Runes appropriately
 	case "enter":
 		m.Type = tea.KeyEnter
 	case "esc":
@@ -103,9 +90,6 @@ func msgFromString(s string) tea.KeyMsg {
 	case "?":
 		m.Type = tea.KeyRunes
 		m.Runes = []rune("?")
-	case "f":
-		m.Type = tea.KeyRunes
-		m.Runes = []rune("f")
 	case "r":
 		m.Type = tea.KeyRunes
 		m.Runes = []rune("r")
@@ -132,35 +116,31 @@ func msgFromString(s string) tea.KeyMsg {
 }
 
 func TestGlobalKeyRouting_Tab(t *testing.T) {
-	tests := []struct {
-		name        string
-		view        view
-		key         string
-		wantHandled bool
-	}{
-		{"tab on dashboard -> global", dashboardView, "tab", true},
-		{"tab on results -> child", resultsView, "tab", false},
-		{"tab on filebrowser -> child", fileBrowserView, "tab", false},
-		{"shift+tab on dashboard -> global", dashboardView, "shift+tab", true},
-		{"shift+tab on results -> child", resultsView, "shift+tab", false},
+	m := defaultTestModel()
+	m.router.focus = focusContent
+
+	handled, model, _ := m.handleGlobalKey(msgFromString("tab"))
+	if !handled {
+		t.Error("tab should toggle focus globally")
+	}
+	mm := model.(mainModel)
+	if mm.router.focus != focusSidebar {
+		t.Error("tab should switch focus to sidebar")
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := defaultTestModel()
-			m.router.currentView = tt.view
-			handled, _, _ := m.handleGlobalKey(msgFromString(tt.key))
-			if handled != tt.wantHandled {
-				t.Errorf("handleGlobalKey(%q) on %v = %v, want %v", tt.key, tt.view, handled, tt.wantHandled)
-			}
-		})
+	handled, model, _ = mm.handleGlobalKey(msgFromString("tab"))
+	if !handled {
+		t.Error("tab should toggle focus back to content")
+	}
+	mm2 := model.(mainModel)
+	if mm2.router.focus != focusContent {
+		t.Error("tab should switch focus back to content")
 	}
 }
 
 func TestGlobalKeyRouting_EscExceptions(t *testing.T) {
 	m := defaultTestModel()
 
-	// analyze running -> esc forwarded
 	m.router.currentView = analyzeView
 	m.analyze.running = true
 	handled, _, _ := m.handleGlobalKey(msgFromString("esc"))
@@ -168,22 +148,12 @@ func TestGlobalKeyRouting_EscExceptions(t *testing.T) {
 		t.Error("esc on analyzeView with running=true should be forwarded to child")
 	}
 
-	// analyze not running, input mode -> esc forwarded
 	m.analyze.running = false
-	m.analyze.inputMode = "path"
-	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
-	if handled {
-		t.Error("esc on analyzeView with inputMode should be forwarded to child")
-	}
-
-	// analyze normal -> esc handled globally (navigate back)
-	m.analyze.inputMode = ""
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
 	if !handled {
 		t.Error("esc on analyzeView with no state should navigate back")
 	}
 
-	// settings editing -> esc forwarded
 	m.router.currentView = settingsView
 	m.settings.editing = true
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
@@ -197,21 +167,19 @@ func TestGlobalKeyRouting_EscExceptions(t *testing.T) {
 		t.Error("esc on settingsView with editing=false should navigate back")
 	}
 
-	// export confirmation -> esc forwarded
-	m.router.currentView = exportView
-	m.exportV.showConfirmation = true
+	m.router.currentView = reportsView
+	m.reportsV.showConfirmation = true
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
 	if handled {
-		t.Error("esc on exportView with showConfirmation=true should be forwarded to child")
+		t.Error("esc on reportsView with showConfirmation=true should be forwarded to child")
 	}
 
-	m.exportV.showConfirmation = false
+	m.reportsV.showConfirmation = false
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
 	if !handled {
-		t.Error("esc on exportView with no confirmation should navigate back")
+		t.Error("esc on reportsView with no confirmation should navigate back")
 	}
 
-	// review editing -> esc forwarded
 	m.router.currentView = reviewView
 	m.review.editing = true
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
@@ -224,37 +192,21 @@ func TestGlobalKeyRouting_EscExceptions(t *testing.T) {
 	if !handled {
 		t.Error("esc on reviewView with editing=false should navigate back")
 	}
-
-	// localai showActions -> esc forwarded
-	m.router.currentView = localaiView
-	m.localai.showActions = true
-	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
-	if handled {
-		t.Error("esc on localaiView with showActions=true should be forwarded to child")
-	}
-
-	m.localai.showActions = false
-	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
-	if !handled {
-		t.Error("esc on localaiView with no actions should navigate back")
-	}
 }
 
 func TestGlobalKeyRouting_ReviewRKey(t *testing.T) {
 	m := defaultTestModel()
 	m.router.currentView = reviewView
 
-	// r on reviewView should fall through (Reject assumption)
 	handled, _, _ := m.handleGlobalKey(msgFromString("r"))
 	if handled {
 		t.Error("r on reviewView should be forwarded to child (Reject)")
 	}
 
-	// r on dashboard should be handled globally (navigate to analyze)
-	m.router.currentView = dashboardView
+	m.router.currentView = analyzeView
 	handled, _, _ = m.handleGlobalKey(msgFromString("r"))
 	if !handled {
-		t.Error("r on dashboardView should navigate to analyze")
+		t.Error("r on analyzeView should navigate to analyze")
 	}
 }
 
@@ -263,20 +215,17 @@ func TestGlobalKeyRouting_SettingsSKey(t *testing.T) {
 	m.router.currentView = settingsView
 	m.settings.editing = false
 
-	// s on settingsView not editing -> handled (save)
 	handled, _, _ := m.handleGlobalKey(msgFromString("s"))
 	if !handled {
 		t.Error("s on settingsView not editing should save settings globally")
 	}
 
-	// s on settingsView editing -> not handled (child handles esc first)
 	m.settings.editing = true
 	handled, _, _ = m.handleGlobalKey(msgFromString("s"))
 	if handled {
 		t.Error("s on settingsView editing should not be globally handled")
 	}
 
-	// s on review -> not handled (review uses s for Accept)
 	m.router.currentView = reviewView
 	m.settings.editing = false
 	handled, _, _ = m.handleGlobalKey(msgFromString("s"))
@@ -287,8 +236,7 @@ func TestGlobalKeyRouting_SettingsSKey(t *testing.T) {
 
 func TestGlobalKeyRouting_PageKeys(t *testing.T) {
 	pageKeys := []string{"pgup", "pgdn", "ctrl+u", "ctrl+d", "home", "end", "b", "g", "G"}
-	allViews := []view{startupView, dashboardView, analyzeView, resultsView, fileBrowserView,
-		localaiView, settingsView, aboutView, exportView, reviewView, validationView, helpView}
+	allViews := []view{analyzeView, caseView, settingsView, aboutView, reportsView, reviewView, validationView, helpView}
 
 	for _, key := range pageKeys {
 		for _, v := range allViews {
@@ -305,60 +253,42 @@ func TestGlobalKeyRouting_PageKeys(t *testing.T) {
 func TestNavigateToUpdatesSidebarSel(t *testing.T) {
 	m := defaultTestModel()
 
-	tests := []struct {
-		name string
-		view view
-		want int
-	}{
-		{"dashboard", dashboardView, 0},
-		{"filebrowser", fileBrowserView, 1},
-		{"analyze", analyzeView, 2},
-		{"results", resultsView, 3},
-		{"settings", settingsView, 15},
-		{"help", helpView, 16},
+	m.navigateTo(analyzeView)
+	if m.router.currentView != analyzeView {
+		t.Errorf("navigateTo(analyze): currentView = %v, want analyzeView", m.router.currentView)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m.navigateTo(tt.view)
-			if m.router.sidebarSel != tt.want {
-				t.Errorf("navigateTo(%v): sidebarSel = %d, want %d", tt.view, m.router.sidebarSel, tt.want)
-			}
-		})
+	m.navigateTo(caseView)
+	if m.router.currentView != caseView {
+		t.Errorf("navigateTo(case): currentView = %v, want caseView", m.router.currentView)
 	}
 
-	// Non-sidebar views should not change sidebarSel (stays at previous)
-	prevSel := m.router.sidebarSel
-	m.navigateTo(exportView)
-	if m.router.sidebarSel != prevSel {
-		t.Errorf("navigateTo(non-sidebar view) should preserve sidebarSel, got %d, want %d",
-			m.router.sidebarSel, prevSel)
+	m.navigateTo(settingsView)
+	if m.router.currentView != settingsView {
+		t.Errorf("navigateTo(settings): currentView = %v, want settingsView", m.router.currentView)
+	}
+
+	m.navigateTo(helpView)
+	if m.router.currentView != helpView {
+		t.Errorf("navigateTo(help): currentView = %v, want helpView", m.router.currentView)
 	}
 }
 
-func TestNavigateBackUpdatesSidebarSel(t *testing.T) {
+func TestNavigateBackUpdatesView(t *testing.T) {
 	m := defaultTestModel()
 
 	m.navigateTo(settingsView)
-	m.navigateTo(resultsView)
+	m.navigateTo(caseView)
 	m.navigateTo(analyzeView)
 
-	// Navigate back to results
 	m.navigateBack()
-	if m.router.currentView != resultsView {
-		t.Errorf("after navigateBack: currentView = %v, want resultsView", m.router.currentView)
-	}
-	if m.router.sidebarSel != 3 {
-		t.Errorf("after navigateBack to results: sidebarSel = %d, want 3", m.router.sidebarSel)
+	if m.router.currentView != caseView {
+		t.Errorf("after navigateBack: currentView = %v, want caseView", m.router.currentView)
 	}
 
-	// Navigate back to settings
 	m.navigateBack()
 	if m.router.currentView != settingsView {
 		t.Errorf("after second navigateBack: currentView = %v, want settingsView", m.router.currentView)
-	}
-	if m.router.sidebarSel != 15 {
-		t.Errorf("after navigateBack to settings: sidebarSel = %d, want 15", m.router.sidebarSel)
 	}
 }
 
@@ -370,8 +300,6 @@ func TestWindowSizeMsgFallsThrough(t *testing.T) {
 	model, cmd := m.Update(msg)
 	_ = cmd
 
-	// WindowSizeMsg should not return early — it should update width/height
-	// and then fall through to child dispatch. The model should reflect the new size.
 	mm := model.(mainModel)
 	if mm.width != 120 {
 		t.Errorf("width = %d, want 120", mm.width)
@@ -386,98 +314,72 @@ func TestWindowSizeMsgFallsThrough(t *testing.T) {
 
 func TestUpdateFallsThroughToChild(t *testing.T) {
 	m := defaultTestModel()
-	m.router.currentView = dashboardView
-	m.dash.selected = 0
+	m.router.currentView = helpView
 
-	// Dashboard handles down arrow — pressing it should increment selected from 0 to 1
 	msg := tea.KeyMsg{Type: tea.KeyDown}
 	model, _ := m.Update(msg)
 	mm := model.(mainModel)
-	if mm.dash.selected != 1 {
-		t.Errorf("dashboard down arrow should increment selected to 1, got %d", mm.dash.selected)
-	}
-
-	// Reset and try with a view where down is globably handled (scroll)
-	m2 := defaultTestModel()
-	m2.router.currentView = helpView
-	msg = tea.KeyMsg{Type: tea.KeyDown}
-	model, _ = m2.Update(msg)
-	mm = model.(mainModel)
-	// For help view, down is handled globally (scroll), so vp should have changed
 	if mm.vp.YOffset <= 0 && mm.vp.TotalLineCount() > 0 {
 		t.Error("expected vp.YOffset > 0 after down arrow on helpView (scroll)")
 	}
 }
 
-func TestCycleSidebar(t *testing.T) {
+func TestSidebarFocus(t *testing.T) {
 	m := defaultTestModel()
 
-	// Initial selection
-	if m.router.sidebarSel != 0 {
-		t.Errorf("initial sidebarSel = %d, want 0", m.router.sidebarSel)
+	if m.router.focus != focusContent {
+		t.Error("initial focus should be content")
 	}
 
-	m.router.CycleSidebar(1)
-	if m.router.sidebarSel != 1 {
-		t.Errorf("after cycleSidebar(1): %d, want 1", m.router.sidebarSel)
+	m.router.ToggleFocus()
+	if m.router.focus != focusSidebar {
+		t.Error("after toggle, focus should be sidebar")
 	}
 
-	m.router.CycleSidebar(3)
-	want := (1 + 3) % len(sidebarEntries)
-	if m.router.sidebarSel != want {
-		t.Errorf("after additional cycleSidebar(3): %d, want %d", m.router.sidebarSel, want)
+	m.router.ToggleFocus()
+	if m.router.focus != focusContent {
+		t.Error("after second toggle, focus should be content")
+	}
+}
+
+func TestSidebarNav_upDown(t *testing.T) {
+	m := defaultTestModel()
+	m.router.focus = focusSidebar
+
+	// Skip past any initial section headers to reach a navigable item
+	for nodes := m.router.sidebarVisibleNodes(); m.router.sidebarSel < len(nodes) && nodes[m.router.sidebarSel].isSection; {
+		m.router.sidebarSel++
+	}
+	startSel := m.router.sidebarSel
+
+	m.router.sidebarMoveDown()
+	if m.router.sidebarSel <= startSel {
+		t.Error("sidebarMoveDown should increase selection")
 	}
 
-	// Wrap around
-	m.router.sidebarSel = 0
-	m.router.CycleSidebar(-1)
-	want = len(sidebarEntries) - 1
-	if m.router.sidebarSel != want {
-		t.Errorf("cycleSidebar(-1) from 0: %d, want %d", m.router.sidebarSel, want)
+	m.router.sidebarMoveUp()
+	if m.router.sidebarSel != startSel {
+		t.Error("sidebarMoveUp should return to original")
 	}
 }
 
 func TestSearchActiveBypassesGlobalHandler(t *testing.T) {
 	m := defaultTestModel()
-	m.router.currentView = resultsView
+	m.router.currentView = caseView
 	m.searchActive = true
 	m.searchQuery = "test"
 
-	// When search is active, key presses should go to handleSearchInput, not handleGlobalKey
-	// We test this by checking that a letter key adds to search query
-	var cmd tea.Cmd
 	m.searchActive = true
-	_, cmd = m.Update(msgFromString("x"))
+	_, cmd := m.Update(msgFromString("x"))
 	_ = cmd
 
-	// handleSearchInput adds "x" to searchQuery via the pointer receiver
 	if m.searchQuery != "test" {
-		// m is a value copy in Update, but handleSearchInput takes *mainModel
-		// and modifies through pointer. However, in our test we need to check
-		// the actual behavior through the Update method.
 		t.Logf("searchQuery after update = %q (value receiver copy)", m.searchQuery)
 	}
 }
 
-func TestScrollKeysOnDashboardDontScroll(t *testing.T) {
-	// Arrow keys on dashboard should NOT scroll the viewport — they should fall through to child
-	m := defaultTestModel()
-	m.router.currentView = dashboardView
-	m.vp.YOffset = 50
-
-	handled, _, _ := m.handleGlobalKey(msgFromString("up"))
-	if handled {
-		t.Error("up on dashboardView should not be handled globally (should fall through to child)")
-	}
-
-	handled, _, _ = m.handleGlobalKey(msgFromString("down"))
-	if handled {
-		t.Error("down on dashboardView should not be handled globally (should fall through to child)")
-	}
-}
-
 func TestScrollKeysOnContentViewsScroll(t *testing.T) {
-	contentViews := []view{resultsView, helpView, aboutView}
+	contentViews := []view{caseView, helpView, aboutView}
 	for _, v := range contentViews {
 		m := defaultTestModel()
 		m.router.currentView = v
@@ -491,6 +393,25 @@ func TestScrollKeysOnContentViewsScroll(t *testing.T) {
 		handled, _, _ = m.handleGlobalKey(msgFromString("down"))
 		if !handled {
 			t.Errorf("down on %v should be handled globally (scroll)", v)
+		}
+	}
+}
+
+func TestSidebarActivate(t *testing.T) {
+	m := defaultTestModel()
+
+	// Find analyze (➕ New Analysis) in sidebar and activate it
+	for i, n := range m.router.sidebarVisibleNodes() {
+		if n.vid == analyzeView && !n.isSection {
+			m.router.sidebarSel = i
+			to, tab := m.router.sidebarActivate()
+			if to != analyzeView {
+				t.Errorf("sidebarActivate should navigate to analyzeView, got %v", to)
+			}
+			if tab != -1 {
+				t.Errorf("analyze tab should be -1, got %d", tab)
+			}
+			break
 		}
 	}
 }

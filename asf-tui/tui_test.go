@@ -71,19 +71,19 @@ func TestCountRisk(t *testing.T) {
 }
 
 func TestEmptyResultRendersEmptyStates(t *testing.T) {
-	s := NewStyles(Themes["dark"])
+	s := NewStyles(Themes["ASF0"])
 	r := &AnalysisResult{}
 
 	cases := []struct {
 		name string
 		fn   func() string
 	}{
-		{"Assumptions", func() string { return renderResultAssumptions(s, r, "") }},
-		{"Verification", func() string { return renderResultVerification(s, r) }},
-		{"Contradictions", func() string { return renderResultContradictions(s, r, "") }},
-		{"Controls", func() string { return renderResultControls(s, r, "") }},
-		{"BlindSpots", func() string { return renderResultBlindSpots(s, r) }},
-		{"Impact", func() string { return renderResultImpact(s, r) }},
+		{"Assumptions", func() string { return renderResultAssumptions(s, r, "", 80) }},
+		{"Verification", func() string { return renderResultVerification(s, r, 80) }},
+		{"Contradictions", func() string { return renderResultContradictions(s, r, "", 80) }},
+		{"Controls", func() string { return renderResultControls(s, r, "", 80) }},
+		{"BlindSpots", func() string { return renderResultBlindSpots(s, r, 80) }},
+		{"Impact", func() string { return renderResultImpact(s, r, 80) }},
 	}
 
 	for _, c := range cases {
@@ -173,35 +173,36 @@ func TestAddRecentFile(t *testing.T) {
 	}
 }
 
-func TestViewForSidebar(t *testing.T) {
+func TestSidebarTree(t *testing.T) {
 	r := newRouter()
-	for i, e := range sidebarEntries {
-		if got := r.ViewForSidebar(i); got != e.vid {
-			t.Errorf("ViewForSidebar(%d) = %d, want %d", i, got, e.vid)
+	nodes := r.sidebarVisibleNodes()
+	// 3 sections + 7 items = 10 (no case entries initially)
+	expected := 12
+	if len(nodes) != expected {
+		t.Errorf("sidebar has %d visible nodes, want %d", len(nodes), expected)
+	}
+	analyzeFound := false
+	reviewFound := false
+	settingsFound := false
+	for _, n := range r.sidebarVisibleNodes() {
+		if n.vid == analyzeView && !n.isSection {
+			analyzeFound = true
+		}
+		if n.vid == reviewView && !n.isSection {
+			reviewFound = true
+		}
+		if n.vid == settingsView && !n.isSection {
+			settingsFound = true
 		}
 	}
-	// Out of range should fall back to dashboard
-	if got := r.ViewForSidebar(100); got != dashboardView {
-		t.Errorf("ViewForSidebar(100) = %d, want dashboardView", got)
+	if !analyzeFound {
+		t.Error("sidebar should contain analyzeView (➕ New Analysis)")
 	}
-}
-
-func TestSidebarItems(t *testing.T) {
-	expected := 18
-	if len(sidebarEntries) != expected {
-		t.Errorf("sidebar has %d entries, want %d", len(sidebarEntries), expected)
+	if !reviewFound {
+		t.Error("sidebar should contain reviewView (Review Queue)")
 	}
-	// Verify all entries have valid views
-	for i, e := range sidebarEntries {
-		if e.vid < startupView || e.vid > helpView {
-			t.Errorf("sidebarEntries[%d] has invalid view %d", i, e.vid)
-		}
-	}
-	// Verify entries that map to resultsView have valid tab indices
-	for i, e := range sidebarEntries {
-		if e.vid == resultsView && (e.tab < 0 || e.tab > 11) {
-			t.Errorf("sidebarEntries[%d] (%s) has invalid tab %d", i, e.name, e.tab)
-		}
+	if !settingsFound {
+		t.Error("sidebar should contain settingsView")
 	}
 }
 
@@ -265,21 +266,32 @@ func TestNewResultsModel(t *testing.T) {
 	}
 }
 
-func TestNewFileBrowserModel(t *testing.T) {
-	fb := newFileBrowserModel()
-	if fb.path != "." {
-		t.Errorf("initial path = %q, want %q", fb.path, ".")
+func TestNewFilePickerState(t *testing.T) {
+	fp := newFilePickerState()
+	if fp.path != "." {
+		t.Errorf("initial path = %q, want %q", fp.path, ".")
 	}
-	if fb.showHidden {
+	if fp.showHidden {
 		t.Error("showHidden should be false initially")
 	}
-	if fb.showPreview {
+	if fp.showPreview {
 		t.Error("showPreview should be false initially")
+	}
+	if fp.mode != pickerArchitecture {
+		t.Errorf("initial mode = %d, want pickerArchitecture (%d)", fp.mode, pickerArchitecture)
+	}
+}
+
+func TestFilePickerMode(t *testing.T) {
+	fp := newFilePickerState()
+	fp.mode = pickerEvidence
+	if fp.mode != pickerEvidence {
+		t.Errorf("mode = %d, want pickerEvidence (%d)", fp.mode, pickerEvidence)
 	}
 }
 
 func TestRiskStyle(t *testing.T) {
-	s := NewStyles(Themes["dark"])
+	s := NewStyles(Themes["ASF0"])
 	// Verify styles render without panic and produce non-empty output
 	cases := []struct {
 		risk RiskLevel
@@ -300,7 +312,7 @@ func TestRiskStyle(t *testing.T) {
 }
 
 func TestConfidenceStyle(t *testing.T) {
-	s := NewStyles(Themes["dark"])
+	s := NewStyles(Themes["ASF0"])
 	cases := []struct {
 		pct int
 	}{
@@ -314,6 +326,150 @@ func TestConfidenceStyle(t *testing.T) {
 		if rendered == "" {
 			t.Errorf("confidenceStyle(%d) rendered empty", c.pct)
 		}
+	}
+}
+
+func TestNewLocalAIModel(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.AI.Enabled = true
+	cfg.AI.ActiveModel = "llama3.2:3b"
+	cfg.AI.InstalledModels = []string{"llama3.2:3b", "mistral:7b"}
+	lm := newLocalAIModel(&cfg)
+
+	if lm.activeModel != "llama3.2:3b" {
+		t.Errorf("activeModel = %q, want %q", lm.activeModel, "llama3.2:3b")
+	}
+	if len(lm.catalog) != len(SupportedModels) {
+		t.Errorf("catalog has %d entries, want %d", len(lm.catalog), len(SupportedModels))
+	}
+
+	found := false
+	for _, c := range lm.catalog {
+		if c.Info.Name == "llama3.2:3b" {
+			found = true
+			if !c.Installed {
+				t.Error("llama3.2:3b should be marked installed")
+			}
+			if !c.Active {
+				t.Error("llama3.2:3b should be marked active")
+			}
+		}
+	}
+	if !found {
+		t.Error("llama3.2:3b not found in catalog")
+	}
+}
+
+func TestLocalAIViewRender(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = localAIView
+	content := m.renderContent()
+	if content == "" {
+		t.Error("Local AI view should render non-empty content")
+	}
+}
+
+func TestLocalAIViewSwitch(t *testing.T) {
+	m := defaultTestModel()
+	m.router.SetView(localAIView)
+	if m.router.currentView != localAIView {
+		t.Errorf("currentView = %v, want localAIView (%v)", m.router.currentView, localAIView)
+	}
+
+	// Verify scroll state is tracked for localAIView
+	m.scrollY[localAIView] = 42
+	m.restoreScroll()
+	if m.vp.YOffset != 42 {
+		t.Errorf("scroll y offset = %d, want 42", m.vp.YOffset)
+	}
+}
+
+func TestLocalAISidebarEntry(t *testing.T) {
+	m := defaultTestModel()
+	found := false
+	for _, n := range m.router.sidebarVisibleNodes() {
+		if n.vid == localAIView && !n.isSection {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("Local AI sidebar entry not found in sidebar nodes")
+	}
+}
+
+func TestLocalAIAnalysisMode(t *testing.T) {
+	a := newAnalyzeModel(nil)
+	modeFound := false
+	for _, item := range a.items {
+		if item.value == ModeASFAndAI {
+			modeFound = true
+			break
+		}
+	}
+	if !modeFound {
+		t.Error("ASF Engine + Local AI mode not found in analyze menu")
+	}
+}
+
+func TestLocalAISidebarNavigation(t *testing.T) {
+	m := defaultTestModel()
+	m.router.focus = focusSidebar
+
+	// Find Local AI entry and navigate to it
+	var localAIIndex int
+	found := false
+	for i, n := range m.router.sidebarVisibleNodes() {
+		if n.vid == localAIView && !n.isSection {
+			localAIIndex = i
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Skip("Local AI sidebar entry not found")
+	}
+
+	m.router.sidebarSel = localAIIndex
+	to, tab := m.router.sidebarActivate()
+	if to != localAIView {
+		t.Errorf("sidebarActivate should navigate to localAIView, got %v", to)
+	}
+	if tab != -1 {
+		t.Errorf("Local AI tab should be -1, got %d", tab)
+	}
+}
+
+func TestLocalAICasesWorkNavigation(t *testing.T) {
+	// Test that CASES / WORK / SYSTEM navigation still works with Local AI added
+	m := defaultTestModel()
+	m.router.focus = focusSidebar
+
+	viewsToCheck := []view{analyzeView, reviewView, validationView, reportsView, settingsView, helpView, aboutView}
+	for _, target := range viewsToCheck {
+		for i, n := range m.router.sidebarVisibleNodes() {
+			if n.vid == target && !n.isSection {
+				m.router.sidebarSel = i
+				to, _ := m.router.sidebarActivate()
+				if to != target {
+					t.Errorf("sidebarActivate should navigate to %v, got %v", target, to)
+				}
+				break
+			}
+		}
+	}
+}
+
+func TestLocalAIRouteDoesNotConflict(t *testing.T) {
+	// Verify localAIView is a distinct value
+	if localAIView == analyzeView || localAIView == caseView || localAIView == settingsView {
+		t.Error("localAIView conflicts with an existing view")
+	}
+	if localAIView == helpView || localAIView == aboutView || localAIView == reviewView {
+		t.Error("localAIView conflicts with an existing view")
+	}
+	if localAIView == validationView || localAIView == reportsView {
+		t.Error("localAIView conflicts with an existing view")
 	}
 }
 

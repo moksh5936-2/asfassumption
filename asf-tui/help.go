@@ -2,6 +2,8 @@ package main
 
 import (
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 type helpModel struct{}
@@ -17,132 +19,94 @@ func (m mainModel) viewHelp() string {
 		title string
 		keys  []string
 	}{
-		{"Global", []string{
-			"Ctrl+C / Q  Force quit",
-			"q           Go back / navigate to previous view",
-			"Esc         Go back / Cancel analysis",
-			"?           Toggle help",
-			"Tab         Cycle sidebar items (primary navigation)",
-			"Shift+Tab   Cycle sidebar items (reverse)",
-			"f           Open file explorer",
-			"r           Run analysis (open Analyze view)",
-		}},
 		{"Navigation", []string{
-			"↑ / k       Move up / Scroll up",
-			"↓ / j       Move down / Scroll down",
-			"PgUp / b    Page up",
-			"PgDn / Space Page down",
-			"Home / g    Go to top",
-			"End / G     Go to bottom",
-			"Ctrl+U      Half page up",
-			"Ctrl+D      Half page down",
+			"Tab         Toggle sidebar / content focus",
+			"↑↓          Navigate content or sidebar tree",
+			"Enter       Select item or activate sidebar entry",
+			"q / Esc     Go back",
+			"Q           Quit",
 		}},
-		{"Dashboard", []string{
-			"↑↓          Select quick action",
-			"Enter       Open selected action",
-			"a           Analyze architecture",
-			"l           Open AI models",
-			"s           Open settings",
-			"i           Open about",
-			"1-9         Open recent file (by number)",
-		}},
-		{"Analyze", []string{
-			"↑↓          Select field (path, mode, start)",
-			"Enter       Edit path / Select mode / Start analysis",
-			"In path: type text, Enter to confirm",
+		{"New Analysis", []string{
+			"Enter       Select / browse architecture file",
 			"Esc         Cancel running analysis",
-			"f           Open file browser to pick document",
 		}},
-		{"Results", []string{
-			"Tab         Next result tab (sidebar-driven navigation)",
-			"Shift+Tab   Previous result tab",
-			"/           Filter current tab by keyword",
-			"n/N         Next/prev match in search",
-			"e           Export results",
-			"c           Clear results",
-			"r           Open review mode",
-			"v           Open validation mode",
-		}},
-		{"File Explorer", []string{
-			"↑↓          Navigate files",
-			"Enter       Open folder / Select file",
-			"Backspace   Go to parent directory",
-			".           Toggle hidden files",
-			"Tab         Toggle preview panel",
-			"/           Search filename",
-		}},
-		{"AI Models", []string{
-			"↑↓          Select model",
-			"Enter       Show actions for model",
-			"Esc         Close action menu",
+		{"Case Workspace", []string{
+			"↑↓ / j k    Scroll workspace tabs",
+			"← →         Switch workspace tab",
+			"r           Open Review mode",
+			"v           Open Validation",
+			"e           Generate Reports",
+			"c           Clear case",
+			"/           Search within visible content",
 		}},
 		{"Review Mode", []string{
-			"Enter       Toggle browse/detail",
+			"↑↓          Navigate assumptions",
+			"Enter       Toggle browse / detail view",
 			"s           Accept assumption",
 			"r           Reject assumption",
 			"m           Mark as modified",
-			"n           Edit note",
-			"v           Open validation for this assumption",
+			"n           Edit notes",
+			"v           Open Validation",
 		}},
-		{"Export", []string{
-			"↑↓          Select format",
-			"Enter       Confirm selection",
-			"Esc         Back to results",
+		{"Validation", []string{
+			"↑↓          Navigate assumptions",
+			"Enter       View detailed trace",
 		}},
 		{"Settings", []string{
-			"↑↓          Select setting",
-			"Enter       Start editing",
-			"← →         Change value",
-			"s           Save settings",
+			"Enter       Toggle edit mode",
+			"← →         Change value during edit",
+			"s           Save",
 			"Esc         Cancel edit",
 		}},
-		{"Search", []string{
-			"/           Start search (current result tab)",
-			"Esc / Enter Exit search",
+		{"Reports", []string{
+			"↑↓          Select export format",
+			"Enter       Choose / confirm",
+			"Esc         Cancel / back",
 		}},
-		{"Sidebar Navigation", []string{
-			"Dashboard                    Quick actions overview",
-			"File Explorer                Browse and select files",
-			"Analyze                      Run architecture analysis",
-			"Summary                      Analysis summary",
-			"Assumptions                  List all extracted assumptions",
-			"Verification                 Verification status & evidence",
-			"Contradictions               Detected contradictions",
-			"Trust Chains                 Trust dependency chains",
-			"Single Points of Trust       SPOF identification",
-			"Assumption Impact Analysis   Impact & priority analysis",
-			"Blind Spots                  Coverage gaps & blind spots",
-			"SDRI                         Security Design Review Intelligence",
-			"Recommended Controls         Control recommendations",
-			"Security Design Review       Detailed SDR findings",
-			"Reports / Exports            Export & report options",
-			"Settings                     Application settings",
-			"Help                         Keyboard reference",
-			"About                        Version & project info",
+		{"File Picker", []string{
+			"↑↓ / j k    Navigate files",
+			"Enter       Open directory / select file",
+			"Backspace   Go to parent directory",
+			".           Toggle hidden files",
+			"Tab         Toggle preview panel",
+			"/           Search files",
+			"Esc         Cancel / close picker",
+		}},
+		{"Sidebar Tree", []string{
+			"CASES",
+			"  ➕ New Analysis",
+			"  📁 <case files>",
+			"WORK",
+			"  📋 Review Queue",
+			"  ✓ Validation Queue",
+			"  📦 Reports",
+			"SYSTEM",
+			"  ⚙ Settings",
+			"  ❓ Help",
+			"  ℹ About",
 		}},
 	}
 
+	header := s.PremiumHeader("Help", m.mainWidth())
+
 	var rows []string
-	rows = append(rows, s.Title.Render("Help — Keyboard Shortcuts"))
-	rows = append(rows, s.Subtitle.Render("Press ? to close help, Esc to go back"))
+	rows = append(rows, s.DimText.Render(" Press Tab to focus sidebar │ ↑↓ to navigate │ Enter to select"))
 	rows = append(rows, "")
 
 	for _, sec := range sections {
-		rows = append(rows, s.Section.Render(sec.title))
+		rows = append(rows, s.SectionHeader(sec.title, m.mainWidth()))
 		for _, k := range sec.keys {
-			rows = append(rows, s.SectionItem.Render("  "+k))
+			rows = append(rows, "  "+s.DimText.Render(k))
 		}
 		rows = append(rows, "")
 	}
 
-	rows = append(rows, s.Section.Render("Supported File Types"))
-	rows = append(rows, s.SectionItem.Render("  YAML (.yaml, .yml), JSON (.json), Markdown (.md)"))
-	rows = append(rows, s.SectionItem.Render("  Mermaid (.mmd), Draw.io (.drawio), SVG (.svg)"))
-	rows = append(rows, s.SectionItem.Render("  PDF (.pdf), DOCX (.docx), TXT (.txt)"))
+	rows = append(rows, s.SectionRule.Render(strings.Repeat("━", max(1, m.mainWidth()))))
+	rows = append(rows, s.DimText.Render("  ASF0 v"+ASFVersion+" — Security Assumption Framework"))
 
-	rows = append(rows, "")
-	rows = append(rows, s.DimText.Render("  ASF v"+ASFVersion+" — Architecture Security Framework"))
-	rows = append(rows, s.DimText.Render("  Local-first, offline-capable, no telemetry"))
-
-	return strings.Join(rows, "\n")
+	return lipgloss.JoinVertical(lipgloss.Left,
+		header,
+		"",
+		s.Card("", strings.Join(rows, "\n"), m.mainWidth()-4),
+	)
 }

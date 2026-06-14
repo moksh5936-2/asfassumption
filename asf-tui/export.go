@@ -2268,7 +2268,7 @@ func riskLevelForAPDScore(score float64) string {
 	}
 }
 
-type exportModel struct {
+type reportsModel struct {
 	selected         int
 	format           ExportFormat
 	done             bool
@@ -2279,11 +2279,11 @@ type exportModel struct {
 	err              error
 }
 
-func newExportModel() exportModel {
-	return exportModel{}
+func newReportsModel() reportsModel {
+	return reportsModel{}
 }
 
-func (m exportModel) Update(msg tea.Msg) (exportModel, tea.Cmd) {
+func (m reportsModel) Update(msg tea.Msg) (reportsModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -2322,46 +2322,42 @@ func (m exportModel) Update(msg tea.Msg) (exportModel, tea.Cmd) {
 	return m, nil
 }
 
-func (m mainModel) viewExport() string {
+func (m mainModel) viewReports() string {
 	s := m.styles
-	ex := m.exportV
+	ex := m.reportsV
 
 	if ex.err != nil {
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Export Error"),
-			s.BorderBox.Render(
-				lipgloss.JoinVertical(lipgloss.Center,
-					s.StatusBad.Render("✗ Export Failed"),
-					s.SectionItem.Render(ex.err.Error()),
-					s.SectionItem.Render("Press Esc to return."),
-				),
+		return s.CardAccent("Export Error",
+			lipgloss.JoinVertical(lipgloss.Center,
+				s.StatusBad.Render("✗ Export Failed"),
+				"",
+				s.DimText.Render(ex.err.Error()),
+				"",
+				s.DimText.Render("Press Esc to return."),
 			),
-		)
+			m.mainWidth()-4)
 	}
 
 	if ex.done {
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Export"),
-			s.BorderBox.Render(
-				lipgloss.JoinVertical(lipgloss.Center,
-					s.StatusGood.Render("✓ Export Complete"),
-					s.SectionItem.Render(ex.exportPath),
-					s.SectionItem.Render("Press Esc to return."),
-				),
+		return s.Card("Export Complete",
+			lipgloss.JoinVertical(lipgloss.Center,
+				s.StatusGood.Render("✓ Export Complete"),
+				"",
+				s.Value.Render(ex.exportPath),
+				"",
+				s.DimText.Render("Press Esc to return."),
 			),
-		)
+			m.mainWidth()-4)
 	}
 
 	if ex.showConfirmation {
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Export"),
-			s.BorderBox.Render(
-				lipgloss.JoinVertical(lipgloss.Center,
-					s.SectionItem.Render(fmt.Sprintf("Export as %s?", ex.format)),
-					s.SectionItem.Render("Press Y to confirm, Esc to cancel."),
-				),
+		return s.Card("Confirm Export",
+			lipgloss.JoinVertical(lipgloss.Center,
+				s.DimText.Render(fmt.Sprintf("Export as %s?", ex.format)),
+				"",
+				s.Accent.Render("Press Y to confirm, Esc to cancel."),
 			),
-		)
+			m.mainWidth()-4)
 	}
 
 	formats := []struct {
@@ -2386,23 +2382,26 @@ func (m mainModel) viewExport() string {
 
 	var items []string
 	for i, f := range formats {
+		prefix := "  "
 		style := s.SectionItem
 		if i == ex.selected {
+			prefix = s.Fox.Render("▶ ")
 			style = s.MenuSelected
 		}
-		items = append(items, style.Render(f.name))
+		items = append(items, style.Render(prefix+f.name))
 	}
 
+	header := s.PremiumHeader("Reports", m.mainWidth())
 	return lipgloss.JoinVertical(lipgloss.Left,
-		s.Title.Render("Export Results"),
-		s.Subtitle.Render("Select export format:"),
-		lipgloss.JoinVertical(lipgloss.Left, items...),
+		header,
+		"",
+		s.Card("Select Export Format", strings.Join(items, "\n"), m.mainWidth()-4),
 	)
 }
 
-func (m mainModel) updateExport(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m mainModel) updateReports(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.exportV, cmd = m.exportV.Update(msg)
+	m.reportsV, cmd = m.reportsV.Update(msg)
 	return m, cmd
 }
 

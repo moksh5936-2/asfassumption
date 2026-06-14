@@ -43,15 +43,6 @@ func newResultsModel() resultsModel {
 }
 
 func (m resultsModel) Update(msg tea.Msg) (resultsModel, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab":
-			m.resultTab = (m.resultTab + 1) % len(m.tabs)
-		case "shift+tab":
-			m.resultTab = (m.resultTab - 1 + len(m.tabs)) % len(m.tabs)
-		}
-	}
 	return m, nil
 }
 
@@ -59,47 +50,46 @@ func (m mainModel) viewResults() string {
 	s := m.styles
 
 	if m.results.result == nil {
-		return lipgloss.JoinVertical(lipgloss.Left,
-			s.Title.Render("Analysis Results"),
+		return s.Card("Case Workspace",
 			s.EmptyState.Render("No results available. Run an analysis first."),
-		)
+			m.mainWidth())
 	}
 
 	r := m.results.result
-	tabBar := m.renderResultTabs()
-
 	query := m.searchQuery
 	var content string
-	switch m.results.resultTab {
+	tab := m.results.resultTab
+	switch tab {
 	case 0:
-		content = renderResultSummary(s, r)
+		content = renderResultSummary(s, r, m.mainWidth()-4)
 	case 1:
-		content = renderResultAssumptions(s, r, query)
+		content = renderResultAssumptions(s, r, query, m.mainWidth()-4)
 	case 2:
-		content = renderResultVerification(s, r)
+		content = renderResultVerification(s, r, m.mainWidth()-4)
 	case 3:
-		content = renderResultContradictions(s, r, query)
+		content = renderResultContradictions(s, r, query, m.mainWidth()-4)
 	case 4:
 		content = renderResultTrust(s, r, query)
 	case 5:
-		content = renderResultImpact(s, r)
+		content = renderResultImpact(s, r, m.mainWidth()-4)
 	case 6:
-		content = renderResultBlindSpots(s, r)
+		content = renderResultBlindSpots(s, r, m.mainWidth()-4)
 	case 7:
-		content = renderResultControls(s, r, query)
+		content = renderResultControls(s, r, query, m.mainWidth()-4)
 	case 8:
-		content = renderResultReports(s, r)
+		content = renderResultReports(s, r, m.mainWidth()-4)
 	case 9:
-		content = renderResultSDRI(s, r)
+		content = renderResultSDRI(s, r, m.mainWidth()-4)
 	case 10:
-		content = renderResultSecurityDesignReview(s, r)
+		content = renderResultSecurityDesignReview(s, r, m.mainWidth()-4)
 	case 11:
 		content = renderResultSPOFs(s, r)
 	}
 
+	sectionName := m.results.tabs[tab].name
+	header := s.PremiumHeader(sectionName, m.mainWidth())
 	return lipgloss.JoinVertical(lipgloss.Left,
-		s.Title.Render("Analysis Results"),
-		tabBar,
+		header,
 		content,
 	)
 }
@@ -120,9 +110,7 @@ func (m mainModel) renderResultTabs() string {
 		tabs = append(tabs, style.Render(" "+label+" "))
 	}
 	bar := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
-	sep := lipgloss.NewStyle().
-		Foreground(s.Theme().Border).
-		Render(strings.Repeat("─", max(1, lipgloss.Width(bar))))
+	sep := s.SectionRule.Render(strings.Repeat("─", max(1, m.mainWidth())))
 	return lipgloss.JoinVertical(lipgloss.Left, bar, sep)
 }
 
@@ -208,78 +196,72 @@ func (m mainModel) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func renderResultSummary(s StyleSet, r *AnalysisResult) string {
-	var rows []string
+func renderResultSummary(s StyleSet, r *AnalysisResult, width int) string {
+	if width < 30 {
+		width = 30
+	}
 
-	rows = append(rows, s.Section.Render("Summary"))
-	rows = append(rows, fmt.Sprintf("  Architecture: %s", r.ArchitectureName))
-	rows = append(rows, fmt.Sprintf("  Domain:       %s", r.Domain))
-	rows = append(rows, fmt.Sprintf("  Mode:         %s", r.AnalysisMode))
-	rows = append(rows, "")
-
-	totalAssumptions := len(r.Assumptions)
 	critical := countRisk(r.Assumptions, "Critical")
 	high := countRisk(r.Assumptions, "High")
 	medium := countRisk(r.Assumptions, "Medium")
 	low := countRisk(r.Assumptions, "Low")
 
-	rows = append(rows, s.Section.Render("Assumptions"))
-	rows = append(rows, fmt.Sprintf("  Total:     %d", totalAssumptions))
-	if critical > 0 {
-		rows = append(rows, fmt.Sprintf("  %s %d", s.BadgeCritical.Render("CRITICAL"), critical))
-	}
-	if high > 0 {
-		rows = append(rows, fmt.Sprintf("  %s %d", s.BadgeHigh.Render("HIGH"), high))
-	}
-	if medium > 0 {
-		rows = append(rows, fmt.Sprintf("  %s %d", s.BadgeMedium.Render("MEDIUM"), medium))
-	}
-	if low > 0 {
-		rows = append(rows, fmt.Sprintf("  %s %d", s.BadgeLow.Render("LOW"), low))
-	}
-	rows = append(rows, "")
+	var infoRows []string
+	infoRows = append(infoRows, fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Architecture"), s.Value.Render(r.ArchitectureName)))
+	infoRows = append(infoRows, fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Domain"), s.Value.Render(r.Domain)))
+	infoRows = append(infoRows, fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Mode"), s.Value.Render(r.AnalysisMode)))
+	infoRows = append(infoRows, "")
+	infoRows = append(infoRows, fmt.Sprintf("  %s  %s", s.SectionTitle.Render("Assumptions"), s.Value.Render(fmt.Sprintf("%d", len(r.Assumptions)))))
+	infoCard := s.Card("Case Info", strings.Join(infoRows, "\n"), width)
 
+	riskCard := s.Card("Risk Distribution", s.RiskHeatmap("", critical, high, medium, low), width)
+
+	var verifyCard string
 	if r.VerificationOutput != nil && r.VerificationOutput.Assessment != nil {
 		a := r.VerificationOutput.Assessment
-		rows = append(rows, s.Section.Render("Verification"))
-		rows = append(rows, fmt.Sprintf("  Verified:  %d", a.VerifiedCount))
-		rows = append(rows, fmt.Sprintf("  Partial:   %d", a.PartialCount))
-		rows = append(rows, fmt.Sprintf("  Unknown:   %d", a.UnverifiedCount))
-		rows = append(rows, "")
+		vContent := fmt.Sprintf("  %s  %s  %s",
+			s.StatusGood.Render(fmt.Sprintf("✓ %d verified", a.VerifiedCount)),
+			s.StatusWarn.Render(fmt.Sprintf("~ %d partial", a.PartialCount)),
+			s.DimText.Render(fmt.Sprintf("? %d unverified", a.UnverifiedCount)))
+		verifyCard = s.Card("Verification", vContent, width)
 	}
 
-	if len(r.Contradictions) > 0 {
-		rows = append(rows, s.Section.Render("Contradictions"))
-		rows = append(rows, fmt.Sprintf("  Found:     %d", len(r.Contradictions)))
-		rows = append(rows, "")
-	}
-
+	var trustCard string
 	if r.TrustOutput != nil && len(r.TrustOutput.TrustChains) > 0 {
-		rows = append(rows, s.Section.Render("Trust Chains"))
-		rows = append(rows, fmt.Sprintf("  Chains:    %d", len(r.TrustOutput.TrustChains)))
-		rows = append(rows, fmt.Sprintf("  SPOFs:     %d", len(r.TrustOutput.SinglePointsOfTrust)))
-		rows = append(rows, "")
+		tContent := fmt.Sprintf("  %s  %s  %s",
+			s.Value.Render(fmt.Sprintf("Chains: %d", len(r.TrustOutput.TrustChains))),
+			s.RiskBadge(fmt.Sprintf("SPOFs: %d", len(r.TrustOutput.SinglePointsOfTrust))),
+			s.DimText.Render("Press 4 for Trust view"),
+		)
+		trustCard = s.Card("Trust Analysis", tContent, width)
 	}
 
+	var coverageCard string
 	if r.CoverageOutput != nil {
-		rows = append(rows, s.Section.Render("Coverage"))
+		var cvRows []string
 		if r.CoverageOutput.BlindSpots != nil {
-			rows = append(rows, fmt.Sprintf("  Blind Spots: %d", len(r.CoverageOutput.BlindSpots)))
+			cvRows = append(cvRows, fmt.Sprintf("  Blind Spots: %d", len(r.CoverageOutput.BlindSpots)))
 		}
 		if r.CoverageOutput.Assessment != nil && r.CoverageOutput.Assessment.Gaps != nil {
-			rows = append(rows, fmt.Sprintf("  Gaps:     %d", len(r.CoverageOutput.Assessment.Gaps)))
+			cvRows = append(cvRows, fmt.Sprintf("  Gaps: %d", len(r.CoverageOutput.Assessment.Gaps)))
 		}
-		rows = append(rows, "")
+		if len(cvRows) > 0 {
+			coverageCard = s.Card("Coverage", strings.Join(cvRows, "\n"), width)
+		}
 	}
 
-	rows = append(rows, s.Section.Render("Exports"))
-	rows = append(rows, "  Press 'e' to export results.")
-	return strings.Join(rows, "\n")
+	return lipgloss.JoinVertical(lipgloss.Left,
+		infoCard,
+		riskCard,
+		verifyCard,
+		trustCard,
+		coverageCard,
+	)
 }
 
-func renderResultAssumptions(s StyleSet, r *AnalysisResult, searchQuery string) string {
+func renderResultAssumptions(s StyleSet, r *AnalysisResult, searchQuery string, width int) string {
 	if len(r.Assumptions) == 0 {
-		return s.EmptyState.Render("No assumptions found.")
+		return s.Card("", s.EmptyState.Render("No assumptions found."), width)
 	}
 
 	var filtered []Assumption
@@ -301,12 +283,12 @@ func renderResultAssumptions(s StyleSet, r *AnalysisResult, searchQuery string) 
 		sectionTitle = fmt.Sprintf("Assumptions (%d of %d matching \"%s\")", len(filtered), len(r.Assumptions), searchQuery)
 	}
 	if len(filtered) == 0 {
-		return s.EmptyState.Render(fmt.Sprintf("No assumptions match \"%s\".", searchQuery))
+		return s.Card("", s.EmptyState.Render(fmt.Sprintf("No assumptions match \"%s\".", searchQuery)), width)
 	}
 
 	var rows []string
-	rows = append(rows, s.Section.Render(sectionTitle))
-	rows = append(rows, s.DimText.Render("  ID  Risk       Confidence  Description"))
+	rows = append(rows, s.SectionRule.Render(strings.Repeat("─", max(1, width-4))))
+	rows = append(rows, s.SubSectionTitle.Render("ID  Risk        Confidence  Description"))
 
 	for _, a := range filtered {
 		riskStyle := riskStyle(s, a.Risk)
@@ -314,60 +296,69 @@ func renderResultAssumptions(s StyleSet, r *AnalysisResult, searchQuery string) 
 		confStyle := confidenceStyle(s, confPct)
 		text := a.Description
 		rows = append(rows, fmt.Sprintf("  %s %s  %s  %s",
-			a.ID,
+			s.DimText.Render(a.ID),
 			riskStyle.Render(padRight(string(a.Risk), 10)),
 			confStyle.Render(fmt.Sprintf("%3d%%", confPct)),
 			text))
 	}
-	return strings.Join(rows, "\n")
+	return s.Card(sectionTitle, strings.Join(rows, "\n"), width)
 }
 
-func renderResultVerification(s StyleSet, r *AnalysisResult) string {
+func renderResultVerification(s StyleSet, r *AnalysisResult, width int) string {
 	if r.VerificationOutput == nil || r.VerificationOutput.Assessment == nil {
-		return s.EmptyState.Render("No verification data available.")
+		return s.Card("", s.EmptyState.Render("No verification data available."), width)
 	}
 	a := r.VerificationOutput.Assessment
-	var rows []string
-	rows = append(rows, s.Section.Render(fmt.Sprintf("Verification — %d total assumptions",
-		a.TotalAssumptions)))
 
-	rows = append(rows, "")
-	rows = append(rows, fmt.Sprintf("  %s  %d verified", s.StatusGood.Render("✓"), a.VerifiedCount))
-	rows = append(rows, fmt.Sprintf("  %s  %d partial", s.StatusWarn.Render("~"), a.PartialCount))
-	rows = append(rows, fmt.Sprintf("  %s  %d unverified", s.DimText.Render("?"), a.UnverifiedCount))
-	rows = append(rows, fmt.Sprintf("  %s  %d no evidence", s.DimText.Render("○"), a.NoEvidenceCount))
-	rows = append(rows, "")
+	cardW := (width - 12) / 4
+	if cardW < 10 {
+		cardW = 10
+	}
+	statusCards := lipgloss.JoinHorizontal(lipgloss.Top,
+		s.StatusCardLarge("VERIFIED", a.VerifiedCount, "", cardW),
+		strings.Repeat(" ", 2),
+		s.StatusCardLarge("PARTIAL", a.PartialCount, "", cardW),
+		strings.Repeat(" ", 2),
+		s.StatusCardLarge("UNVERIFIED", a.UnverifiedCount, "", cardW),
+		strings.Repeat(" ", 2),
+		s.StatusCardLarge("NO EVIDENCE", a.NoEvidenceCount, "", cardW),
+	)
+
+	var rows []string
+	rows = append(rows, statusCards)
 
 	if a.OverallConfidence > 0 {
-		rows = append(rows, fmt.Sprintf("  Overall Confidence: %.1f%%", a.OverallConfidence*100))
+		confPct := a.OverallConfidence * 100
+		rows = append(rows, "")
+		rows = append(rows, s.SubHeader("Overall Confidence"))
+		rows = append(rows, "  "+s.ProgressWithLabel(confPct, width-8))
 		rows = append(rows, "")
 	}
 
 	if r.VerificationOutput.CISOView != nil {
 		cv := r.VerificationOutput.CISOView
 		if len(cv.TopAssumptionsToVerify) > 0 {
-			rows = append(rows, s.Section.Render("Top Items to Verify"))
+			var items []string
 			for _, plan := range cv.TopAssumptionsToVerify {
-				text := plan.AssumptionText
-				rows = append(rows, fmt.Sprintf("  • %s", text))
+				items = append(items, "  • "+s.DimText.Render(plan.AssumptionText))
 			}
-			rows = append(rows, "")
+			rows = append(rows, s.Card("Top Items to Verify", strings.Join(items, "\n"), width-4))
 		}
 		if len(cv.EvidenceGaps) > 0 {
-			rows = append(rows, s.StatusWarn.Render("Evidence Gaps:"))
+			var gaps []string
 			for _, g := range cv.EvidenceGaps {
-				rows = append(rows, fmt.Sprintf("  • %s", g))
+				gaps = append(gaps, "  • "+s.StatusWarn.Render(g))
 			}
-			rows = append(rows, "")
+			rows = append(rows, s.CardAccent("Evidence Gaps", strings.Join(gaps, "\n"), width-4))
 		}
 	}
 
-	return strings.Join(rows, "\n")
+	return s.Card("Verification Assessment", strings.Join(rows, "\n"), width)
 }
 
-func renderResultContradictions(s StyleSet, r *AnalysisResult, searchQuery string) string {
+func renderResultContradictions(s StyleSet, r *AnalysisResult, searchQuery string, width int) string {
 	if len(r.Contradictions) == 0 {
-		return s.EmptyState.Render("No contradictions detected.")
+		return s.Card("", s.EmptyState.Render("No contradictions detected."), width)
 	}
 
 	var filtered []Contradiction
@@ -388,12 +379,10 @@ func renderResultContradictions(s StyleSet, r *AnalysisResult, searchQuery strin
 		sectionTitle = fmt.Sprintf("Contradictions (%d of %d matching \"%s\")", len(filtered), len(r.Contradictions), searchQuery)
 	}
 	if len(filtered) == 0 {
-		return s.EmptyState.Render(fmt.Sprintf("No contradictions match \"%s\".", searchQuery))
+		return s.Card("", s.EmptyState.Render(fmt.Sprintf("No contradictions match \"%s\".", searchQuery)), width)
 	}
 
-	var rows []string
-	rows = append(rows, s.Section.Render(sectionTitle))
-
+	var cards []string
 	for _, c := range filtered {
 		severityStyle := s.StatusWarn
 		if c.Severity == RiskHigh || c.Severity == RiskCritical {
@@ -401,16 +390,20 @@ func renderResultContradictions(s StyleSet, r *AnalysisResult, searchQuery strin
 		} else if c.Severity == RiskLow {
 			severityStyle = s.StatusGood
 		}
-		rows = append(rows, fmt.Sprintf("  %s %s", severityStyle.Render(strings.ToUpper(string(c.Severity))), c.Description))
+		var detail []string
+		detail = append(detail, fmt.Sprintf("  %s", severityStyle.Render(strings.ToUpper(string(c.Severity)))))
+		detail = append(detail, "  "+s.Value.Render(c.Description))
 		if c.Explanation != "" {
-			rows = append(rows, fmt.Sprintf("    Reason: %s", c.Explanation))
+			detail = append(detail, "  "+s.DimText.Render("Reason: "+c.Explanation))
 		}
 		if len(c.AffectedAssumptions) > 0 {
-			rows = append(rows, fmt.Sprintf("    Affects: %s", strings.Join(c.AffectedAssumptions, ", ")))
+			detail = append(detail, "  "+s.DimText.Render("Affects: "+strings.Join(c.AffectedAssumptions, ", ")))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.CardAccent("", strings.Join(detail, "\n"), width))
 	}
-	return strings.Join(rows, "\n")
+
+	title := s.SubSectionTitle.Render(sectionTitle)
+	return title + "\n" + strings.Join(cards, "\n")
 }
 
 func renderResultTrust(s StyleSet, r *AnalysisResult, searchQuery string) string {
@@ -423,7 +416,6 @@ func renderResultTrust(s StyleSet, r *AnalysisResult, searchQuery string) string
 	if len(r.TrustOutput.TrustChains) > 0 {
 		total := len(r.TrustOutput.TrustChains)
 		matchCount := 0
-		var chainRows []string
 
 		for _, chain := range r.TrustOutput.TrustChains {
 			if searchQuery != "" {
@@ -436,17 +428,22 @@ func renderResultTrust(s StyleSet, r *AnalysisResult, searchQuery string) string
 			}
 			matchCount++
 			confidence := int(chain.Confidence * 100)
-			route := chain.RootNode
-			if chain.LeafNode != "" && chain.LeafNode != chain.RootNode {
-				route += " → " + chain.LeafNode
-			}
-			chainRows = append(chainRows, fmt.Sprintf("  Chain %s: %s (len=%d, conf=%d%%)",
-				chain.ID, route, chain.Length, confidence))
+
+			var nodes []string
 			if len(chain.Nodes) > 0 {
-				path := strings.Join(chain.Nodes, " → ")
-				chainRows = append(chainRows, fmt.Sprintf("    Path: %s", path))
+				nodes = chain.Nodes
+			} else {
+				nodes = []string{chain.RootNode, chain.LeafNode}
 			}
-			chainRows = append(chainRows, "")
+			diagram := s.TrustDiagram(nodes)
+
+			info := fmt.Sprintf("Chain %s  |  Length: %d  |  Confidence: %d%%",
+				s.DimText.Render(chain.ID),
+				chain.Length,
+				confidence)
+			cardContent := diagram + "\n" + info
+			rows = append(rows, s.Card("", cardContent, 30))
+			rows = append(rows, "")
 		}
 
 		sectionTitle := fmt.Sprintf("Trust Chains (%d)", total)
@@ -454,10 +451,10 @@ func renderResultTrust(s StyleSet, r *AnalysisResult, searchQuery string) string
 			sectionTitle = fmt.Sprintf("Trust Chains (%d of %d matching \"%s\")", matchCount, total, searchQuery)
 		}
 		if matchCount == 0 {
-			chainRows = append(chainRows, s.EmptyState.Render(fmt.Sprintf("No trust chains match \"%s\".", searchQuery)))
+			rows = append(rows, s.EmptyState.Render(fmt.Sprintf("No trust chains match \"%s\".", searchQuery)))
 		}
-		rows = append(rows, s.Section.Render(sectionTitle))
-		rows = append(rows, chainRows...)
+		title := s.SubSectionTitle.Render(sectionTitle)
+		rows = append([]string{title}, rows...)
 	}
 
 	if len(rows) == 0 {
@@ -471,93 +468,94 @@ func renderResultSPOFs(s StyleSet, r *AnalysisResult) string {
 		return s.EmptyState.Render("No single points of trust failure identified.")
 	}
 	var rows []string
-	rows = append(rows, s.Section.Render(fmt.Sprintf("Single Points of Trust Failure (%d)", len(r.TrustOutput.SinglePointsOfTrust))))
+	rows = append(rows, s.SubSectionTitle.Render(fmt.Sprintf("Single Points of Trust Failure (%d)", len(r.TrustOutput.SinglePointsOfTrust))))
 	for _, spof := range r.TrustOutput.SinglePointsOfTrust {
-		rows = append(rows, fmt.Sprintf("  ⚠ %s", spof.AssumptionText))
+		rows = append(rows, s.SPOFDiagram(spof.AssumptionText, 3, "High"))
+		rows = append(rows, "")
 	}
 	return strings.Join(rows, "\n")
 }
 
-func renderResultImpact(s StyleSet, r *AnalysisResult) string {
+func renderResultImpact(s StyleSet, r *AnalysisResult, width int) string {
 	var rows []string
 
 	if r.ReviewOutput != nil && r.ReviewOutput.Queue != nil && len(r.ReviewOutput.Queue.Items) > 0 {
-		rows = append(rows, s.Section.Render(fmt.Sprintf("Priority Queue (%d)", len(r.ReviewOutput.Queue.Items))))
+		var items []string
 		for _, item := range r.ReviewOutput.Queue.Items {
 			riskStyle := riskStyle(s, RiskLevel(item.Risk))
-			text := item.AssumptionText
-			rows = append(rows, fmt.Sprintf("  #%d %s [%.0f] %s",
-				item.Rank, riskStyle.Render(item.Risk), item.PriorityScore, text))
+			items = append(items, fmt.Sprintf("  #%d %s [%.0f] %s",
+				item.Rank, riskStyle.Render(item.Risk), item.PriorityScore, s.DimText.Render(item.AssumptionText)))
 		}
-		rows = append(rows, "")
+		rows = append(rows, s.Card("Priority Queue", strings.Join(items, "\n"), width))
 	}
 
 	if r.TrustOutput != nil && len(r.TrustOutput.SinglePointsOfTrust) > 0 {
-		rows = append(rows, s.Section.Render("Single Points of Trust Failure"))
+		var spofs []string
 		for _, spof := range r.TrustOutput.SinglePointsOfTrust {
-			rows = append(rows, fmt.Sprintf("  ⚠ %s", spof.AssumptionText))
+			spofs = append(spofs, fmt.Sprintf("  ⚠ %s", s.DimText.Render(spof.AssumptionText)))
 		}
-		rows = append(rows, "")
+		rows = append(rows, s.CardAccent("Single Points of Trust Failure", strings.Join(spofs, "\n"), width))
 	}
 
 	if r.ReviewOutput != nil && r.ReviewOutput.CISODashboard != nil {
 		d := r.ReviewOutput.CISODashboard
-		rows = append(rows, s.Section.Render("CISO View"))
-		rows = append(rows, fmt.Sprintf("  Critical: %d", d.CriticalAssumptions))
-		rows = append(rows, fmt.Sprintf("  High:     %d", d.HighAssumptions))
-		rows = append(rows, "")
+		ciso := fmt.Sprintf("  %s %d  %s %d",
+			s.BadgeCritical.Render("CRITICAL"), d.CriticalAssumptions,
+			s.BadgeHigh.Render("HIGH"), d.HighAssumptions)
+		rows = append(rows, s.Card("CISO View", ciso, width))
 	}
 
 	if len(rows) == 0 {
-		return s.EmptyState.Render("No impact data available.")
+		return s.Card("", s.EmptyState.Render("No impact data available."), width)
 	}
 	return strings.Join(rows, "\n")
 }
 
-func renderResultBlindSpots(s StyleSet, r *AnalysisResult) string {
+func renderResultBlindSpots(s StyleSet, r *AnalysisResult, width int) string {
 	if r.CoverageOutput == nil {
-		return s.EmptyState.Render("No blind spot data available.")
+		return s.Card("", s.EmptyState.Render("No blind spot data available."), width)
 	}
-	var rows []string
+	var cards []string
 
 	if len(r.CoverageOutput.BlindSpots) > 0 {
-		rows = append(rows, s.Section.Render(fmt.Sprintf("Blind Spots (%d)", len(r.CoverageOutput.BlindSpots))))
+		var items []string
 		for _, bs := range r.CoverageOutput.BlindSpots {
-			rows = append(rows, fmt.Sprintf("  • %s", bs.Title))
+			items = append(items, "  • "+s.DimText.Render(bs.Title))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Blind Spots", strings.Join(items, "\n"), width))
 	}
 
 	if len(r.CoverageOutput.DomainBlindSpots) > 0 {
-		rows = append(rows, s.Section.Render(fmt.Sprintf("Domain Blind Spots (%d)", len(r.CoverageOutput.DomainBlindSpots))))
+		var items []string
 		for _, dbs := range r.CoverageOutput.DomainBlindSpots {
-			rows = append(rows, fmt.Sprintf("  • %s", dbs.MissingArea))
+			items = append(items, "  • "+s.DimText.Render(dbs.MissingArea))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Domain Blind Spots", strings.Join(items, "\n"), width))
 	}
 
 	if r.CoverageOutput.Assessment != nil && len(r.CoverageOutput.Assessment.Gaps) > 0 {
-		rows = append(rows, s.Section.Render(fmt.Sprintf("Coverage Gaps (%d)", len(r.CoverageOutput.Assessment.Gaps))))
+		var items []string
 		for _, gap := range r.CoverageOutput.Assessment.Gaps {
-			rows = append(rows, fmt.Sprintf("  %s: %s (observed: %d, expected: %d)",
-				gap.Category, gap.Risk, gap.ObservedCount, gap.ExpectedCount))
+			items = append(items, fmt.Sprintf("  %s: %s (observed: %d, expected: %d)",
+				s.StatusWarn.Render(string(gap.Category)), gap.Risk, gap.ObservedCount, gap.ExpectedCount))
 		}
+		cards = append(cards, s.CardAccent("Coverage Gaps", strings.Join(items, "\n"), width))
 	}
 
-	if len(rows) == 0 {
-		rows = append(rows, s.StatusGood.Render("No blind spots or gaps detected."))
+	if len(cards) == 0 {
+		return s.Card("", s.StatusGood.Render("No blind spots or gaps detected."), width)
 	}
-	return strings.Join(rows, "\n")
+	return strings.Join(cards, "\n")
 }
 
-func renderResultControls(s StyleSet, r *AnalysisResult, searchQuery string) string {
+func renderResultControls(s StyleSet, r *AnalysisResult, searchQuery string, width int) string {
 	if len(r.Controls) == 0 {
-		return s.EmptyState.Render("No recommended controls.")
+		return s.Card("", s.EmptyState.Render("No recommended controls."), width)
 	}
 
 	q := strings.ToLower(searchQuery)
 	matchCount := 0
-	var controlRows []string
+	var controlCards []string
 
 	for _, c := range r.Controls {
 		if searchQuery != "" {
@@ -568,14 +566,15 @@ func renderResultControls(s StyleSet, r *AnalysisResult, searchQuery string) str
 			}
 		}
 		matchCount++
-		controlRows = append(controlRows, fmt.Sprintf("  • %s", c.Description))
+		var details []string
+		details = append(details, "  "+s.Value.Render(c.Description))
 		if c.Rationale != "" {
-			controlRows = append(controlRows, fmt.Sprintf("    %s", c.Rationale))
+			details = append(details, "  "+s.DimText.Render(c.Rationale))
 		}
 		if len(c.MitigatedAssumptionIDs) > 0 {
-			controlRows = append(controlRows, fmt.Sprintf("    Mitigates: %s", strings.Join(c.MitigatedAssumptionIDs, ", ")))
+			details = append(details, "  "+s.DimText.Render("Mitigates: "+strings.Join(c.MitigatedAssumptionIDs, ", ")))
 		}
-		controlRows = append(controlRows, "")
+		controlCards = append(controlCards, s.Card("", strings.Join(details, "\n"), width))
 	}
 
 	sectionTitle := fmt.Sprintf("Recommended Controls (%d)", len(r.Controls))
@@ -583,36 +582,28 @@ func renderResultControls(s StyleSet, r *AnalysisResult, searchQuery string) str
 		sectionTitle = fmt.Sprintf("Recommended Controls (%d of %d matching \"%s\")", matchCount, len(r.Controls), searchQuery)
 	}
 	if matchCount == 0 {
-		return s.EmptyState.Render(fmt.Sprintf("No controls match \"%s\".", searchQuery))
+		return s.Card("", s.EmptyState.Render(fmt.Sprintf("No controls match \"%s\".", searchQuery)), width)
 	}
 
-	var rows []string
-	rows = append(rows, s.Section.Render(sectionTitle))
-	rows = append(rows, controlRows...)
-	return strings.Join(rows, "\n")
+	return s.SubSectionTitle.Render(sectionTitle) + "\n" + strings.Join(controlCards, "\n")
 }
 
-func renderResultReports(s StyleSet, r *AnalysisResult) string {
-	var rows []string
-	rows = append(rows, s.Section.Render("Reports & Exports"))
-	rows = append(rows, "")
+func renderResultReports(s StyleSet, r *AnalysisResult, width int) string {
+	var cards []string
 
 	if r.NarrativeOutput != nil {
-		rows = append(rows, s.StatusGood.Render("Architect Narrative Available"))
-		rows = append(rows, s.DimText.Render("  Press 'e' → select narrative-md or narrative-html"))
-		rows = append(rows, "")
+		cards = append(cards, s.StatusCardLarge("NARRATIVE", 0, "Architect Narrative available — press 'e' to export", width))
 	}
 
 	if r.ReviewOutput != nil && r.ReviewOutput.Campaigns != nil && len(r.ReviewOutput.Campaigns) > 0 {
-		rows = append(rows, s.Section.Render(fmt.Sprintf("Review Campaigns (%d)", len(r.ReviewOutput.Campaigns))))
+		var items []string
 		for _, c := range r.ReviewOutput.Campaigns {
-			rows = append(rows, fmt.Sprintf("  ▶ %s (%d items)", c.Name, len(c.Items)))
+			items = append(items, "  ▶ "+s.Value.Render(c.Name)+" "+s.DimText.Render(fmt.Sprintf("(%d items)", len(c.Items))))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Review Campaigns", strings.Join(items, "\n"), width))
 	}
 
 	if r.ConfidenceOutput != nil && len(r.ConfidenceOutput.Breakdowns) > 0 {
-		rows = append(rows, s.Section.Render("Confidence"))
 		highConf := 0
 		lowConf := 0
 		for _, bd := range r.ConfidenceOutput.Breakdowns {
@@ -622,34 +613,30 @@ func renderResultReports(s StyleSet, r *AnalysisResult) string {
 				lowConf++
 			}
 		}
-		rows = append(rows, fmt.Sprintf("  High Confidence: %d", highConf))
-		rows = append(rows, fmt.Sprintf("  Low Confidence:  %d", lowConf))
-		rows = append(rows, "")
+		conf := fmt.Sprintf("  %s %d  %s %d",
+			s.StatusGood.Render("High Confidence:"), highConf,
+			s.StatusBad.Render("Low Confidence:"), lowConf)
+		cards = append(cards, s.Card("Confidence Overview", conf, width))
 	}
 
-	rows = append(rows, s.Section.Render("Export"))
-	rows = append(rows, "  Press 'e' to open export dialog.")
-	rows = append(rows, "  Available formats: JSON, Markdown, HTML, CSV, PDF")
+	cards = append(cards, s.Card("Export",
+		"  Press 'e' to open export dialog.\n  Formats: JSON, Markdown, HTML, CSV, PDF",
+		width))
 
-	return strings.Join(rows, "\n")
+	return strings.Join(cards, "\n")
 }
 
-func renderResultSDRI(s StyleSet, r *AnalysisResult) string {
+func renderResultSDRI(s StyleSet, r *AnalysisResult, width int) string {
 	if r.SDRISummary == "" && len(r.SDRIControls) == 0 {
-		return s.EmptyState.Render("No SDRI data available.")
+		return s.Card("", s.EmptyState.Render("No SDRI data available."), width)
 	}
-	var rows []string
-	rows = append(rows, s.Section.Render("Security Design Review Intelligence (SDRI)"))
-	rows = append(rows, "")
+	var cards []string
 
 	if r.SDRISummary != "" {
-		rows = append(rows, s.Subtitle.Render("Executive Summary"))
-		rows = append(rows, "  "+r.SDRISummary)
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Executive Summary", "  "+s.DimText.Render(r.SDRISummary), width))
 	}
 
 	if len(r.SDRIControls) > 0 {
-		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Control Inventory (%d)", len(r.SDRIControls))))
 		byStatus := map[string]int{}
 		for _, c := range r.SDRIControls {
 			status := c.Status
@@ -658,6 +645,7 @@ func renderResultSDRI(s StyleSet, r *AnalysisResult) string {
 			}
 			byStatus[status]++
 		}
+		var items []string
 		for st, n := range byStatus {
 			style := s.Value
 			switch st {
@@ -668,13 +656,13 @@ func renderResultSDRI(s StyleSet, r *AnalysisResult) string {
 			case "missing", "none":
 				style = s.StatusBad
 			}
-			rows = append(rows, fmt.Sprintf("  %s %s: %d", style.Render("●"), st, n))
+			items = append(items, fmt.Sprintf("  %s %s: %d", style.Render("●"), st, n))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Control Inventory", strings.Join(items, "\n"), width))
 	}
 
 	if len(r.SDRICoverageByCategory) > 0 {
-		rows = append(rows, s.Subtitle.Render("Coverage by Category"))
+		var items []string
 		for _, c := range r.SDRICoverageByCategory {
 			style := s.StatusGood
 			if c.Coverage < 50 {
@@ -682,36 +670,34 @@ func renderResultSDRI(s StyleSet, r *AnalysisResult) string {
 			} else if c.Coverage < 80 {
 				style = s.StatusWarn
 			}
-			rows = append(rows, fmt.Sprintf("  %s %s: %.0f%% (%d/%d)",
+			items = append(items, fmt.Sprintf("  %s %s: %.0f%% (%d/%d)",
 				style.Render("●"), c.Category, c.Coverage*100, c.Observed, c.Expected))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Coverage by Category", strings.Join(items, "\n"), width))
 	}
 
 	if r.SDRICoverageDashboard != nil && len(r.SDRICoverageDashboard) > 0 {
-		rows = append(rows, s.Subtitle.Render("Coverage Dashboard"))
+		var items []string
 		for k, v := range r.SDRICoverageDashboard {
 			pct := int(v * 100)
 			style := confidenceStyle(s, pct)
-			rows = append(rows, fmt.Sprintf("  %s: %s", k, style.Render(fmt.Sprintf("%d%%", pct))))
+			items = append(items, fmt.Sprintf("  %s: %s", k, style.Render(fmt.Sprintf("%d%%", pct))))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Coverage Dashboard", strings.Join(items, "\n"), width))
 	}
 
-	return strings.Join(rows, "\n")
+	return strings.Join(cards, "\n")
 }
 
-func renderResultSecurityDesignReview(s StyleSet, r *AnalysisResult) string {
+func renderResultSecurityDesignReview(s StyleSet, r *AnalysisResult, width int) string {
 	if len(r.SDRIDesignFindings) == 0 && len(r.SDRIAchitecturalWeaknesses) == 0 &&
 		len(r.SDRIRemediations) == 0 && len(r.SDRIComplianceAlignments) == 0 {
-		return s.EmptyState.Render("No security design review data available.")
+		return s.Card("", s.EmptyState.Render("No security design review data available."), width)
 	}
-	var rows []string
-	rows = append(rows, s.Section.Render("Security Design Review"))
-	rows = append(rows, "")
+	var cards []string
 
 	if len(r.SDRIDesignFindings) > 0 {
-		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Design Findings (%d)", len(r.SDRIDesignFindings))))
+		var items []string
 		for _, f := range r.SDRIDesignFindings {
 			severityStyle := s.StatusWarn
 			switch f.Severity {
@@ -720,19 +706,20 @@ func renderResultSecurityDesignReview(s StyleSet, r *AnalysisResult) string {
 			case "Low":
 				severityStyle = s.StatusGood
 			}
-			rows = append(rows, fmt.Sprintf("  %s [%s] %s", severityStyle.Render("●"), f.Severity, f.Title))
+			items = append(items, fmt.Sprintf("  %s %s %s",
+				severityStyle.Render("●"), s.RiskBadge(f.Severity), s.Value.Render(f.Title)))
 			if f.Description != "" {
-				rows = append(rows, fmt.Sprintf("    %s", f.Description))
+				items = append(items, "    "+s.DimText.Render(f.Description))
 			}
 			if f.Recommendation != "" {
-				rows = append(rows, fmt.Sprintf("    → %s", f.Recommendation))
+				items = append(items, "    → "+s.DimText.Render(f.Recommendation))
 			}
-			rows = append(rows, "")
 		}
+		cards = append(cards, s.Card("Design Findings", strings.Join(items, "\n"), width))
 	}
 
 	if len(r.SDRIAchitecturalWeaknesses) > 0 {
-		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Architectural Weaknesses (%d)", len(r.SDRIAchitecturalWeaknesses))))
+		var items []string
 		for _, w := range r.SDRIAchitecturalWeaknesses {
 			severityStyle := s.StatusWarn
 			switch w.Severity {
@@ -741,30 +728,32 @@ func renderResultSecurityDesignReview(s StyleSet, r *AnalysisResult) string {
 			case "Low":
 				severityStyle = s.StatusGood
 			}
-			rows = append(rows, fmt.Sprintf("  %s [%s] %s", severityStyle.Render("●"), w.Severity, w.Pattern))
+			items = append(items, fmt.Sprintf("  %s %s %s",
+				severityStyle.Render("●"), s.RiskBadge(w.Severity), s.Value.Render(w.Pattern)))
 			if w.Description != "" {
-				rows = append(rows, fmt.Sprintf("    %s", w.Description))
+				items = append(items, "    "+s.DimText.Render(w.Description))
 			}
 			if w.Recommendation != "" {
-				rows = append(rows, fmt.Sprintf("    → %s", w.Recommendation))
+				items = append(items, "    → "+s.DimText.Render(w.Recommendation))
 			}
-			rows = append(rows, "")
 		}
+		cards = append(cards, s.CardAccent("Architectural Weaknesses", strings.Join(items, "\n"), width))
 	}
 
 	if len(r.SDRIRemediations) > 0 {
-		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Remediations (%d)", len(r.SDRIRemediations))))
+		var items []string
 		for _, rem := range r.SDRIRemediations {
-			rows = append(rows, fmt.Sprintf("  #%d [%.0f] %s", rem.Priority, rem.RiskScore, rem.Description))
+			items = append(items, fmt.Sprintf("  #%d [%.0f] %s",
+				rem.Priority, rem.RiskScore, s.Value.Render(rem.Description)))
 			if rem.Recommendation != "" {
-				rows = append(rows, fmt.Sprintf("    → %s (effort: %s)", rem.Recommendation, rem.Effort))
+				items = append(items, "    → "+s.DimText.Render(rem.Recommendation)+" "+s.DimText.Render("(effort: "+rem.Effort+")"))
 			}
-			rows = append(rows, "")
 		}
+		cards = append(cards, s.Card("Remediations", strings.Join(items, "\n"), width))
 	}
 
 	if len(r.SDRIComplianceAlignments) > 0 {
-		rows = append(rows, s.Subtitle.Render(fmt.Sprintf("Compliance Alignments (%d)", len(r.SDRIComplianceAlignments))))
+		var items []string
 		for _, m := range r.SDRIComplianceAlignments {
 			style := s.StatusGood
 			if m.Coverage < 50 {
@@ -772,13 +761,13 @@ func renderResultSecurityDesignReview(s StyleSet, r *AnalysisResult) string {
 			} else if m.Coverage < 80 {
 				style = s.StatusWarn
 			}
-			rows = append(rows, fmt.Sprintf("  %s %s: %.0f%% (%s)",
+			items = append(items, fmt.Sprintf("  %s %s: %.0f%% (%s)",
 				style.Render("●"), m.Framework, m.Coverage, m.Status))
 		}
-		rows = append(rows, "")
+		cards = append(cards, s.Card("Compliance Alignments", strings.Join(items, "\n"), width))
 	}
 
-	return strings.Join(rows, "\n")
+	return strings.Join(cards, "\n")
 }
 
 func countRisk(assumptions []Assumption, risk RiskLevel) int {

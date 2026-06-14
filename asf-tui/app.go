@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -12,49 +13,30 @@ import (
 type view int
 
 const (
-	startupView view = iota
-	dashboardView
-	analyzeView
-	resultsView
-	fileBrowserView
-	localaiView
-	settingsView
-	aboutView
-	exportView
+	analyzeView view = iota
+	caseView
 	reviewView
 	validationView
+	reportsView
+	settingsView
 	helpView
+	aboutView
+	localAIView
 )
-
-var viewNames = map[view]string{
-	startupView:     "Startup",
-	dashboardView:   "Dashboard",
-	analyzeView:     "Analyze",
-	resultsView:     "Results",
-	fileBrowserView: "File Explorer",
-	localaiView:     "AI Models",
-	settingsView:    "Settings",
-	aboutView:       "About",
-	helpView:        "Help",
-}
-
-type sidebarEntry struct {
-	name string
-	vid  view
-	tab  int
-}
 
 type layoutManager struct {
 	sidebarWidth    int
-	topBarHeight    int
-	bottomBarHeight int
+	headerHeight    int
+	hintsHeight     int
+	statusBarHeight int
 }
 
 func newLayoutManager() layoutManager {
 	return layoutManager{
-		sidebarWidth:    23,
-		topBarHeight:    1,
-		bottomBarHeight: 1,
+		sidebarWidth:    28,
+		headerHeight:    1,
+		hintsHeight:     1,
+		statusBarHeight: 1,
 	}
 }
 
@@ -77,7 +59,7 @@ func (v *viewHistory) push(vw view) {
 
 func (v *viewHistory) pop() (view, bool) {
 	if len(v.views) == 0 {
-		return startupView, false
+		return analyzeView, false
 	}
 	last := v.views[len(v.views)-1]
 	v.views = v.views[:len(v.views)-1]
@@ -96,23 +78,25 @@ type mainModel struct {
 	err          error
 	statusMsg    string
 	currentFile  string
-	sidebarOpen  bool
 	searchActive bool
 	searchQuery  string
 	recentFiles  []string
+	pickerActive bool
+	filePicker   filePickerState
 
-	startup    startupModel
-	dash       dashboardModel
-	analyze    analyzeModel
-	results    resultsModel
-	fileBrowse fileBrowserModel
-	localai    localaiModel
-	settings   settingsModel
-	about      aboutModel
-	exportV    exportModel
-	review     reviewModel
-	validate   validationModel
-	help       helpModel
+	analyze  analyzeModel
+	results  resultsModel
+	settings settingsModel
+	about    aboutModel
+	reportsV reportsModel
+	review   reviewModel
+	validate validationModel
+	help     helpModel
+	localai  localaiModel
+
+	caseResults map[string]*AnalysisResult
+	activeCase  string
+	caseTab     int
 
 	vp        viewport.Model
 	scrollY   map[view]int
@@ -123,52 +107,35 @@ type navigateMsg struct {
 	to view
 }
 
-var sidebarEntries = []sidebarEntry{
-	{"Dashboard", dashboardView, -1},
-	{"File Explorer", fileBrowserView, -1},
-	{"Analyze", analyzeView, -1},
-	{"Summary", resultsView, 0},
-	{"Assumptions", resultsView, 1},
-	{"Verification", resultsView, 2},
-	{"Contradictions", resultsView, 3},
-	{"Trust Chains", resultsView, 4},
-	{"Single Points of Trust", resultsView, 11},
-	{"Assumption Impact Analysis", resultsView, 5},
-	{"Blind Spots", resultsView, 6},
-	{"SDRI", resultsView, 9},
-	{"Recommended Controls", resultsView, 7},
-	{"Security Design Review", resultsView, 10},
-	{"Reports / Exports", resultsView, 8},
-	{"Settings", settingsView, -1},
-	{"Help", helpView, -1},
-	{"About", aboutView, -1},
-}
-
 func newMainModel(cfg *Config) *mainModel {
-	s := NewStyles(Themes[cfg.Appearance.Theme])
+	theme, ok := Themes[cfg.Appearance.Theme]
+	if !ok {
+		theme = Themes["ASF0"]
+	}
+	s := NewStyles(theme)
 	e := NewEngine(cfg)
-	return &mainModel{
+	m := &mainModel{
 		router:      newRouter(),
 		styles:      s,
 		config:      cfg,
 		engine:      e,
-		sidebarOpen: true,
 		vp:          viewport.New(0, 0),
 		scrollY:     make(map[view]int),
-		startup:     newStartupModel(),
-		dash:        newDashboardModel(),
+		filePicker:  newFilePickerState(),
 		analyze:     newAnalyzeModel(e),
 		results:     newResultsModel(),
-		fileBrowse:  newFileBrowserModel(),
-		localai:     newLocalAIModel(cfg),
 		settings:    newSettingsModel(cfg),
 		about:       newAboutModel(),
-		exportV:     newExportModel(),
+		reportsV:    newReportsModel(),
 		review:      newReviewModel(),
 		validate:    newValidationModel(),
 		help:        newHelpModel(),
+		localai:     newLocalAIModel(cfg),
 		layoutMgr:   newLayoutManager(),
+		caseResults: make(map[string]*AnalysisResult),
 	}
+	m.router.rebuildCaseEntries(m.getCaseLabels())
+	return m
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -176,12 +143,39 @@ func (m mainModel) Init() tea.Cmd {
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.pickerActive {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			cmd, _ := m.filePicker.handleKey(msg)
+			if cmd != nil {
+				m.pickerActive = false
+				return m, cmd
+			}
+			if !m.pickerActive {
+				return m, nil
+			}
+			return m, nil
+		case filePickedMsg:
+			m.pickerActive = false
+			m.handleFilePicked(msg)
+			return m, nil
+		case filePickerCancelledMsg:
+			m.pickerActive = false
+			return m, nil
+		}
+		return m, nil
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.ready = true
 		m.width = msg.Width
 		m.height = msg.Height
-		m.styles = NewStyles(m.styles.Theme())
+		theme, ok := Themes[m.config.Appearance.Theme]
+		if !ok {
+			theme = Themes["ASF0"]
+		}
+		m.styles = NewStyles(theme)
 		m.vp.Width = m.mainWidth()
 		m.vp.Height = m.mainHeight()
 
@@ -189,6 +183,61 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.searchActive {
 			return m.handleSearchInput(msg)
 		}
+
+		if m.router.focus == focusSidebar {
+			switch msg.String() {
+			case "tab", "esc":
+				m.router.ToggleFocus()
+				return m, nil
+			case "up", "k":
+				m.router.sidebarMoveUp()
+				return m, nil
+			case "down", "j":
+				m.router.sidebarMoveDown()
+				return m, nil
+			case "enter":
+				nodes := m.router.sidebarVisibleNodes()
+				if m.router.sidebarSel >= len(nodes) {
+					return m, nil
+				}
+				n := nodes[m.router.sidebarSel]
+				if n.isSection {
+					return m, nil
+				}
+				tab := m.router.sidebarSelTab()
+				if m.router.sidebarSelIsParent() {
+					if m.router.sidebarSelIsExpanded() {
+						m.router.sidebarCollapse()
+					} else {
+						m.router.sidebarExpand()
+					}
+					return m, nil
+				}
+				m.router.sidebarActivate()
+				if n.vid == caseView && tab >= 0 && tab < len(m.recentFiles) {
+					m.activeCase = m.recentFiles[tab]
+					m.results.result = m.caseResults[m.activeCase]
+					m.results.resultTab = 0
+				} else if tab >= 0 {
+					m.results.resultTab = tab
+				}
+				m.restoreScroll()
+				return m, nil
+			case "left":
+				if m.router.sidebarSelIsParent() && m.router.sidebarSelIsExpanded() {
+					m.router.sidebarCollapse()
+					return m, nil
+				}
+			case "right":
+				if m.router.sidebarSelIsParent() && !m.router.sidebarSelIsExpanded() {
+					m.router.sidebarExpand()
+					return m, nil
+				}
+
+			}
+			return m, nil
+		}
+
 		handled, model, cmd := m.handleGlobalKey(msg)
 		if handled {
 			return model, cmd
@@ -205,20 +254,20 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case navigateMsg:
-		if msg.to == exportView {
-			m.exportV.selected = 0
-			m.exportV.done = false
-			m.exportV.exportPath = ""
-			m.exportV.showConfirmation = false
-			m.exportV.err = nil
-			m.exportV.result = m.results.result
-			m.exportV.outputDir = m.config.Output.Directory
-			if m.exportV.outputDir == "" {
-				m.exportV.outputDir = "./reports"
+		if msg.to == reportsView {
+			m.reportsV.selected = 0
+			m.reportsV.done = false
+			m.reportsV.exportPath = ""
+			m.reportsV.showConfirmation = false
+			m.reportsV.err = nil
+			m.reportsV.result = m.results.result
+			m.reportsV.outputDir = m.config.Output.Directory
+			if m.reportsV.outputDir == "" {
+				m.reportsV.outputDir = "./reports"
 			}
-			m.exportV.format = exportFormatFromConfig(m.config)
+			m.reportsV.format = exportFormatFromConfig(m.config)
 		}
-		if msg.to == resultsView && m.results.result != nil {
+		if msg.to == caseView && m.results.result != nil {
 			m.results.resultTab = 0
 		}
 		m.navigateTo(msg.to)
@@ -237,52 +286,70 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.analyze.running = false
 		m.analyze.result = msg.result
 		m.analyze.progress = 100
+		docPath := m.analyze.docPath()
+		m.currentFile = docPath
+		m.caseResults[docPath] = msg.result
+		m.activeCase = docPath
 		m.results.result = msg.result
 		m.results.resultTab = 0
-		m.currentFile = m.analyze.docPath()
 		m.statusMsg = "Analysis complete"
-		m.addRecentFile(m.currentFile)
-		m.navigateTo(resultsView)
-		m.scrollY[resultsView] = 0
+		m.addRecentFile(docPath)
+		m.router.rebuildCaseEntries(m.getCaseLabels())
+		m.navigateTo(caseView)
+		m.scrollY[caseView] = 0
 		return m, nil
 
-	case fileSelectedMsg:
-		m.analyze.setDocPath(string(msg))
-		m.currentFile = string(msg)
-		m.statusMsg = "File selected: " + string(msg)
-		m.addRecentFile(string(msg))
-		m.navigateTo(analyzeView)
-		m.scrollY[analyzeView] = 0
+	case openFilePickerMsg:
+		m.filePicker = newFilePickerState()
+		m.filePicker.path, _ = getDefaultPath(m.config)
+		m.filePicker.mode = msg.mode
+		m.filePicker.refresh()
+		m.pickerActive = true
+		return m, nil
+
+	case filePickedMsg:
+		m.handleFilePicked(msg)
+		return m, nil
+
+	case filePickerCancelledMsg:
+		m.pickerActive = false
 		return m, nil
 	}
 
 	switch m.router.currentView {
-	case startupView:
-		return m.updateStartup(msg)
-	case dashboardView:
-		return m.updateDashboard(msg)
 	case analyzeView:
 		return m.updateAnalyze(msg)
-	case resultsView:
+	case caseView:
 		return m.updateResults(msg)
-	case fileBrowserView:
-		return m.updateFileBrowser(msg)
-	case localaiView:
-		return m.updateLocalAI(msg)
 	case settingsView:
 		return m.updateSettings(msg)
 	case aboutView:
 		return m.updateAbout(msg)
-	case exportView:
-		return m.updateExport(msg)
+	case reportsView:
+		return m.updateReports(msg)
 	case reviewView:
 		return m.updateReview(msg)
 	case validationView:
 		return m.updateValidation(msg)
 	case helpView:
 		return m.updateHelp(msg)
+	case localAIView:
+		return m.updateLocalAI(msg)
 	}
 	return m, nil
+}
+
+func (m *mainModel) handleFilePicked(msg filePickedMsg) {
+	m.pickerActive = false
+	m.currentFile = msg.path
+	m.addRecentFile(msg.path)
+	if msg.mode == pickerArchitecture {
+		m.analyze.setDocPath(msg.path)
+		m.statusMsg = "Architecture file selected: " + filepath.Base(msg.path)
+	} else {
+		m.analyze.addEvidence(msg.path)
+		m.statusMsg = "Evidence added: " + filepath.Base(msg.path)
+	}
 }
 
 func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
@@ -291,31 +358,26 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 		m.quitting = true
 		return true, m, tea.Quit
 	case "q":
-		if m.router.currentView == startupView {
-			m.quitting = true
-			return true, m, tea.Quit
-		}
 		m.navigateBack()
 		return true, m, nil
 	case "?":
 		m.navigateTo(helpView)
 		return true, m, nil
+	case "tab":
+		m.router.ToggleFocus()
+		return true, m, nil
 	case "esc":
 		switch m.router.currentView {
 		case analyzeView:
-			if m.analyze.running || m.analyze.inputMode != "" {
+			if m.analyze.running {
 				return false, m, nil
 			}
 		case settingsView:
 			if m.settings.editing {
 				return false, m, nil
 			}
-		case localaiView:
-			if m.localai.showActions {
-				return false, m, nil
-			}
-		case exportView:
-			if m.exportV.showConfirmation || m.exportV.done {
+		case reportsView:
+			if m.reportsV.showConfirmation || m.reportsV.done {
 				return false, m, nil
 			}
 		case reviewView:
@@ -325,44 +387,16 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 		}
 		m.navigateBack()
 		return true, m, nil
-	case "tab":
-		switch m.router.currentView {
-		case resultsView, fileBrowserView:
-			return false, m, nil
-		}
-		m.saveScroll()
-		m.router.CycleSidebar(1)
-		m.router.ActivateSidebar()
-		tab := m.router.ActivateSidebarTab()
-		if tab >= 0 {
-			m.results.resultTab = tab
-		}
-		m.restoreScroll()
-		return true, m, nil
-	case "shift+tab":
-		switch m.router.currentView {
-		case resultsView, fileBrowserView:
-			return false, m, nil
-		}
-		m.saveScroll()
-		m.router.CycleSidebar(-1)
-		m.router.ActivateSidebar()
-		tab := m.router.ActivateSidebarTab()
-		if tab >= 0 {
-			m.results.resultTab = tab
-		}
-		m.restoreScroll()
-		return true, m, nil
 	case "up", "k":
 		switch m.router.currentView {
-		case resultsView, helpView, aboutView:
+		case caseView, helpView, aboutView:
 			m.vp.LineUp(1)
 			return true, m, nil
 		}
 		return false, m, nil
 	case "down", "j":
 		switch m.router.currentView {
-		case resultsView, helpView, aboutView:
+		case caseView, helpView, aboutView:
 			m.vp.LineDown(1)
 			return true, m, nil
 		}
@@ -371,7 +405,7 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 		m.vp.HalfViewUp()
 		return true, m, nil
 	case "pgdown", " ":
-		if m.router.currentView == resultsView && msg.String() == " " {
+		if m.router.currentView == caseView && msg.String() == " " {
 			return false, m, nil
 		}
 		m.vp.HalfViewDown()
@@ -388,15 +422,11 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 	case "end", "G":
 		m.vp.GotoBottom()
 		return true, m, nil
-	case "f":
-		m.fileBrowse.path, _ = getDefaultPath(m.config)
-		m.navigateTo(fileBrowserView)
-		return true, m, nil
 	case "r":
 		if m.router.currentView == reviewView {
 			return false, m, nil
 		}
-		if m.router.currentView == resultsView {
+		if m.router.currentView == caseView {
 			if m.results.result != nil && len(m.results.result.Assumptions) > 0 {
 				m.review.assumptions = m.results.result.Assumptions
 				m.review.currentIdx = 0
@@ -409,7 +439,7 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 			return true, m, nil
 		}
 	case "v":
-		if m.router.currentView == resultsView && m.results.result != nil && len(m.results.result.Assumptions) > 0 {
+		if m.router.currentView == caseView && m.results.result != nil && len(m.results.result.Assumptions) > 0 {
 			m.validate.assumptions = m.results.result.Assumptions
 			m.validate.currentIdx = 0
 			m.navigateTo(validationView)
@@ -422,15 +452,18 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 			return true, m, nil
 		}
 	case "c":
-		if m.router.currentView == resultsView && m.results.result != nil {
+		if m.router.currentView == caseView && m.activeCase != "" {
+			delete(m.caseResults, m.activeCase)
 			m.results.result = nil
-			m.statusMsg = "Results cleared"
+			m.activeCase = ""
+			m.router.rebuildCaseEntries(m.getCaseLabels())
+			m.statusMsg = "Case cleared"
 			m.navigateTo(analyzeView)
 			return true, m, nil
 		}
 	case "e":
-		if m.router.currentView == resultsView && m.results.result != nil {
-			return true, m, func() tea.Msg { return navigateMsg{to: exportView} }
+		if m.router.currentView == caseView && m.results.result != nil {
+			return true, m, func() tea.Msg { return navigateMsg{to: reportsView} }
 		}
 	case "s":
 		if m.router.currentView == settingsView && !m.settings.editing {
@@ -439,9 +472,6 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 			return true, m, nil
 		}
 	case "/":
-		if m.router.currentView == fileBrowserView {
-			return false, m, nil
-		}
 		m.searchActive = true
 		m.searchQuery = ""
 		return true, m, nil
@@ -496,6 +526,16 @@ func (m *mainModel) navigateBack() {
 	m.restoreScroll()
 }
 
+func (m *mainModel) getCaseLabels() []string {
+	var labels []string
+	for _, f := range m.recentFiles {
+		if _, ok := m.caseResults[f]; ok {
+			labels = append(labels, filepath.Base(f))
+		}
+	}
+	return labels
+}
+
 func (m *mainModel) addRecentFile(path string) {
 	if path == "" {
 		return
@@ -514,31 +554,28 @@ func (m *mainModel) addRecentFile(path string) {
 }
 
 func (m *mainModel) sidebarWidth() int {
-	if !m.sidebarOpen {
-		return 0
-	}
 	return m.layoutMgr.sidebarWidth
 }
 
 func (m *mainModel) mainWidth() int {
-	w := m.width - m.sidebarWidth() - 2
-	if w < 10 {
-		w = 10
+	w := m.width - m.sidebarWidth() - 1
+	if w < 20 {
+		w = 20
 	}
 	return w
 }
 
 func (m *mainModel) mainHeight() int {
-	h := m.height - 3
-	if h < 3 {
-		h = 3
+	h := m.height - m.layoutMgr.headerHeight - m.layoutMgr.hintsHeight - m.layoutMgr.statusBarHeight
+	if h < 5 {
+		h = 5
 	}
 	return h
 }
 
 func (m mainModel) View() string {
 	if !m.ready {
-		return "\n  Initializing..."
+		return m.styles.BrandedLoading("Initializing...", 0)
 	}
 	if m.quitting {
 		return ""
@@ -546,11 +583,16 @@ func (m mainModel) View() string {
 	if m.err != nil {
 		return m.styles.ErrorText.Render(fmt.Sprintf("Fatal Error: %v", m.err))
 	}
-	if m.width < 60 || m.height < 12 {
-		return fmt.Sprintf("Terminal too small.\nMinimum: 60x12\nCurrent: %dx%d", m.width, m.height)
+	if m.width < 60 || m.height < 10 {
+		return fmt.Sprintf("Terminal too small.\nMinimum: 60x10\nCurrent: %dx%d", m.width, m.height)
 	}
 
 	content := m.renderContent()
+
+	if m.pickerActive {
+		overlay := m.renderFilePicker(m.mainWidth(), m.mainHeight())
+		content = overlay
+	}
 
 	if m.searchActive {
 		searchPrompt := fmt.Sprintf("Search: %s█", m.searchQuery)
@@ -558,72 +600,94 @@ func (m mainModel) View() string {
 	}
 
 	sidebar := m.renderSidebar()
-
 	m.vp.Width = m.mainWidth()
 	m.vp.Height = m.mainHeight()
 	m.vp.SetContent(content)
 
 	mainArea := m.styles.App.Render(m.vp.View())
 
-	var body string
-	if m.sidebarOpen {
-		body = lipgloss.JoinHorizontal(lipgloss.Top,
-			sidebar,
-			mainArea,
-		)
-	} else {
-		body = mainArea
-	}
+	body := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, mainArea)
 
-	topBar := m.renderTopBar()
-	bottomBar := m.renderBottomBar()
+	headerBar := m.renderHeaderBar()
+	hintsBar := m.renderHintsBar()
+	statusBar := m.renderStatusBar()
 
 	return lipgloss.JoinVertical(lipgloss.Top,
-		topBar,
+		headerBar,
 		body,
-		bottomBar,
+		hintsBar,
+		statusBar,
 	)
 }
 
-func (m mainModel) renderTopBar() string {
+func (m mainModel) renderHeaderBar() string {
+	s := m.styles
 	version := "v" + ASFVersion
-	file := m.currentFile
-	if file == "" {
-		file = "no file"
-	} else {
-		if len(file) > 40 {
-			file = "..." + file[len(file)-37:]
-		}
-	}
-	status := m.statusMsg
-	if status == "" {
-		status = "ready"
-	}
-	left := fmt.Sprintf(" ASF %s  │  %s", version, file)
-	right := fmt.Sprintf(" %s ", status)
-	fill := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 4
+	fox := s.Fox.Render(" /\\_/\\  ")
+	left := fmt.Sprintf(" %sASF0  %s", fox, version)
+	right := " Security Assumption Framework "
+	fill := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 2
 	if fill < 1 {
 		fill = 1
 	}
-	return m.styles.TopBar.Render(left + strings.Repeat(" ", fill) + right)
+	return s.HeaderBar.Render(left + strings.Repeat(" ", fill) + right)
 }
 
 func (m mainModel) renderSidebar() string {
+	s := m.styles
 	var rendered []string
-	for i, e := range sidebarEntries {
-		active := i == m.router.sidebarSel && e.vid == m.router.currentView
-		if e.vid == resultsView && m.router.currentView == resultsView {
-			for j, se := range sidebarEntries {
-				if se.vid == resultsView && se.tab == m.results.resultTab {
-					active = i == j
+	nodes := m.router.sidebarVisibleNodes()
+	for i, n := range nodes {
+		if n.isSection {
+			rule := strings.Repeat("━", s.sidebarInnerWidth()-3)
+			rendered = append(rendered, s.Texture.Render(" "+n.label+" ")+s.SectionRule.Render(rule))
+			continue
+		}
+
+		isParent := len(n.children) > 0
+		active := i == m.router.sidebarSel && m.router.focus == focusSidebar
+		viewActive := n.vid == m.router.currentView
+		if n.vid == caseView && n.tab >= 0 && n.tab < len(m.recentFiles) {
+			viewActive = m.recentFiles[n.tab] == m.activeCase
+		}
+
+		var prefix string
+		if isParent {
+			if n.expanded {
+				prefix = "▾ "
+			} else {
+				prefix = "▸ "
+			}
+		} else {
+			prefix = "  "
+		}
+
+		indent := ""
+		if len(m.router.sidebarTree) > 0 && n != m.router.sidebarTree[0] {
+			for _, parent := range m.router.sidebarTree {
+				for _, child := range parent.children {
+					if child == n {
+						indent = "  "
+						break
+					}
+				}
+				if indent != "" {
 					break
 				}
 			}
 		}
-		if active {
-			rendered = append(rendered, m.styles.SidebarActive.Render(" "+e.name))
-		} else {
-			rendered = append(rendered, m.styles.SidebarItem.Render(" "+e.name))
+
+		label := indent + prefix + n.label
+
+		switch {
+		case active:
+			rendered = append(rendered, s.SidebarActive.Render(label))
+		case viewActive:
+			rendered = append(rendered, s.SidebarParent.Render(label))
+		case isParent:
+			rendered = append(rendered, s.SidebarParent.Render(label))
+		default:
+			rendered = append(rendered, s.SidebarItem.Render(label))
 		}
 	}
 	sidebarContent := lipgloss.JoinVertical(lipgloss.Left, rendered...)
@@ -632,38 +696,118 @@ func (m mainModel) renderSidebar() string {
 	if lines < availHeight {
 		sidebarContent += strings.Repeat("\n", availHeight-lines)
 	}
-	return m.styles.Sidebar.Render(sidebarContent)
+	return s.Sidebar.Render(sidebarContent)
 }
 
-func (m mainModel) renderBottomBar() string {
+func (s StyleSet) sidebarInnerWidth() int {
+	return s.Sidebar.GetWidth() - 2
+}
+
+func (m mainModel) renderHintsBar() string {
+	s := m.styles
 	var hints []string
-	if m.router.currentView == startupView {
-		hints = append(hints, "↑↓=Navigate", "Enter=Select", "Q=Quit")
-	} else {
-		hints = append(hints, "F=Files", "R=Analyze", "?=Help", "Q=Quit")
-		switch m.router.currentView {
-		case resultsView:
-			hints = append(hints, "/=Search", "Tab=Tabs", "E=Export", "C=Clear")
-		case fileBrowserView:
-			hints = append(hints, "Tab=Preview", ".=Hidden")
-		case settingsView:
-			hints = append(hints, "Enter=Edit", "S=Save")
-		case reviewView:
-			hints = append(hints, "S=Accept", "R=Reject", "M=Mod", "N=Note")
+	switch m.router.currentView {
+	case analyzeView:
+		if m.analyze.running {
+			hints = append(hints, s.DimText.Render("Esc=Cancel"))
+		} else {
+			hints = append(hints, s.DimText.Render("Enter=Select"))
 		}
+	case caseView:
+		hints = append(hints, s.DimText.Render("Enter=Select"))
+		hints = append(hints, s.DimText.Render("r=Review"))
+		hints = append(hints, s.DimText.Render("v=Validate"))
+		hints = append(hints, s.DimText.Render("e=Reports"))
+		hints = append(hints, s.DimText.Render("c=Clear"))
+		hints = append(hints, s.DimText.Render("/=Search"))
+	case reviewView:
+		if m.review.editing {
+			hints = append(hints, s.DimText.Render("Enter=Save"))
+			hints = append(hints, s.DimText.Render("Esc=Cancel"))
+		} else {
+			hints = append(hints, s.DimText.Render("↑↓=Navigate"))
+			hints = append(hints, s.DimText.Render("Enter=Detail"))
+			hints = append(hints, s.Accent.Render("s=Accept"))
+			hints = append(hints, s.DimText.Render("r=Reject"))
+			hints = append(hints, s.DimText.Render("m=Modify"))
+			hints = append(hints, s.DimText.Render("n=Notes"))
+			hints = append(hints, s.DimText.Render("v=Validate"))
+			hints = append(hints, s.DimText.Render("Tab=Sidebar"))
+		}
+	case validationView:
+		hints = append(hints, s.DimText.Render("↑↓=Navigate"))
+		hints = append(hints, s.DimText.Render("Enter=Detail"))
+	case settingsView:
+		if m.settings.editing {
+			hints = append(hints, s.DimText.Render("←→=Change"))
+			hints = append(hints, s.DimText.Render("Esc=Done"))
+		} else {
+			hints = append(hints, s.DimText.Render("Enter=Edit"))
+			hints = append(hints, s.DimText.Render("s=Save"))
+		}
+	case reportsView:
+		if m.reportsV.showConfirmation || m.reportsV.done {
+			hints = append(hints, s.DimText.Render("Esc=Back"))
+		} else {
+			hints = append(hints, s.DimText.Render("↑↓=Select"))
+			hints = append(hints, s.DimText.Render("Enter=Choose"))
+		}
+	case helpView:
+		hints = append(hints, s.DimText.Render("↑↓=Scroll"))
+		hints = append(hints, s.DimText.Render("/=Search"))
+	case aboutView:
+		hints = append(hints, s.DimText.Render("Q=Quit"))
+	case localAIView:
+		hints = append(hints, s.DimText.Render("↑↓=Select"))
+		hints = append(hints, s.DimText.Render("Enter=Action"))
+		hints = append(hints, s.DimText.Render("Esc=Cancel"))
 	}
+	if m.router.focus == focusSidebar {
+		hints = append(hints, s.Accent.Render(" [Sidebar]"))
+		hints = append(hints, s.DimText.Render("Tab=Content"))
+	} else {
+		hints = append(hints, s.DimText.Render("Tab=Sidebar"))
+	}
+	hints = append(hints, s.DimText.Render("?=Help"))
+	hints = append(hints, s.DimText.Render("q=Back"))
+	hints = append(hints, s.DimText.Render("Q=Quit"))
 
 	scrollPct := m.viewportScrollPercent()
 	if scrollPct != "" {
-		hints = append(hints, scrollPct)
+		hints = append(hints, s.DimText.Render(scrollPct))
 	}
 
-	hintStr := strings.Join(hints, "  ")
-	fill := m.width - lipgloss.Width(hintStr) - 4
-	if fill > 0 {
-		hintStr = hintStr + strings.Repeat(" ", fill)
+	hintStr := strings.Join(hints, "  │  ")
+	return s.HintsBar.Render(hintStr)
+}
+
+func (m mainModel) renderStatusBar() string {
+	s := m.styles
+	version := "v" + ASFVersion
+	mode := "ASF Engine"
+	if m.config.AI.Enabled {
+		mode = s.Accent.Render("AI Enhanced")
 	}
-	return m.styles.BottomBar.Render(hintStr)
+	file := m.activeCase
+	if file == "" {
+		file = s.DimText.Render("no case")
+	} else {
+		file = s.Value.Render(filepath.Base(file))
+	}
+	state := m.statusMsg
+	if state == "" {
+		state = s.DimText.Render("ready")
+	} else {
+		state = s.StatusGood.Render(state)
+	}
+
+	left := fmt.Sprintf("  %s  %s  %s", s.DimText.Render(version), mode, file)
+	right := fmt.Sprintf(" %s ", state)
+	fill := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 4
+	if fill < 1 {
+		fill = 1
+	}
+	return s.StatusBar.Render(left + strings.Repeat(" ", fill) + right)
 }
 
 func (m mainModel) viewportScrollPercent() string {
@@ -671,46 +815,35 @@ func (m mainModel) viewportScrollPercent() string {
 	visible := m.vp.Height
 	offset := m.vp.YOffset
 	if total <= visible || total == 0 {
-		return "All"
+		return ""
 	}
 	pct := int(float64(offset+visible) / float64(total) * 100)
 	if pct > 100 {
 		pct = 100
 	}
-	from := offset + 1
-	to := offset + visible
-	if to > total {
-		to = total
-	}
-	return fmt.Sprintf("%d-%d/%d (%d%%)", from, to, total, pct)
+	return fmt.Sprintf("%d%%", pct)
 }
 
 func (m mainModel) renderContent() string {
 	switch m.router.currentView {
-	case startupView:
-		return m.viewStartup()
-	case dashboardView:
-		return m.viewDashboard()
 	case analyzeView:
 		return m.viewAnalyze()
-	case resultsView:
+	case caseView:
 		return m.viewResults()
-	case fileBrowserView:
-		return m.viewFileBrowser()
-	case localaiView:
-		return m.viewLocalAI()
 	case settingsView:
 		return m.viewSettings()
 	case aboutView:
 		return m.viewAbout()
-	case exportView:
-		return m.viewExport()
+	case reportsView:
+		return m.viewReports()
 	case reviewView:
 		return m.viewReview()
 	case validationView:
 		return m.viewValidation()
 	case helpView:
 		return m.viewHelp()
+	case localAIView:
+		return m.viewLocalAI()
 	}
 	return ""
 }
