@@ -29,6 +29,7 @@ const (
 	ContradictionTypeDATA_CLASSIFICATION ContradictionType = "DATA_CLASSIFICATION"
 	ContradictionTypeIDENTITY            ContradictionType = "IDENTITY"
 	ContradictionTypeGENERAL             ContradictionType = "GENERAL"
+	ContradictionTypeTRUST                ContradictionType = "TRUST"
 	ContradictionTypeTRUST_BOUNDARY      ContradictionType = "TRUST_BOUNDARY"
 	ContradictionTypeCONTROL             ContradictionType = "CONTROL"
 )
@@ -207,12 +208,14 @@ func (ce *ClaimExtractor) extractFromRawText(rawText string) []Statement {
 // CIEEngine (Contradiction Intelligence Engine) is the main contradiction engine.
 type CIEEngine struct {
 	claimExtractor *ClaimExtractor
+	semanticEngine *SemanticEngine
 }
 
 // NewCIEEngine creates a new contradiction intelligence engine.
 func NewCIEEngine() *CIEEngine {
 	return &CIEEngine{
 		claimExtractor: NewClaimExtractor(),
+		semanticEngine: NewSemanticEngine(),
 	}
 }
 
@@ -249,6 +252,13 @@ func (cie *CIEEngine) DetectAllContradictions(arch *ArchDescription, assumptions
 	for i := range contradictions {
 		contradictions[i] = cie.scoreContradiction(contradictions[i], assumptions, arch)
 	}
+
+	// Phase 9 — Semantic contradiction detection
+	semantic := cie.semanticEngine.DetectSemanticContradictions(claims)
+	for i := range semantic {
+		semantic[i] = cie.scoreContradiction(semantic[i], assumptions, arch)
+	}
+	contradictions = append(contradictions, semantic...)
 
 	return contradictions
 }

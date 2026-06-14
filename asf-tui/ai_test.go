@@ -214,9 +214,9 @@ func TestAIEnhance_FallbackKeepsBaseResults(t *testing.T) {
 	engine := &Engine{
 		config: &Config{
 			AI: struct {
-				Enabled         bool     `yaml:"enabled"`
-				ActiveModel     string   `yaml:"active_model"`
-				InstalledModels []string `yaml:"installed_models"`
+				Enabled         bool     `json:"enabled" yaml:"enabled"`
+				ActiveModel     string   `json:"active_model" yaml:"active_model"`
+				InstalledModels []string `json:"installed_models" yaml:"installed_models"`
 			}{
 				Enabled:     true,
 				ActiveModel: "test-model",

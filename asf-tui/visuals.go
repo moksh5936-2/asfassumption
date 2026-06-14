@@ -344,6 +344,22 @@ func FoxLogoSmall() string {
  ASF0`
 }
 
+func FoxLogoLarge() string {
+	return `        ╭──────────────────────╮
+        │   /\_/\               │
+        │  ( o.o )   ASF0       │
+        │   > ^ <    v` + ASFVersion + `          │
+        │   Security Assumption  │
+        │   Framework Zero      │
+        ╰──────────────────────╯`
+}
+
+func FoxLogoCompact() string {
+	return ` /\_/\  ASF0 v` + ASFVersion + `
+( o.o ) Security Assumption
+ > ^ <  Framework Zero`
+}
+
 func (s StyleSet) BrandedLoading(stage string, pct float64) string {
 	fox := s.Fox.Render(FoxLogoSmall())
 	bar := s.ProgressWithLabel(pct, 40)
@@ -377,6 +393,35 @@ func (s StyleSet) ExecutiveSummaryWidget(critical, high, medium, low,
 	b.WriteString(fmt.Sprintf("  Chains: %d  SPOFs: %s", chains,
 		s.RiskBadge(fmt.Sprintf("%d", spofs))))
 	return s.Card("Executive Summary", b.String(), width)
+}
+
+// ──────────────────────────────────────────────
+// Workflow Lifecycle Widget
+// ──────────────────────────────────────────────
+
+func (s StyleSet) renderWorkflow(r *AnalysisResult) string {
+	steps := []struct {
+		label string
+		done  bool
+	}{
+		{"New Analysis", true},
+		{"Run Analysis", true},
+		{"Review", len(r.Assumptions) > 0},
+		{"Validate", r.VerificationOutput != nil},
+		{"Reports", false},
+	}
+
+	var lines []string
+	for _, st := range steps {
+		if st.done {
+			lines = append(lines, fmt.Sprintf("  %s  %s", s.StatusGood.Render("✓"), s.DimText.Render(st.label)))
+		} else {
+			lines = append(lines, fmt.Sprintf("  %s  %s", s.DimText.Render("○"), s.DimText.Render(st.label)))
+		}
+	}
+
+	flowStr := strings.Join(lines, "\n")
+	return s.Card("Workflow", flowStr, 40)
 }
 
 // ──────────────────────────────────────────────

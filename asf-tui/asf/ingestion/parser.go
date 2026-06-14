@@ -190,7 +190,21 @@ func parseYAMLToRecords(path string) ([]map[string]interface{}, error) {
 		return []map[string]interface{}{single}, nil
 	}
 
-	return nil, fmt.Errorf("cannot parse YAML: not an array or object")
+	var list []interface{}
+	if err := yaml.Unmarshal(data, &list); err == nil {
+		records := make([]map[string]interface{}, len(list))
+		for i, v := range list {
+			records[i] = map[string]interface{}{"value": v}
+		}
+		return records, nil
+	}
+
+	var scalar interface{}
+	if err := yaml.Unmarshal(data, &scalar); err == nil {
+		return []map[string]interface{}{{"value": scalar}}, nil
+	}
+
+	return nil, fmt.Errorf("cannot parse YAML: expected a mapping, sequence, or scalar value")
 }
 
 func parsePDF(path string) (string, error) {

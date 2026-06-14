@@ -184,13 +184,15 @@ func TestAddRecentFile(t *testing.T) {
 func TestSidebarTree(t *testing.T) {
 	r := newRouter()
 	nodes := r.sidebarVisibleNodes()
-	// 3 sections + 5 items = 8 (no case entries initially)
-	expected := 8
+	// 4 sections + 8 items = 12 (no case entries initially)
+	expected := 12
 	if len(nodes) != expected {
 		t.Errorf("sidebar has %d visible nodes, want %d", len(nodes), expected)
 	}
 	analyzeFound := false
 	reviewFound := false
+	validationFound := false
+	reportsFound := false
 	settingsFound := false
 	for _, n := range r.sidebarVisibleNodes() {
 		if n.vid == analyzeView && !n.isSection {
@@ -199,6 +201,12 @@ func TestSidebarTree(t *testing.T) {
 		if n.vid == reviewView && !n.isSection {
 			reviewFound = true
 		}
+		if n.vid == validationView && !n.isSection {
+			validationFound = true
+		}
+		if n.vid == reportsView && !n.isSection {
+			reportsFound = true
+		}
 		if n.vid == settingsView && !n.isSection {
 			settingsFound = true
 		}
@@ -206,8 +214,14 @@ func TestSidebarTree(t *testing.T) {
 	if !analyzeFound {
 		t.Error("sidebar should contain analyzeView (+ New Analysis)")
 	}
-	if reviewFound {
-		t.Error("sidebar should NOT contain reviewView (removed from sidebar)")
+	if !reviewFound {
+		t.Error("sidebar should contain reviewView (Review Queue)")
+	}
+	if !validationFound {
+		t.Error("sidebar should contain validationView (Validation Queue)")
+	}
+	if !reportsFound {
+		t.Error("sidebar should contain reportsView (Reports)")
 	}
 	if !settingsFound {
 		t.Error("sidebar should contain settingsView")
@@ -488,7 +502,7 @@ func TestAnalyzeStage(t *testing.T) {
 	if s := analyzeStage(50); s == "" {
 		t.Error("analyzeStage(50) should not be empty")
 	}
-	if s := analyzeStage(100); s != "Generating Gap Analysis..." {
-		t.Errorf("analyzeStage(100) = %q, want 'Generating Gap Analysis...'", s)
+	if s := analyzeStage(100); s != "Generating gap analysis..." {
+		t.Errorf("analyzeStage(100) = %q, want 'Generating gap analysis...'", s)
 	}
 }

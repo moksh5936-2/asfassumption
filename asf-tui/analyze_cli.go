@@ -247,7 +247,9 @@ func runAnalyzeCLI(args []string) {
 			fmt.Println("  -e, --evidence <path>     Evidence files/directories (CSV, JSON, YAML)")
 			fmt.Println("  --json                    Output as JSON (default)")
 			fmt.Println("  --graph                   Include dependency graph in JSON output")
-			fmt.Println("  --report-type <type>      Filter output to specific report pack (board, executive, technical, architect-narrative, executive-summary, technical-summary)")
+			fmt.Println("  --report-type <type>      Filter output to specific report pack")
+			fmt.Println("                            (board, executive, technical, architect-narrative,")
+			fmt.Println("                             executive-summary, technical-summary)")
 			fmt.Println("  --help, -h                Show this help")
 			os.Exit(ExitSuccess)
 		}

@@ -234,16 +234,26 @@ func (m *analyzeModel) runAnalysisCmd() tea.Cmd {
 
 func analyzeStage(pct int) string {
 	switch {
+	case pct < 10:
+		return "Loading architecture document..."
 	case pct < 20:
-		return "Parsing Documents..."
+		return "Parsing document structure..."
+	case pct < 30:
+		return "Extracting security claims..."
 	case pct < 40:
-		return "Extracting Claims..."
+		return "Classifying claim types..."
+	case pct < 50:
+		return "Converting to assumptions..."
 	case pct < 60:
-		return "Converting to Assumptions..."
+		return "Applying STRIDE categorization..."
+	case pct < 70:
+		return "Verifying against evidence..."
 	case pct < 80:
-		return "Verifying Against Evidence..."
+		return "Assessing risk levels..."
+	case pct < 90:
+		return "Building trust chains..."
 	default:
-		return "Generating Gap Analysis..."
+		return "Generating gap analysis..."
 	}
 }
 
@@ -312,9 +322,16 @@ func (m mainModel) viewAnalyze() string {
 		s.BreadcrumbSep.Render(" / ") +
 		s.BreadcrumbSep.Render("New Analysis / ") +
 		s.BreadcrumbSep.Render("Select Architecture")
+
+	guidance := s.DimText.Render("  Select an architecture file (YAML, JSON, MD, DrawIO, SVG) to analyze.") +
+		"\n" + s.DimText.Render("  Optionally add evidence files (CSV, JSON, YAML) for verification.")
+
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
 		breadcrumb,
+		"",
+		guidance,
+		"",
 		s.Card("Configuration", strings.Join(rows, "\n"), m.mainWidth()-4),
 	)
 }

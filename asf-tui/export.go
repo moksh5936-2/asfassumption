@@ -21,6 +21,7 @@ import (
 	"github.com/go-pdf/fpdf"
 )
 
+// ExportFormat defines the output format for analysis result exports.
 type ExportFormat string
 
 const (
@@ -44,8 +45,10 @@ const (
 	ExportReviewHTML         ExportFormat = "review-html"
 	ExportConfidenceMarkdown ExportFormat = "confidence-md"
 	ExportConfidenceHTML     ExportFormat = "confidence-html"
+	ExportJSONL              ExportFormat = "jsonl"
 )
 
+// ExportResult writes the analysis result to the specified format and output directory.
 func ExportResult(result *AnalysisResult, format ExportFormat, outputDir string) (string, error) {
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return "", fmt.Errorf("cannot create output directory: %w", err)
@@ -119,6 +122,9 @@ func ExportResult(result *AnalysisResult, format ExportFormat, outputDir string)
 	case ExportConfidenceHTML:
 		path = filepath.Join(outputDir, baseName+"_confidence.html")
 		err = exportConfidenceHTML(result, path)
+	case ExportJSONL:
+		path = filepath.Join(outputDir, baseName+".jsonl")
+		err = exportJSONL(result, path)
 	}
 
 	if err != nil {
@@ -1268,6 +1274,34 @@ func exportHTML(result *AnalysisResult, path string) error {
 	return os.WriteFile(path, []byte(b.String()), 0644)
 }
 
+func exportJSONL(result *AnalysisResult, path string) error {
+	var b strings.Builder
+	for _, a := range result.Assumptions {
+		line := struct {
+			ID          string  `json:"id"`
+			Description string  `json:"description"`
+			Risk        string  `json:"risk"`
+			Confidence  float64 `json:"confidence"`
+			STRIDE      string  `json:"stride"`
+			Review      string  `json:"review_status,omitempty"`
+		}{
+			ID:          a.ID,
+			Description: a.Description,
+			Risk:        string(a.Risk),
+			Confidence:  a.Confidence,
+			STRIDE:      strings.Join(convertStride(a.Stride), ","),
+			Review:      a.ReviewStatus,
+		}
+		data, err := json.Marshal(line)
+		if err != nil {
+			return err
+		}
+		b.Write(data)
+		b.WriteByte('\n')
+	}
+	return os.WriteFile(path, []byte(b.String()), 0644)
+}
+
 func exportCSV(result *AnalysisResult, path string) error {
 	var b strings.Builder
 	b.WriteString("ID,Description,Component,Category,Risk,STRIDE,Likelihood,Impact,RiskScore,Confidence,ReviewStatus,\"EvidenceSources\",SourceNode,SourceLine,\"Rationale\",\"StrideReason\",\"RiskReason\",\"MitigatingControls\"\n")
@@ -2325,6 +2359,17 @@ func (m reportsModel) Update(msg tea.Msg) (reportsModel, tea.Cmd) {
 func (m mainModel) viewReports() string {
 	s := m.styles
 	ex := m.reportsV
+
+	if ex.result == nil {
+		return s.Card("Reports",
+			lipgloss.JoinVertical(lipgloss.Left,
+				s.EmptyState.Render("No reports generated."),
+				"",
+				s.DimText.Render("  Run an analysis first to generate a case."),
+				s.DimText.Render("  Then open the case and press 'e' to export reports."),
+			),
+			m.mainWidth())
+	}
 
 	if ex.err != nil {
 		return s.CardAccent("Export Error",

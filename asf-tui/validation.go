@@ -30,8 +30,15 @@ func (m mainModel) viewValidation() string {
 	v := m.validate
 
 	if len(v.assumptions) == 0 {
-		return s.Card("Validation Mode",
-			s.EmptyState.Render("No assumptions to validate. Run an analysis first."),
+		return s.Card("Validation Queue",
+			lipgloss.JoinVertical(lipgloss.Left,
+				s.EmptyState.Render("No validations pending."),
+				"",
+				s.DimText.Render("  All findings have been reviewed."),
+				"",
+				s.DimText.Render("  Open a case from the sidebar and press 'v' to"),
+				s.DimText.Render("  validate its assumptions against evidence."),
+			),
 			m.mainWidth())
 	}
 

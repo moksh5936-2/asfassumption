@@ -20,30 +20,6 @@ const (
 	ExitLicenseErr   = 7
 )
 
-func printUsage() {
-	fmt.Printf("ASF0 v%s — Security Assumption Framework\n", ASFVersion)
-	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Println("  asf                        Launch the TUI")
-	fmt.Println("  asf --version, -v          Show version")
-	fmt.Println("  asf --license              Show license status")
-	fmt.Println("  asf analyze <file>         Run native analysis (JSON output)")
-	fmt.Println("  asf analyze <file> -e <ev> ...   With evidence files/dirs")
-	fmt.Println("  asf analyze <file> --graph Include graph in JSON output")
-	fmt.Println("  asf doctor                 Run system diagnostics")
-	fmt.Println("  asf doctor --verbose       Detailed diagnostics")
-	fmt.Println("  asf doctor --fix           Clean stale binaries")
-	fmt.Println("  asf --help, -h             Show this help")
-	fmt.Println("  asf --version-check       Check for newer version")
-	fmt.Println()
-	fmt.Println("Configuration:")
-	fmt.Printf("  Config:  %s\n", asfConfigPath())
-	fmt.Printf("  Cache:   %s\n", asfCacheDir())
-	fmt.Printf("  License: %s\n", asfLicensePath())
-	fmt.Println()
-	fmt.Println("Documentation: https://github.com/moksh5936-2/asfassumption")
-}
-
 func main() {
 	if err := initLogger(); err != nil {
 		asfLog = log.New(io.Discard, "[asf] ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -52,91 +28,161 @@ func main() {
 	asfLog.Printf("ASF0 v%s starting", ASFVersion)
 
 	args := os.Args[1:]
+	if len(args) == 0 {
+		launchTUI(nil)
+		return
+	}
 
-	if len(args) > 0 {
-		switch args[0] {
-		case "--version", "-v":
-			fmt.Printf("ASF0 v%s\n", ASFVersion)
-			if msg := VersionCheckMessage(); msg != "" {
-				fmt.Println(msg)
-			}
-			os.Exit(ExitSuccess)
-		case "--version-check":
-			if msg := VersionCheckMessage(); msg != "" {
-				fmt.Println(msg)
-			} else {
-				fmt.Printf("ASF0 v%s is up to date.\n", ASFVersion)
-			}
-			os.Exit(ExitSuccess)
-		case "--license":
-			l := LoadLicense()
-			if l != nil && l.Valid {
-				fmt.Printf("License: %s\n", l.Message)
-				os.Exit(ExitSuccess)
-			}
-			fmt.Println("No valid license found.")
-			fmt.Printf("Place your license key in %s\n", asfLicensePath())
-			os.Exit(ExitLicenseErr)
-		case "doctor", "--doctor", "diagnose":
-			verbose := false
-			fix := false
-			for _, a := range args[1:] {
-				switch a {
-				case "--verbose", "-v":
-					verbose = true
-				case "--fix":
-					fix = true
-				}
-			}
-			if fix {
-				runDoctorFix()
-			} else {
-				runDoctor(verbose)
-			}
-			os.Exit(ExitSuccess)
-		case "analyze":
-			runAnalyzeCLI(args[1:])
-			os.Exit(ExitSuccess)
-		case "--help", "-h":
-			printUsage()
-			os.Exit(ExitSuccess)
-		default:
-			fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", args[0])
-			fmt.Fprintf(os.Stderr, "Run 'asf --help' for usage.\n")
-			os.Exit(ExitInvalidCmd)
+	mainCLI(args)
+}
+
+func isStrictCLI() bool {
+	return os.Getenv("ASF_STRICT") == "1" || os.Getenv("ASF_NONINTERACTIVE") == "1"
+}
+
+func mainCLI(args []string) {
+	strict := false
+	var positional []string
+	for _, a := range args {
+		if a == "--strict" {
+			strict = true
+			os.Setenv("ASF_STRICT", "1")
+		} else {
+			positional = append(positional, a)
 		}
 	}
+	args = positional
 
-	cfg, err := LoadConfig(asfConfigPath())
-	if err != nil {
-		def := DefaultConfig()
-		cfg = &def
+	if len(args) == 0 {
+		if strict {
+			fmt.Fprintf(os.Stderr, "Error: no command in strict mode\n")
+			os.Exit(ExitInvalidCmd)
+		}
+		launchTUI(nil)
+		return
 	}
-	asfLog.Printf("config path: %s", asfConfigPath())
+
+	switch args[0] {
+	case "--version", "-v":
+		fmt.Printf("ASF0 v%s\n", ASFVersion)
+		if msg := VersionCheckMessage(); msg != "" {
+			fmt.Println(msg)
+		}
+	case "--version-check":
+		if msg := VersionCheckMessage(); msg != "" {
+			fmt.Println(msg)
+		} else {
+			fmt.Printf("ASF0 v%s is up to date.\n", ASFVersion)
+		}
+	case "--license":
+		l := LoadLicense()
+		if l != nil && l.Valid {
+			fmt.Printf("License: %s\n", l.Message)
+			return
+		}
+		fmt.Println("No valid license found.")
+		fmt.Printf("Place your license key in %s\n", asfLicensePath())
+		os.Exit(ExitLicenseErr)
+	case "doctor", "--doctor", "diagnose":
+		verbose := false
+		fix := false
+		for _, a := range args[1:] {
+			switch a {
+			case "--verbose", "-v":
+				verbose = true
+			case "--fix":
+				fix = true
+			}
+		}
+		if fix {
+			runDoctorFix()
+		} else {
+			runDoctor(verbose)
+		}
+	case "analyze":
+		strict = true
+		os.Setenv("ASF_STRICT", "1")
+		runAnalyzeCLI(args[1:])
+	case "export":
+		runExportCLI(args[1:])
+	case "config":
+		runConfigCLI(args[1:])
+	case "completion":
+		runCompletionCLI(args[1:])
+	case "--help", "-h":
+		printUsage()
+	case "help":
+		printUsage()
+	default:
+		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", args[0])
+		fmt.Fprintf(os.Stderr, "Run 'asf --help' for usage.\n")
+		os.Exit(ExitInvalidCmd)
+	}
+}
+
+func launchTUI(cfg *Config) {
+	if cfg == nil {
+		var err error
+		cfg, err = LoadConfig(ConfigPath())
+		if err != nil {
+			def := DefaultConfig()
+			cfg = &def
+		}
+	}
+	asfLog.Printf("config path: %s", ConfigPath())
 
 	if err := ensureRuntimeDirs(); err != nil {
 		debugLog.Printf("runtime dirs: %v", err)
+	}
+
+	if isStrictCLI() {
+		fmt.Fprintf(os.Stderr, "Error: cannot launch TUI in strict CLI mode\n")
+		fmt.Fprintf(os.Stderr, "Use 'asf analyze' or 'asf export' for non-interactive use.\n")
+		os.Exit(ExitInvalidCmd)
 	}
 
 	m := newMainModel(cfg)
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGTERM)
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
-		<-sigCh
+		sig := <-sigCh
+		asfLog.Printf("received signal %v, shutting down", sig)
 		p.Quit()
 	}()
 
 	defer func() {
 		if cfg != nil {
-			if err := cfg.Save(asfConfigPath()); err != nil {
+			if err := cfg.Save(ConfigPath()); err != nil {
 				debugLog.Printf("config save on exit: %v", err)
 			}
 		}
 	}()
 
 	if _, err := p.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(ExitGeneralError)
 	}
+}
+
+func pluralize(n int, s string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, s)
+	}
+	return fmt.Sprintf("%d %ss", n, s)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

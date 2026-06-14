@@ -1,0 +1,37 @@
+metadata:
+  name: Payroll Architecture with Contradictions
+  version: "1.0"
+  purpose: Benchmark for contradiction detection - payroll domain
+system:
+  name: PayrollProcessingSystem
+  description: Payroll platform with known security contradictions
+components:
+  - name: PayrollApp
+    type: web_application
+    description: Payroll management application
+  - name: PayrollDatabase
+    type: database
+    description: Database storing employee payroll records
+  - name: PayrollAdmin
+    type: admin_tool
+    description: Payroll administration console
+  - name: ExternalVendor
+    type: external_service
+    description: External payroll processing vendor
+relationships:
+  - source: PayrollApp
+    target: PayrollDatabase
+    protocol: TLS
+  - source: PayrollAdmin
+    target: PayrollDatabase
+    protocol: TLS
+  - source: ExternalVendor
+    target: PayrollDatabase
+    protocol: HTTPS
+assumptions:
+  - All employee payroll data is encrypted at rest
+  - Payroll reports are stored in plaintext unencrypted format
+  - Access restricted to HR staff only for payroll records
+  - External payroll vendor has full access to all payroll records
+  - MFA required for payroll system access
+  - Payroll admin uses single password only with no two-factor authentication
