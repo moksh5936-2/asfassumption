@@ -30,27 +30,27 @@ type Theme struct {
 var Themes = map[string]Theme{
 	"ASF0": {
 		Name:      "ASF0",
-		Primary:   lipgloss.Color("#FF6B35"),
-		Secondary: lipgloss.Color("#4CAF50"),
-		Accent:    lipgloss.Color("#FFB300"),
-		Success:   lipgloss.Color("#4CAF50"),
-		Warning:   lipgloss.Color("#FFB300"),
-		Error:     lipgloss.Color("#FF4444"),
-		Info:      lipgloss.Color("#FF6B35"),
-		Text:      lipgloss.Color("#E8E8E8"),
-		DimText:   lipgloss.Color("#888888"),
-		Border:    lipgloss.Color("#333333"),
-		Highlight: lipgloss.Color("#FF8C5A"),
-		Bg:        lipgloss.Color("#1A1D23"),
-		SidebarBg: lipgloss.Color("#131518"),
+		Primary:   lipgloss.Color("#E8590C"),
+		Secondary: lipgloss.Color("#F59E0B"),
+		Accent:    lipgloss.Color("#FBBF24"),
+		Success:   lipgloss.Color("#10B981"),
+		Warning:   lipgloss.Color("#F59E0B"),
+		Error:     lipgloss.Color("#EF4444"),
+		Info:      lipgloss.Color("#E8590C"),
+		Text:      lipgloss.Color("#F0F0F0"),
+		DimText:   lipgloss.Color("#7878A0"),
+		Border:    lipgloss.Color("#2D2D44"),
+		Highlight: lipgloss.Color("#F97316"),
+		Bg:        lipgloss.Color("#0F0F1A"),
+		SidebarBg: lipgloss.Color("#0A0A14"),
 
-		RiskCritical: lipgloss.Color("#FF4444"),
-		RiskHigh:     lipgloss.Color("#FF8C5A"),
-		RiskMedium:   lipgloss.Color("#FFB300"),
-		RiskLow:      lipgloss.Color("#4CAF50"),
-		RiskInfo:     lipgloss.Color("#00BCD4"),
-		CardBg:       lipgloss.Color("#1E2128"),
-		Glow:         lipgloss.Color("#FF6B35"),
+		RiskCritical: lipgloss.Color("#EF4444"),
+		RiskHigh:     lipgloss.Color("#F97316"),
+		RiskMedium:   lipgloss.Color("#F59E0B"),
+		RiskLow:      lipgloss.Color("#10B981"),
+		RiskInfo:     lipgloss.Color("#38BDF8"),
+		CardBg:       lipgloss.Color("#15152A"),
+		Glow:         lipgloss.Color("#E8590C"),
 	},
 }
 
@@ -103,6 +103,7 @@ type StyleSet struct {
 	CardBorderAccent lipgloss.Style
 	CardContainer    lipgloss.Style
 	CardTitle        lipgloss.Style
+	StartupBox       lipgloss.Style
 	PremiumTitle     lipgloss.Style
 	SectionTitle     lipgloss.Style
 	SectionRule      lipgloss.Style
@@ -352,6 +353,12 @@ func NewStyles(t Theme) StyleSet {
 		CardTitle: lipgloss.NewStyle().
 			Foreground(t.Primary).
 			Bold(true),
+
+		StartupBox: lipgloss.NewStyle().
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(t.Primary).
+			Padding(1, 4).
+			Margin(1, 2),
 
 		PremiumTitle: lipgloss.NewStyle().
 			Foreground(t.Primary).

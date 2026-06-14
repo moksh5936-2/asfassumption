@@ -68,6 +68,7 @@ func (v *viewHistory) pop() (view, bool) {
 
 type mainModel struct {
 	ready        bool
+	startup      bool
 	width        int
 	height       int
 	router       Router
@@ -115,6 +116,7 @@ func newMainModel(cfg *Config) *mainModel {
 	s := NewStyles(theme)
 	e := NewEngine(cfg)
 	m := &mainModel{
+		startup:     true,
 		router:      newRouter(),
 		styles:      s,
 		config:      cfg,
@@ -143,6 +145,31 @@ func (m mainModel) Init() tea.Cmd {
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.startup {
+		switch msg := msg.(type) {
+		case tea.WindowSizeMsg:
+			m.ready = true
+			m.width = msg.Width
+			m.height = msg.Height
+			return m, nil
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter":
+				m.startup = false
+				m.router.SetView(analyzeView)
+				return m, nil
+			case "q", "Q", "ctrl+c":
+				m.quitting = true
+				return m, tea.Quit
+			case "?":
+				m.startup = false
+				m.router.SetView(helpView)
+				return m, nil
+			}
+		}
+		return m, nil
+	}
+
 	if m.pickerActive {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
@@ -236,6 +263,36 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			}
 			return m, nil
+		}
+
+		// Tab navigation for case workspace
+		if m.router.currentView == caseView && m.results.result != nil {
+			switch msg.String() {
+			case "left":
+				if m.results.resultTab > 0 {
+					m.results.resultTab--
+					m.vp.YOffset = 0
+				}
+				return m, nil
+			case "right":
+				if m.results.resultTab < len(m.results.tabs)-1 {
+					m.results.resultTab++
+					m.vp.YOffset = 0
+				}
+				return m, nil
+			case "h":
+				if m.results.resultTab > 0 {
+					m.results.resultTab--
+					m.vp.YOffset = 0
+				}
+				return m, nil
+			case "l":
+				if m.results.resultTab < len(m.results.tabs)-1 {
+					m.results.resultTab++
+					m.vp.YOffset = 0
+				}
+				return m, nil
+			}
 		}
 
 		handled, model, cmd := m.handleGlobalKey(msg)
@@ -553,6 +610,54 @@ func (m *mainModel) addRecentFile(path string) {
 	m.recentFiles = dedup
 }
 
+func (m mainModel) viewStartup() string {
+	s := m.styles
+
+	foxArt := lipgloss.JoinVertical(lipgloss.Center,
+		s.Fox.Render("             /\\_/\\"),
+		s.Fox.Render("            ( o.o )"),
+		s.Fox.Render("             > ^ <"),
+	)
+
+	title := s.Title.Render("ASF0")
+	subtitle := s.Subtitle.Render("Assumption Security Framework Zero")
+
+	sep := s.SectionRule.Render(strings.Repeat("─", 40))
+
+	enterKey := s.Accent.Render("  Enter  ") + s.DimText.Render("Start")
+	quitKey := s.Accent.Render("  q     ") + s.DimText.Render("Quit")
+	helpKey := s.Accent.Render("  ?     ") + s.DimText.Render("Help")
+
+	keys := lipgloss.JoinVertical(lipgloss.Left,
+		enterKey,
+		quitKey,
+		helpKey,
+	)
+
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		"",
+		"",
+		"",
+		foxArt,
+		"",
+		"",
+		title,
+		subtitle,
+		"",
+		"",
+		sep,
+		"",
+		keys,
+		"",
+		s.DimText.Render("v"+ASFVersion),
+	)
+
+	return lipgloss.Place(m.width, m.height,
+		lipgloss.Center, lipgloss.Center,
+		s.StartupBox.Render(content),
+	)
+}
+
 func (m *mainModel) sidebarWidth() int {
 	return m.layoutMgr.sidebarWidth
 }
@@ -576,6 +681,9 @@ func (m *mainModel) mainHeight() int {
 func (m mainModel) View() string {
 	if !m.ready {
 		return m.styles.BrandedLoading("Initializing...", 0)
+	}
+	if m.startup {
+		return m.viewStartup()
 	}
 	if m.quitting {
 		return ""
@@ -714,7 +822,7 @@ func (m mainModel) renderHintsBar() string {
 			hints = append(hints, s.DimText.Render("Enter=Select"))
 		}
 	case caseView:
-		hints = append(hints, s.DimText.Render("Enter=Select"))
+		hints = append(hints, s.DimText.Render("←→=Tabs"))
 		hints = append(hints, s.DimText.Render("r=Review"))
 		hints = append(hints, s.DimText.Render("v=Validate"))
 		hints = append(hints, s.DimText.Render("e=Reports"))

@@ -126,11 +126,8 @@ func TestResultTabCount(t *testing.T) {
 	if got := resultTabCount(r, 3); got != 1 {
 		t.Errorf("Contradictions count = %d, want 1", got)
 	}
-	if got := resultTabCount(r, 4); got != 1 {
-		t.Errorf("Trust chains count = %d, want 1", got)
-	}
-	if got := resultTabCount(r, 11); got != 1 {
-		t.Errorf("SPOFs count = %d, want 1", got)
+	if got := resultTabCount(r, 4); got != 2 {
+		t.Errorf("Trust count (chains + SPOFs) = %d, want 2", got)
 	}
 }
 
@@ -176,8 +173,8 @@ func TestAddRecentFile(t *testing.T) {
 func TestSidebarTree(t *testing.T) {
 	r := newRouter()
 	nodes := r.sidebarVisibleNodes()
-	// 3 sections + 7 items = 10 (no case entries initially)
-	expected := 12
+	// 3 sections + 5 items = 8 (no case entries initially)
+	expected := 8
 	if len(nodes) != expected {
 		t.Errorf("sidebar has %d visible nodes, want %d", len(nodes), expected)
 	}
@@ -196,10 +193,10 @@ func TestSidebarTree(t *testing.T) {
 		}
 	}
 	if !analyzeFound {
-		t.Error("sidebar should contain analyzeView (➕ New Analysis)")
+		t.Error("sidebar should contain analyzeView (+ New Analysis)")
 	}
-	if !reviewFound {
-		t.Error("sidebar should contain reviewView (Review Queue)")
+	if reviewFound {
+		t.Error("sidebar should NOT contain reviewView (removed from sidebar)")
 	}
 	if !settingsFound {
 		t.Error("sidebar should contain settingsView")
@@ -255,10 +252,10 @@ func TestScrollPercentLogic(t *testing.T) {
 
 func TestNewResultsModel(t *testing.T) {
 	rm := newResultsModel()
-	if len(rm.tabs) != 12 {
-		t.Errorf("results has %d tabs, want 12", len(rm.tabs))
+	if len(rm.tabs) != 7 {
+		t.Errorf("results has %d tabs, want 7", len(rm.tabs))
 	}
-	expected := []string{"Summary", "Assumptions", "Verification", "Contradictions", "Trust Chains", "Impact", "Blind Spots", "Controls", "Reports", "SDRI", "Security Design Review", "SPOFs"}
+	expected := []string{"Overview", "Assumptions", "Verification", "Contradictions", "Trust", "Controls", "SDRI"}
 	for i, name := range expected {
 		if rm.tabs[i].name != name {
 			t.Errorf("tab[%d] = %q, want %q", i, rm.tabs[i].name, name)
@@ -441,11 +438,11 @@ func TestLocalAISidebarNavigation(t *testing.T) {
 }
 
 func TestLocalAICasesWorkNavigation(t *testing.T) {
-	// Test that CASES / WORK / SYSTEM navigation still works with Local AI added
+	// Test that CASES / AI / SYSTEM navigation still works with Local AI added
 	m := defaultTestModel()
 	m.router.focus = focusSidebar
 
-	viewsToCheck := []view{analyzeView, reviewView, validationView, reportsView, settingsView, helpView, aboutView}
+	viewsToCheck := []view{analyzeView, localAIView, settingsView, helpView, aboutView}
 	for _, target := range viewsToCheck {
 		for i, n := range m.router.sidebarVisibleNodes() {
 			if n.vid == target && !n.isSection {

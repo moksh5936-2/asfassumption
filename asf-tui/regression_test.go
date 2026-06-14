@@ -400,7 +400,7 @@ func TestScrollKeysOnContentViewsScroll(t *testing.T) {
 func TestSidebarActivate(t *testing.T) {
 	m := defaultTestModel()
 
-	// Find analyze (➕ New Analysis) in sidebar and activate it
+	// Find analyze (+ New Analysis) in sidebar and activate it
 	for i, n := range m.router.sidebarVisibleNodes() {
 		if n.vid == analyzeView && !n.isSection {
 			m.router.sidebarSel = i

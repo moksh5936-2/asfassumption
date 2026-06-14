@@ -24,9 +24,6 @@ type analyzeModel struct {
 	items    []menuItem
 	selected int
 
-	inputMode string
-	inputBuf  string
-
 	architectureFile string
 	evidenceFiles    []string
 
@@ -257,12 +254,6 @@ func (m mainModel) viewAnalyze() string {
 	for i, item := range am.items {
 		if item.typ == "sep" {
 			rows = append(rows, "")
-			continue
-		}
-
-		if i == am.selected && am.inputMode == item.label && item.typ == "path" {
-			editStr := fmt.Sprintf("  %s: %s█", item.label, am.inputBuf)
-			rows = append(rows, s.MenuSelected.Render("▸ "+editStr))
 			continue
 		}
 
