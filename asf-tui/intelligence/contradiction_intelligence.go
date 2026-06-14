@@ -223,6 +223,16 @@ func NewCIEEngine() *CIEEngine {
 func (cie *CIEEngine) DetectAllContradictions(arch *ArchDescription, assumptions []Assumption, controls []ControlDetail, boundaries []TrustBoundary) []CIEContradiction {
 	claims := cie.claimExtractor.ExtractClaims(arch, assumptions)
 
+	// Filter out structured security controls (labels like "encryption: AES-256" are
+	// identifiers, not natural language statements — they can false-match with real claims).
+	filtered := claims[:0]
+	for _, c := range claims {
+		if c.Source != "security_controls" {
+			filtered = append(filtered, c)
+		}
+	}
+	claims = filtered
+
 	var contradictions []CIEContradiction
 
 	// Phase 3 — Explicit contradictions
