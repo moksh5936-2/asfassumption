@@ -159,7 +159,6 @@ func (m mainModel) viewResults() string {
 		content = renderResultSDRI(s, r, ts, m.mainWidth()-4)
 	}
 
-	ts.selectedLine = 0
 	tabBar := m.renderResultTabs()
 	breadcrumb := m.renderBreadcrumb(tab, ts)
 	sectionName := m.results.tabs[tab].name

@@ -15,7 +15,7 @@ import (
 const DemoSecret = "asf-enterprise-secret-2024"
 
 // ASFVersion is the current version. Overridden at build time via -ldflags -X.
-var ASFVersion = "5.0.4"
+var ASFVersion = "5.0.5"
 
 const LicensePrefix = "ASF"
 

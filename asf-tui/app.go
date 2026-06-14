@@ -801,8 +801,10 @@ func (m mainModel) View() string {
 		if targetLine > 0 {
 			visibleTop := m.vp.YOffset
 			visibleBot := visibleTop + m.vp.Height
-			if targetLine < visibleTop || targetLine >= visibleBot-1 {
+			if targetLine < visibleTop {
 				m.vp.YOffset = targetLine
+			} else if targetLine >= visibleBot {
+				m.vp.YOffset = targetLine - m.vp.Height + 1
 			}
 		}
 	}
@@ -844,8 +846,13 @@ func (m mainModel) renderSidebar() string {
 	nodes := m.router.sidebarVisibleNodes()
 	for i, n := range nodes {
 		if n.isSection {
-			rule := strings.Repeat("━", s.sidebarInnerWidth()-3)
-			rendered = append(rendered, s.Texture.Render(" "+n.label+" ")+s.SectionRule.Render(rule))
+			labelStr := " " + n.label + " "
+			labelWidth := lipgloss.Width(labelStr)
+			ruleWidth := s.sidebarInnerWidth() - labelWidth
+			if ruleWidth < 1 {
+				ruleWidth = 1
+			}
+			rendered = append(rendered, s.Texture.Render(labelStr)+s.SectionRule.Render(strings.Repeat("━", ruleWidth)))
 			continue
 		}
 
@@ -1007,6 +1014,10 @@ func (m mainModel) renderHintsBar() string {
 	}
 
 	hintStr := strings.Join(hints, "  │  ")
+	avail := m.width - 2
+	if w := lipgloss.Width(hintStr); w < avail {
+		hintStr += strings.Repeat(" ", avail-w)
+	}
 	return s.HintsBar.Render(hintStr)
 }
 
@@ -1032,7 +1043,7 @@ func (m mainModel) renderStatusBar() string {
 
 	left := fmt.Sprintf("  %s  %s  %s", s.DimText.Render(version), mode, file)
 	right := fmt.Sprintf(" %s ", state)
-	fill := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 4
+	fill := m.width - lipgloss.Width(left) - lipgloss.Width(right) - 2
 	if fill < 1 {
 		fill = 1
 	}

@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-VERSION="${1:-5.0.4}"
+VERSION="${1:-5.0.5}"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 RELEASE_DIR="${ROOT_DIR}/release"
 BUILD_DIR="${ROOT_DIR}/asf-tui"

@@ -1,7 +1,7 @@
 .PHONY: all build install clean test lint run doctor docs completion-bash completion-zsh completion-fish
 
 APP     := asf
-VERSION ?= 5.0.4
+VERSION ?= 5.0.5
 COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown")
 LDFLAGS := -ldflags "-X main.ASFVersion=$(VERSION) -X main.buildCommit=$(COMMIT) -X main.buildDate=$(DATE)"

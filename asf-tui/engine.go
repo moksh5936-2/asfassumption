@@ -441,7 +441,9 @@ func (e *Engine) RunAnalysis(archPath, evPath, mode string, progress chan<- Anal
 		cieContradictions := cie.DetectAllContradictions(intelArch, existingIntelAssumptions, convertControlsToIntel(result.Controls), convertTrustBoundariesToIntel(result.TrustBoundaries))
 		result.CIEContradictions = deduplicateCIEContradictions(convertCIEContradictions(cieContradictions))
 		result.CIESummary = intelligence.BuildContradictionSummary(cieContradictions)
-		debugLog.Printf("cie: detected %d contradictions", len(cieContradictions))
+		cieLegacy := mergeCIEContradictions(result.CIEContradictions)
+		result.Contradictions = deduplicateContradictions(append(result.Contradictions, cieLegacy...))
+		debugLog.Printf("cie: detected %d contradictions (%d merged for display)", len(cieContradictions), len(cieLegacy))
 
 		// Run Trust Boundary Intelligence Engine (TBI)
 		progress <- AnalysisProgress{Percent: 75, Stage: "Running Trust Boundary Intelligence Engine..."}
@@ -2868,6 +2870,39 @@ func deduplicateCIEContradictions(contradictions []CIEContradiction) []CIEContra
 		}
 	}
 	return result
+}
+
+// mergeCIEContradictions converts CIEContradictions into legacy Contradictions
+// for TUI display, since the results view only renders the legacy type.
+func mergeCIEContradictions(cie []CIEContradiction) []Contradiction {
+	if len(cie) == 0 {
+		return nil
+	}
+	out := make([]Contradiction, 0, len(cie))
+	for _, c := range cie {
+		desc := c.Description
+		if desc == "" {
+			desc = c.Summary
+		}
+		explanation := c.Reasoning
+		if c.StatementA.OriginalText != "" || c.StatementB.OriginalText != "" {
+			if explanation != "" {
+				explanation = "Claim: " + c.StatementA.OriginalText + " vs " + c.StatementB.OriginalText + " — " + explanation
+			} else {
+				explanation = "Claim: " + c.StatementA.OriginalText + " vs " + c.StatementB.OriginalText
+			}
+		}
+		out = append(out, Contradiction{
+			ID:                  c.ID,
+			Severity:            c.Severity,
+			Description:         desc,
+			Explanation:         explanation,
+			Evidence:            c.Evidence,
+			RuleName:            c.Type,
+			AffectedAssumptions: append([]string{}, c.StatementA.ID, c.StatementB.ID),
+		})
+	}
+	return out
 }
 
 // TBI conversion helpers
