@@ -37,7 +37,7 @@
                 \ | /
                  \|/
 
-                ASF v5.0.0
+                ASF v5.1.0
    Architecture Security Framework
    Security Assumption Discovery Engine
 ```
@@ -102,7 +102,7 @@
 
 ## Intelligence Engines
 
-ASF v5.0.0 includes the full ASF intelligence engine suite:
+ASF v5.1.0 includes the full ASF intelligence engine suite:
 
 ### 1. Intelligence Engine V3 (65%)
 - **Taxonomy-driven assumption discovery** — 24 categories, 5 severity levels
@@ -240,18 +240,18 @@ Download the binary for your platform from the [latest release](https://github.c
 
 | Platform | Download |
 |----------|---------|
-| macOS Apple Silicon | `ASF-v5.0.0-darwin-arm64` |
-| macOS Intel | `ASF-v5.0.0-darwin-amd64` |
-| Linux AMD64 | `ASF-v5.0.0-linux-amd64` |
-| Linux ARM64 | `ASF-v5.0.0-linux-arm64` |
-| Windows AMD64 | `ASF-v5.0.0-windows-amd64.exe` |
+| macOS Apple Silicon | `ASF-v5.1.0-darwin-arm64` |
+| macOS Intel | `ASF-v5.1.0-darwin-amd64` |
+| Linux AMD64 | `ASF-v5.1.0-linux-amd64` |
+| Linux ARM64 | `ASF-v5.1.0-linux-arm64` |
+| Windows AMD64 | `ASF-v5.1.0-windows-amd64.exe` |
 
 ```bash
 # Example: macOS Apple Silicon
-curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v5.0.0/ASF-v5.0.0-darwin-arm64
-chmod +x ASF-v5.0.0-darwin-arm64
+curl -sfLO https://github.com/moksh5936-2/asfassumption/releases/download/v5.1.0/ASF-v5.1.0-darwin-arm64
+chmod +x ASF-v5.1.0-darwin-arm64
 mkdir -p ~/.local/bin ~/.asf
-cp ASF-v5.0.0-darwin-arm64 ~/.asf/asf
+cp ASF-v5.1.0-darwin-arm64 ~/.asf/asf
 ln -sf ~/.asf/asf ~/.local/bin/asf
 ```
 
@@ -259,7 +259,7 @@ ln -sf ~/.asf/asf ~/.local/bin/asf
 
 ```bash
 asf --version
-# Expected: ASF v5.0.0
+# Expected: ASF v5.1.0
 ```
 
 ### Uninstall
@@ -522,7 +522,7 @@ A: Draw.io (.drawio), Mermaid (.mmd), YAML (.yaml/.yml), JSON (.json), SVG (.svg
 A: ASF finds implicit security assumptions, not known vulnerabilities. It answers "what did my team assume about the system?" not "what CVEs exist?"
 
 **Q: Can I use ASF without Python?**  
-A: Yes. ASF v5.0.0+ is a self-contained Go binary with no Python dependency. The analysis engine is fully native.
+A: Yes. ASF v5.1.0+ is a self-contained Go binary with no Python dependency. The analysis engine is fully native.
 
 **Q: How accurate is ASF?**  
 A: We don't know yet. Precision, recall, and false positive rate have not been measured. See [VALIDATION_STATUS.md](docs/VALIDATION_STATUS.md).

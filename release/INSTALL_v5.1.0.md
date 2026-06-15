@@ -55,7 +55,7 @@ asf --version
 curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash
 ```
 
-## Upgrade from v5.0.4
+## Upgrade from v5.0.5
 ```bash
 curl -fsSL https://raw.githubusercontent.com/moksh5936-2/asfassumption/main/install.sh | bash -s -- --upgrade
 ```

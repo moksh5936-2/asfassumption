@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-ASF_VERSION="5.0.5"
+ASF_VERSION="5.1.0"
 ASF_REPO="moksh5936-2/asfassumption"
 LATEST_VERSION="v${ASF_VERSION}"
 ASSET_VERSION="${ASF_VERSION}"

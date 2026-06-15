@@ -265,6 +265,10 @@ func (m mainModel) viewAnalyze() string {
 		return m.viewAnalyzeProgress()
 	}
 
+	if am.architectureFile == "" && m.currentFile == "" {
+		return m.viewAnalyzeEmpty()
+	}
+
 	var rows []string
 	for i, item := range am.items {
 		if item.typ == "sep" {
@@ -333,6 +337,40 @@ func (m mainModel) viewAnalyze() string {
 		guidance,
 		"",
 		s.Card("Configuration", strings.Join(rows, "\n"), m.mainWidth()-4),
+	)
+}
+
+func (m mainModel) viewAnalyzeEmpty() string {
+	s := m.styles
+	w := m.mainWidth()
+
+	fox := s.Fox.Render(` /\_/\  `)
+	title := s.SubSectionTitle.Render("No cases yet.")
+	subtitle := s.DimText.Render("Start by selecting an architecture file to analyze.")
+
+	action1 := s.MenuSelected.Render("  [1] Select Architecture  ") + s.DimText.Render("  Choose a YAML/JSON/MD/DrawIO/SVG file")
+	action2 := s.SectionItem.Render("  [2] Add Evidence       ") + s.DimText.Render("  Optionally add CSV/JSON/YAML evidence files")
+	action3 := s.SectionItem.Render("  [3] Run Analysis       ") + s.DimText.Render("  Discover assumptions, contradictions, trust chains")
+	action4 := s.DimText.Render("  [?] Quick Tour          ") + s.DimText.Render("  Learn ASF0 in 60 seconds")
+
+	actions := lipgloss.JoinVertical(lipgloss.Left, "", action1, "", action2, "", action3, "", action4, "")
+
+	formats := s.DimText.Render("Supported formats: YAML · JSON · Markdown · DrawIO · SVG")
+	sep := s.SectionRule.Render(strings.Repeat("━", min(50, w-4)))
+
+	return lipgloss.JoinVertical(lipgloss.Center,
+		"",
+		fox,
+		"",
+		title,
+		"",
+		subtitle,
+		"",
+		sep,
+		actions,
+		sep,
+		"",
+		formats,
 	)
 }
 

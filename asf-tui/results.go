@@ -133,9 +133,21 @@ func (m mainModel) viewResults() string {
 	s := m.styles
 
 	if m.results.result == nil {
-		return s.Card("Case Workspace",
-			s.EmptyState.Render("No results available. Run an analysis first."),
-			m.mainWidth())
+		return lipgloss.JoinVertical(lipgloss.Left,
+			s.PremiumHeader("Case Workspace", m.mainWidth()),
+			"",
+			s.Card("",
+				lipgloss.JoinVertical(lipgloss.Left,
+					s.SubSectionTitle.Render("  No results yet."),
+					"",
+					s.DimText.Render("  Start a new analysis or open an existing case to see results here."),
+					"",
+					s.DimText.Render("  Press  n for New Analysis"),
+					s.DimText.Render("  Press  ? for Quick Tour"),
+				),
+				m.mainWidth()-4,
+			),
+		)
 	}
 
 	r := m.results.result
@@ -160,7 +172,6 @@ func (m mainModel) viewResults() string {
 	}
 
 	tabBar := m.renderResultTabs()
-	breadcrumb := m.renderBreadcrumb(tab, ts)
 	sectionName := m.results.tabs[tab].name
 	countStr := m.results.tabCountString(tab)
 	titleStr := sectionName
@@ -168,11 +179,10 @@ func (m mainModel) viewResults() string {
 		titleStr = sectionName + " — " + countStr
 	}
 	header := s.PremiumHeader(titleStr, m.mainWidth())
-	ts.contentOffset = strings.Count(lipgloss.JoinVertical(lipgloss.Left, header, tabBar, breadcrumb), "\n") + 1
+	ts.contentOffset = strings.Count(lipgloss.JoinVertical(lipgloss.Left, header, tabBar), "\n") + 1
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
 		tabBar,
-		breadcrumb,
 		content,
 	)
 }
@@ -437,6 +447,92 @@ func renderResultSummary(s StyleSet, r *AnalysisResult, ts *tabState, width int)
 		}
 	}
 
+	var topContradictionsCard string
+	if len(r.Contradictions) > 0 {
+		var cRows []string
+		maxC := 3
+		if maxC > len(r.Contradictions) {
+			maxC = len(r.Contradictions)
+		}
+		for i := 0; i < maxC; i++ {
+			c := r.Contradictions[i]
+			sev := riskStyle(s, c.Severity).Render(string(c.Severity))
+			desc := c.Description
+			if len(desc) > 60 {
+				desc = desc[:57] + "..."
+			}
+			cRows = append(cRows, fmt.Sprintf("  %s  %s", sev, s.Value.Render(desc)))
+		}
+		if len(r.Contradictions) > maxC {
+			cRows = append(cRows, fmt.Sprintf("  %s  (+%d more — see Tab 3)",
+				s.DimText.Render("⋯"),
+				len(r.Contradictions)-maxC))
+		}
+		topContradictionsCard = s.CardAccent("Critical Contradictions (Top)", strings.Join(cRows, "\n"), width)
+	}
+
+	var topSPOFsCard string
+	if r.TrustOutput != nil && len(r.TrustOutput.SinglePointsOfTrust) > 0 {
+		var sRows []string
+		maxS := 5
+		if maxS > len(r.TrustOutput.SinglePointsOfTrust) {
+			maxS = len(r.TrustOutput.SinglePointsOfTrust)
+		}
+		for i := 0; i < maxS; i++ {
+			spof := r.TrustOutput.SinglePointsOfTrust[i]
+			sRows = append(sRows, fmt.Sprintf("  %s  %s  (%d dependents)",
+				s.StatusBad.Render("SPOF"),
+				s.Value.Render(spof.NodeID),
+				spof.DependentsCount))
+		}
+		if len(r.TrustOutput.SinglePointsOfTrust) > maxS {
+			sRows = append(sRows, fmt.Sprintf("  %s  (+%d more — see Tab 4)",
+				s.DimText.Render("⋯"),
+				len(r.TrustOutput.SinglePointsOfTrust)-maxS))
+		}
+		topSPOFsCard = s.Card("Single Points of Trust Failure", strings.Join(sRows, "\n"), width)
+	}
+
+	var sdriFindingsCard string
+	if len(r.SDRIDesignFindings) > 0 || len(r.SDRIAchitecturalWeaknesses) > 0 {
+		var fRows []string
+		count := 0
+		maxF := 3
+		for i := 0; i < len(r.SDRIDesignFindings) && count < maxF; i++ {
+			f := r.SDRIDesignFindings[i]
+			if f.Severity == "Critical" || f.Severity == "High" {
+				sev := s.StatusBad.Render(f.Severity)
+				desc := f.Title
+				if len(desc) > 55 {
+					desc = desc[:52] + "..."
+				}
+				fRows = append(fRows, fmt.Sprintf("  %s  %s", sev, s.Value.Render(desc)))
+				count++
+			}
+		}
+		for i := 0; i < len(r.SDRIAchitecturalWeaknesses) && count < maxF; i++ {
+			w := r.SDRIAchitecturalWeaknesses[i]
+			if w.Severity == "Critical" || w.Severity == "High" {
+				sev := s.StatusWarn.Render(w.Severity)
+				desc := w.Pattern
+				if len(desc) > 55 {
+					desc = desc[:52] + "..."
+				}
+				fRows = append(fRows, fmt.Sprintf("  %s  %s", sev, s.Value.Render(desc)))
+				count++
+			}
+		}
+		if len(fRows) > 0 {
+			totalSDRI := len(r.SDRIDesignFindings) + len(r.SDRIAchitecturalWeaknesses)
+			if totalSDRI > count {
+				fRows = append(fRows, fmt.Sprintf("  %s  (+%d more — see Tab 6)",
+					s.DimText.Render("⋯"),
+					totalSDRI-count))
+			}
+			sdriFindingsCard = s.Card("SDRI — Critical Findings", strings.Join(fRows, "\n"), width)
+		}
+	}
+
 	wflow := s.renderWorkflow(r)
 
 	result := lipgloss.JoinVertical(lipgloss.Left,
@@ -446,6 +542,9 @@ func renderResultSummary(s StyleSet, r *AnalysisResult, ts *tabState, width int)
 		contradictCard,
 		trustCard,
 		coverageCard,
+		topContradictionsCard,
+		topSPOFsCard,
+		sdriFindingsCard,
 		wflow,
 	)
 

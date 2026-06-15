@@ -17,11 +17,12 @@ type treeNode struct {
 }
 
 type Router struct {
-	currentView view
-	sidebarSel  int
-	focus       focusTarget
-	history     viewHistory
-	sidebarTree []*treeNode
+	currentView   view
+	sidebarSel    int
+	sidebarOffset int
+	focus         focusTarget
+	history       viewHistory
+	sidebarTree   []*treeNode
 }
 
 var sidebarTreeBase = []*treeNode{
@@ -180,6 +181,30 @@ func (r *Router) sidebarMoveDown() bool {
 	}
 	r.sidebarSel = orig
 	return false
+}
+
+func (r *Router) MaintainSidebarOffset(visibleHeight int) {
+	nodes := r.sidebarVisibleNodes()
+	if len(nodes) == 0 {
+		r.sidebarOffset = 0
+		return
+	}
+	if r.sidebarSel < r.sidebarOffset {
+		r.sidebarOffset = r.sidebarSel
+	}
+	if r.sidebarSel >= r.sidebarOffset+visibleHeight {
+		r.sidebarOffset = r.sidebarSel - visibleHeight + 1
+	}
+	maxOffset := len(nodes) - visibleHeight
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+	if r.sidebarOffset > maxOffset {
+		r.sidebarOffset = maxOffset
+	}
+	if r.sidebarOffset < 0 {
+		r.sidebarOffset = 0
+	}
 }
 
 func (r *Router) sidebarExpand() {

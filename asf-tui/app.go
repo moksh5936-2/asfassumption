@@ -23,6 +23,7 @@ const (
 	helpView
 	aboutView
 	localAIView
+	tourView
 )
 
 type layoutManager struct {
@@ -72,6 +73,7 @@ func (v *viewHistory) pop() (view, bool) {
 type mainModel struct {
 	ready           bool
 	startup         bool
+	startupMenuIdx  int
 	width           int
 	height          int
 	router          Router
@@ -98,6 +100,7 @@ type mainModel struct {
 	validate validationModel
 	help     helpModel
 	localai  localaiModel
+	tour     tourModel
 
 	caseResults map[string]*AnalysisResult
 	activeCase  string
@@ -138,6 +141,7 @@ func newMainModel(cfg *Config) *mainModel {
 		validate:        newValidationModel(),
 		help:            newHelpModel(),
 		localai:         newLocalAIModel(cfg),
+		tour:            newTourModel(),
 		layoutMgr:       newLayoutManager(),
 		caseResults:     make(map[string]*AnalysisResult),
 	}
@@ -159,17 +163,67 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case tea.KeyMsg:
 			switch msg.String() {
+			case "up", "k":
+				if m.startupMenuIdx > 0 {
+					m.startupMenuIdx--
+				}
+				return m, nil
+			case "down", "j":
+				if m.startupMenuIdx < 3 {
+					m.startupMenuIdx++
+				}
+				return m, nil
 			case "enter":
 				m.startup = false
-				m.router.SetView(analyzeView)
+				switch m.startupMenuIdx {
+				case 0: // Start New Analysis
+					m.router.SetView(analyzeView)
+				case 1: // Open Existing Case
+					if len(m.recentFiles) > 0 {
+						m.activeCase = m.recentFiles[0]
+						m.results.result = m.caseResults[m.activeCase]
+						m.results.resultTab = 0
+						m.results.tabStates = make(map[int]*tabState)
+						m.router.SetView(caseView)
+					} else {
+						m.router.SetView(analyzeView)
+						m.statusMsg = "No existing cases yet. Start a new analysis."
+					}
+				case 2: // Local AI Settings
+					m.router.SetView(localAIView)
+				case 3: // Quick Tour
+					m.tour.step = 0
+					m.router.SetView(tourView)
+				}
 				return m, nil
-			case "q", "Q", "ctrl+c":
-				m.quitting = true
-				return m, tea.Quit
+			case "o", "O":
+				m.startup = false
+				if len(m.recentFiles) > 0 {
+					m.activeCase = m.recentFiles[0]
+					m.results.result = m.caseResults[m.activeCase]
+					m.results.resultTab = 0
+					m.results.tabStates = make(map[int]*tabState)
+					m.router.SetView(caseView)
+				} else {
+					m.router.SetView(analyzeView)
+					m.statusMsg = "No existing cases yet. Start a new analysis."
+				}
+				return m, nil
+			case "a", "A":
+				m.startup = false
+				m.router.SetView(localAIView)
+				return m, nil
 			case "?":
 				m.startup = false
-				m.router.SetView(helpView)
+				m.tour.step = 0
+				m.router.SetView(tourView)
 				return m, nil
+			case "q":
+				// 'q' does nothing on startup screen (only Q quits)
+				return m, nil
+			case "Q", "ctrl+c":
+				m.quitting = true
+				return m, tea.Quit
 			}
 		}
 		return m, nil
@@ -313,6 +367,25 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m.updateResults(msg)
 					}
 				}
+			}
+		}
+
+		if m.router.currentView == tourView {
+			switch msg.String() {
+			case "right", " ", "l":
+				if m.tour.step < m.tour.totalSteps-1 {
+					m.tour.step++
+				}
+				return m, nil
+			case "left", "h":
+				if m.tour.step > 0 {
+					m.tour.step--
+				}
+				return m, nil
+			case "q", "esc":
+				m.startup = true
+				m.router.SetView(analyzeView)
+				return m, nil
 			}
 		}
 
@@ -471,6 +544,9 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 		m.navigateBack()
 		return true, m, nil
 	case "?":
+		if m.router.currentView == tourView {
+			return false, m, nil
+		}
 		m.navigateTo(helpView)
 		return true, m, nil
 	case "tab":
@@ -667,34 +743,64 @@ func (m *mainModel) addRecentFile(path string) {
 func (m mainModel) viewStartup() string {
 	s := m.styles
 
-	fox := s.Fox.Render(` /\_/\  `)
-	title := s.Title.Render("ASF0")
-	subtitle := s.Subtitle.Render("Assumption Security Framework Zero")
-	slogans := lipgloss.JoinVertical(lipgloss.Left,
-		s.DimText.Render("     Discover assumptions."),
-		s.DimText.Render("     Verify assumptions."),
-		s.DimText.Render("     Expose contradictions."),
-		s.DimText.Render("     Model trust."),
-	)
-	sep := s.SectionRule.Render(strings.Repeat("─", 40))
+	sel := m.startupMenuIdx
 
-	enterKey := s.Accent.Render("  Enter  ") + s.DimText.Render("  Start ASF0")
-	helpKey := s.Accent.Render("  ?      ") + s.DimText.Render("  Help")
-	quitKey := s.Accent.Render("  q      ") + s.DimText.Render("  Quit")
-	keys := lipgloss.JoinVertical(lipgloss.Left, enterKey, helpKey, quitKey)
+	fox := s.Fox.Render(` /\_/\  `)
+	title := s.PremiumTitle.Render("ASF0")
+	subtitle := s.DimText.Render("Assumption Security Framework Zero")
+	tagline := s.Accent.Render(`"Find hidden assumptions, contradictions,`) + "\n" +
+		s.Accent.Render(` trust failures, and control gaps."`)
+	sep := s.SectionRule.Render(strings.Repeat("━", 50))
+
+	menuItems := []struct {
+		key  string
+		desc string
+	}{
+		{"Enter", "Start New Analysis"},
+		{"O", "Open Existing Case"},
+		{"A", "Local AI Settings"},
+		{"?", "Quick Tour  (recommended for first use)"},
+	}
+
+	var menuRows []string
+	for i, item := range menuItems {
+		active := i == sel
+		menuKey := s.Accent.Render("  [" + item.key + "]  ")
+		if active {
+			menuKey = s.SidebarActive.Render("  [" + item.key + "]  ")
+		}
+		menuDesc := s.DimText.Render(item.desc)
+		menuRows = append(menuRows, "  "+menuKey+"  "+menuDesc)
+	}
+	menu := lipgloss.JoinVertical(lipgloss.Left, menuRows...)
+
+	quitHint := s.DimText.Render("  [Q] Quit")
+
+	tipTitle := s.SubSectionTitle.Render("  Tip:")
+	tipText := s.DimText.Render("Results appear inside case workspaces.")
+	tipBody := s.DimText.Render("Critical findings: Contradictions · Trust Chains · SDRI")
 
 	content := lipgloss.JoinVertical(lipgloss.Center,
 		"",
 		fox,
+		"",
 		title,
 		"",
 		subtitle,
 		"",
-		slogans,
+		tagline,
 		"",
 		sep,
 		"",
-		keys,
+		menu,
+		"",
+		sep,
+		"",
+		tipTitle,
+		tipText,
+		tipBody,
+		"",
+		quitHint,
 		"",
 		s.DimText.Render("v"+ASFVersion),
 	)
@@ -741,10 +847,21 @@ func (m *mainModel) renderBreadcrumbBar() string {
 		fileLabel = "case"
 	}
 	parts = append(parts, s.Breadcrumb.Render(fileLabel))
+	tab := m.results.resultTab
 	tabName := m.caseTabName()
 	if tabName != "" {
 		parts = append(parts, s.BreadcrumbSep.Render(" / "))
 		parts = append(parts, s.DimText.Render(tabName))
+	}
+	ts := m.results.tabStateFor(tab)
+	if tab > 0 && ts.selectedIndex >= 0 && ts.selectedIndex < m.results.tabCount(tab) {
+		parts = append(parts, s.BreadcrumbSep.Render(" / "), s.DimText.Render(fmt.Sprintf("#%d", ts.selectedIndex+1)))
+	}
+	if ts.detailOpen {
+		parts = append(parts, s.BreadcrumbSep.Render(" / "), s.DimText.Render("detail"))
+	}
+	if ts.filterActive || ts.searchQuery != "" {
+		parts = append(parts, s.BreadcrumbSep.Render(" / "), s.SearchActive.Render("filter:"+ts.searchQuery))
 	}
 	return s.HeaderBar.Render(strings.Join(parts, ""))
 }
@@ -842,9 +959,26 @@ func (m mainModel) renderHeaderBar() string {
 
 func (m mainModel) renderSidebar() string {
 	s := m.styles
-	var rendered []string
 	nodes := m.router.sidebarVisibleNodes()
-	for i, n := range nodes {
+	availHeight := m.mainHeight()
+	totalNodes := len(nodes)
+
+	// Apply sidebar viewport offset so selection stays visible
+	m.router.MaintainSidebarOffset(availHeight)
+	offset := m.router.sidebarOffset
+	if offset >= totalNodes && totalNodes > 0 {
+		offset = totalNodes - 1
+	}
+	end := offset + availHeight
+	if end > totalNodes {
+		end = totalNodes
+	}
+	visibleNodes := nodes[offset:end]
+
+	var rendered []string
+	selNodeIdx := m.router.sidebarSel
+	for i, n := range visibleNodes {
+		actualIdx := offset + i
 		if n.isSection {
 			labelStr := " " + n.label + " "
 			labelWidth := lipgloss.Width(labelStr)
@@ -857,7 +991,7 @@ func (m mainModel) renderSidebar() string {
 		}
 
 		isParent := len(n.children) > 0
-		active := i == m.router.sidebarSel && m.router.focus == focusSidebar
+		active := actualIdx == selNodeIdx && m.router.focus == focusSidebar
 		viewActive := n.vid == m.router.currentView
 		if n.vid == caseView && n.tab >= 0 && n.tab < len(m.recentFiles) {
 			viewActive = m.recentFiles[n.tab] == m.activeCase
@@ -903,10 +1037,18 @@ func (m mainModel) renderSidebar() string {
 		}
 	}
 	sidebarContent := lipgloss.JoinVertical(lipgloss.Left, rendered...)
-	availHeight := m.mainHeight()
 	lines := strings.Count(sidebarContent, "\n") + 1
 	if lines < availHeight {
 		sidebarContent += strings.Repeat("\n", availHeight-lines)
+	}
+
+	if totalNodes > availHeight {
+		scrollPct := int(float64(offset+availHeight) / float64(totalNodes) * 100)
+		if scrollPct > 100 {
+			scrollPct = 100
+		}
+		scrollBar := fmt.Sprintf(" %s %d%%", s.DimText.Render("▐█▌"), scrollPct)
+		sidebarContent += "\n" + s.DimText.Render(scrollBar)
 	}
 	return s.Sidebar.Render(sidebarContent)
 }
@@ -1069,6 +1211,10 @@ func (m mainModel) viewportScrollPercent() string {
 	return fmt.Sprintf("Line %d–%d / %d  (%d%%)", first, last, total, pct)
 }
 
+func (m mainModel) updateHelp(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
 func (m mainModel) renderContent() string {
 	switch m.router.currentView {
 	case analyzeView:
@@ -1089,10 +1235,8 @@ func (m mainModel) renderContent() string {
 		return m.viewHelp()
 	case localAIView:
 		return m.viewLocalAI()
+	case tourView:
+		return m.viewTour()
 	}
 	return ""
-}
-
-func (m mainModel) updateHelp(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
 }
