@@ -172,16 +172,16 @@ func TestGlobalKeyRouting_EscExceptions(t *testing.T) {
 	}
 
 	m.router.currentView = reportsView
-	m.reportsV.showConfirmation = true
+	m.reportsV.mode = "detail"
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
 	if handled {
-		t.Error("esc on reportsView with showConfirmation=true should be forwarded to child")
+		t.Error("esc on reportsView with mode=detail should be forwarded to child")
 	}
 
-	m.reportsV.showConfirmation = false
+	m.reportsV.mode = "browse"
 	handled, _, _ = m.handleGlobalKey(msgFromString("esc"))
 	if !handled {
-		t.Error("esc on reportsView with no confirmation should navigate back")
+		t.Error("esc on reportsView with mode=browse should navigate back")
 	}
 
 	m.router.currentView = reviewView

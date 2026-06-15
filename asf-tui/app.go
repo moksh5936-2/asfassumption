@@ -109,6 +109,14 @@ type mainModel struct {
 	vp        viewport.Model
 	scrollY   map[view]int
 	layoutMgr layoutManager
+
+	exportActive   bool
+	exportSelected int
+	exportFormat   ExportFormat
+	exportDone     bool
+	exportPath     string
+	exportErr      error
+	exportConfirm  bool
 }
 
 type navigateMsg struct {
@@ -329,6 +337,53 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Export dialog from case workspace
+		if m.router.currentView == caseView && m.exportActive {
+			switch msg.String() {
+			case "up", "k":
+				if m.exportSelected > 0 {
+					m.exportSelected--
+				}
+				return m, nil
+			case "down", "j":
+				if m.exportSelected < 13 {
+					m.exportSelected++
+				}
+				return m, nil
+			case "enter":
+				if !m.exportDone {
+					formats := []ExportFormat{ExportJSON, ExportMarkdown, ExportCSV, ExportPDF, ExportHTML, ExportNarrativeMarkdown, ExportNarrativeHTML, ExportTrustMarkdown, ExportTrustHTML, ExportTrustJSON, ExportReviewMarkdown, ExportReviewHTML, ExportConfidenceMarkdown, ExportConfidenceHTML}
+					if m.exportSelected < len(formats) {
+						m.exportFormat = formats[m.exportSelected]
+						m.exportConfirm = true
+					}
+				}
+				return m, nil
+			case "y":
+				if m.exportConfirm && !m.exportDone && m.results.result != nil {
+					outputDir := m.config.Output.Directory
+					if outputDir == "" {
+						outputDir = asfReportsDir()
+					}
+					path, err := ExportResult(m.results.result, m.exportFormat, outputDir)
+					if err != nil {
+						m.exportErr = err
+					} else {
+						m.exportDone = true
+						m.exportPath = path
+					}
+				}
+				return m, nil
+			case "esc":
+				m.exportActive = false
+				m.exportConfirm = false
+				m.exportDone = false
+				m.exportErr = nil
+				return m, nil
+			}
+			return m, nil
+		}
+
 		// Tab navigation for case workspace
 		if m.router.currentView == caseView && m.results.result != nil {
 			switch msg.String() {
@@ -416,16 +471,12 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case navigateMsg:
 		if msg.to == reportsView {
 			m.reportsV.selected = 0
-			m.reportsV.done = false
-			m.reportsV.exportPath = ""
-			m.reportsV.showConfirmation = false
+			m.reportsV.mode = "browse"
 			m.reportsV.err = nil
-			m.reportsV.result = m.results.result
-			m.reportsV.outputDir = m.config.Output.Directory
-			if m.reportsV.outputDir == "" {
-				m.reportsV.outputDir = "./reports"
-			}
-			m.reportsV.format = exportFormatFromConfig(m.config)
+			m.reportsV.searching = false
+			m.reportsV.searchQuery = ""
+			m.reportsV.confirmDelete = false
+			m.reportsV.entries = scanReportsDirs()
 		}
 		if msg.to == caseView && m.results.result != nil {
 			m.results.resultTab = 0
@@ -567,7 +618,7 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 				return false, m, nil
 			}
 		case reportsView:
-			if m.reportsV.showConfirmation || m.reportsV.done {
+			if m.reportsV.mode == "detail" || m.reportsV.searching || m.reportsV.confirmDelete {
 				return false, m, nil
 			}
 		case reviewView:
@@ -654,7 +705,18 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 		}
 	case "e":
 		if m.router.currentView == caseView && m.results.result != nil {
-			return true, m, func() tea.Msg { return navigateMsg{to: reportsView} }
+			m.exportActive = true
+			m.exportSelected = 0
+			m.exportDone = false
+			m.exportPath = ""
+			m.exportErr = nil
+			m.exportConfirm = false
+			m.exportFormat = exportFormatFromConfig(m.config)
+			return true, m, nil
+		}
+		if m.router.currentView == reportsView {
+			m.statusMsg = "Export is available from an active case. Open a case first, then export from the case workspace."
+			return true, m, nil
 		}
 	case "s":
 		if m.router.currentView == settingsView && !m.settings.editing {
@@ -663,6 +725,11 @@ func (m mainModel) handleGlobalKey(msg tea.KeyMsg) (bool, tea.Model, tea.Cmd) {
 			return true, m, nil
 		}
 	case "/":
+		if m.router.currentView == reportsView && !m.reportsV.confirmDelete {
+			m.reportsV.searching = true
+			m.reportsV.searchQuery = ""
+			return true, m, nil
+		}
 		m.searchActive = true
 		m.searchQuery = ""
 		return true, m, nil
@@ -911,6 +978,11 @@ func (m mainModel) View() string {
 		content = m.styles.StatusWarn.Render(searchPrompt) + "\n" + content
 	}
 
+	if m.exportActive && m.router.currentView == caseView {
+		overlay := m.renderExportDialog()
+		content = overlay
+	}
+
 	sidebar := m.renderSidebar()
 	m.vp.Width = m.mainWidth()
 	m.vp.Height = m.mainHeight()
@@ -1081,7 +1153,7 @@ func (m mainModel) renderHintsBar() string {
 		hints = append(hints, s.DimText.Render("←→ Tabs"))
 		hints = append(hints, s.DimText.Render("r Review"))
 		hints = append(hints, s.DimText.Render("v Validate"))
-		hints = append(hints, s.DimText.Render("e Reports"))
+		hints = append(hints, s.DimText.Render("e Export"))
 		hints = append(hints, s.DimText.Render("c Clear"))
 	case reviewView:
 		guidance = "Review Queue — Human analyst approval workflow for assumptions"
@@ -1112,12 +1184,17 @@ func (m mainModel) renderHintsBar() string {
 			hints = append(hints, s.DimText.Render("s Save"))
 		}
 	case reportsView:
-		guidance = "Reports — Generate and export analysis results (PDF, HTML, JSON, CSV, Markdown)"
-		if m.reportsV.showConfirmation || m.reportsV.done {
+		guidance = "Exported Reports Library — Browse, open, and manage previous exports"
+		if m.reportsV.mode == "detail" {
+			hints = append(hints, s.DimText.Render("o Open"))
+			hints = append(hints, s.DimText.Render("c Copy Path"))
+			hints = append(hints, s.DimText.Render("d Delete"))
 			hints = append(hints, s.DimText.Render("Esc Back"))
-		} else {
+		} else if len(m.reportsV.entries) > 0 {
 			hints = append(hints, s.DimText.Render("↑↓ Select"))
-			hints = append(hints, s.DimText.Render("Enter Choose"))
+			hints = append(hints, s.DimText.Render("Enter Details"))
+			hints = append(hints, s.DimText.Render("r Refresh"))
+			hints = append(hints, s.DimText.Render("/ Search"))
 		}
 	case helpView:
 		guidance = "Help — Keyboard shortcuts, workflow guide, and documentation"
@@ -1185,6 +1262,99 @@ func (m mainModel) renderStatusBar() string {
 		fill = 1
 	}
 	return s.StatusBar.Render(left + strings.Repeat(" ", fill) + right)
+}
+
+func (m mainModel) renderExportDialog() string {
+	s := m.styles
+	width := m.mainWidth() - 8
+
+	if m.exportErr != nil {
+		content := s.CardAccent("Export Error",
+			lipgloss.JoinVertical(lipgloss.Center,
+				s.StatusBad.Render("✗ Export Failed"),
+				"",
+				s.DimText.Render(m.exportErr.Error()),
+				"",
+				s.DimText.Render("Press Esc to return."),
+			),
+			width)
+		return lipgloss.Place(m.mainWidth(), m.mainHeight(),
+			lipgloss.Center, lipgloss.Center,
+			content)
+	}
+
+	if m.exportDone {
+		content := s.Card("Export Complete",
+			lipgloss.JoinVertical(lipgloss.Center,
+				s.StatusGood.Render("✓ Export Complete"),
+				"",
+				s.Value.Render(m.exportPath),
+				"",
+				s.DimText.Render("Press Esc to return."),
+			),
+			width)
+		return lipgloss.Place(m.mainWidth(), m.mainHeight(),
+			lipgloss.Center, lipgloss.Center,
+			content)
+	}
+
+	if m.exportConfirm {
+		content := s.Card("Confirm Export",
+			lipgloss.JoinVertical(lipgloss.Center,
+				s.DimText.Render(fmt.Sprintf("Export as %s?", m.exportFormat)),
+				"",
+				s.Accent.Render("Press Y to confirm, Esc to cancel."),
+			),
+			width)
+		return lipgloss.Place(m.mainWidth(), m.mainHeight(),
+			lipgloss.Center, lipgloss.Center,
+			content)
+	}
+
+	formats := []struct {
+		name   string
+		format ExportFormat
+	}{
+		{"JSON (.json)", ExportJSON},
+		{"Markdown (.md)", ExportMarkdown},
+		{"HTML (.html)", ExportHTML},
+		{"CSV (.csv)", ExportCSV},
+		{"PDF (.pdf)", ExportPDF},
+		{"Narrative Markdown (.md)", ExportNarrativeMarkdown},
+		{"Narrative HTML (.html)", ExportNarrativeHTML},
+		{"Trust Chain Markdown (.md)", ExportTrustMarkdown},
+		{"Trust Chain HTML (.html)", ExportTrustHTML},
+		{"Trust Chain JSON (.json)", ExportTrustJSON},
+		{"Review Workbench Markdown (.md)", ExportReviewMarkdown},
+		{"Review Workbench HTML (.html)", ExportReviewHTML},
+		{"Confidence Report Markdown (.md)", ExportConfidenceMarkdown},
+		{"Confidence Report HTML (.html)", ExportConfidenceHTML},
+	}
+
+	var items []string
+	for i, f := range formats {
+		prefix := "  "
+		style := s.SectionItem
+		if i == m.exportSelected {
+			prefix = s.Fox.Render("▶ ")
+			style = s.MenuSelected
+		}
+		items = append(items, style.Render(prefix+f.name))
+	}
+
+	header := s.PremiumTitle.Render("Export Report")
+	list := s.Card("Select Export Format", strings.Join(items, "\n"), width)
+
+	dialog := lipgloss.JoinVertical(lipgloss.Center,
+		"",
+		header,
+		"",
+		list,
+	)
+
+	return lipgloss.Place(m.mainWidth(), m.mainHeight(),
+		lipgloss.Center, lipgloss.Center,
+		s.Card("", dialog, width+4))
 }
 
 func (m mainModel) viewportScrollPercent() string {

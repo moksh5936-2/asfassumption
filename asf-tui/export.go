@@ -21,6 +21,14 @@ import (
 	"github.com/go-pdf/fpdf"
 )
 
+var asfReportsDir = func() string {
+	return filepath.Join(asfRootDir(), "reports")
+}
+
+var projectReportsDir = func() string {
+	return "./reports"
+}
+
 // ExportFormat defines the output format for analysis result exports.
 type ExportFormat string
 
@@ -2302,145 +2310,349 @@ func riskLevelForAPDScore(score float64) string {
 	}
 }
 
+type reportEntry struct {
+	name     string
+	path     string
+	caseName string
+	format   string
+	size     int64
+	modTime  time.Time
+}
+
 type reportsModel struct {
-	selected         int
-	format           ExportFormat
-	done             bool
-	exportPath       string
-	showConfirmation bool
-	result           *AnalysisResult
-	outputDir        string
-	err              error
+	entries       []reportEntry
+	selected      int
+	mode          string // "browse", "detail"
+	searchQuery   string
+	searching     bool
+	confirmDelete bool
+	err           error
 }
 
 func newReportsModel() reportsModel {
-	return reportsModel{}
+	return reportsModel{mode: "browse", searching: false, confirmDelete: false}
+}
+
+func reportFormatFromExt(path string) string {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".pdf":
+		return "PDF"
+	case ".html", ".htm":
+		return "HTML"
+	case ".md":
+		return "Markdown"
+	case ".json":
+		return "JSON"
+	case ".jsonl":
+		return "JSONL"
+	case ".csv":
+		return "CSV"
+	case ".docx":
+		return "DOCX"
+	default:
+		return strings.ToUpper(strings.TrimPrefix(ext, "."))
+	}
+}
+
+func scanReportsDirs() []reportEntry {
+	dirs := []string{asfReportsDir(), projectReportsDir()}
+	seen := make(map[string]bool)
+	var entries []reportEntry
+	for _, dir := range dirs {
+		if dir == "" {
+			continue
+		}
+		entries = append(entries, scanReportsDir(dir, seen)...)
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].modTime.After(entries[j].modTime)
+	})
+	return entries
+}
+
+func scanReportsDir(dir string, seen map[string]bool) []reportEntry {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	var entries []reportEntry
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		fullPath := filepath.Join(dir, f.Name())
+		if seen[fullPath] {
+			continue
+		}
+		seen[fullPath] = true
+		info, err := f.Info()
+		if err != nil {
+			continue
+		}
+		caseName := inferCaseName(f.Name())
+		entries = append(entries, reportEntry{
+			name:     f.Name(),
+			path:     fullPath,
+			caseName: caseName,
+			format:   reportFormatFromExt(f.Name()),
+			size:     info.Size(),
+			modTime:  info.ModTime(),
+		})
+	}
+	return entries
+}
+
+func inferCaseName(filename string) string {
+	ext := filepath.Ext(filename)
+	base := strings.TrimSuffix(filename, ext)
+	idx := strings.LastIndex(base, "_")
+	if idx > 0 {
+		after := base[idx+1:]
+		if len(after) == 15 {
+			return base[:idx]
+		}
+	}
+	return base
 }
 
 func (m reportsModel) Update(msg tea.Msg) (reportsModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Delete confirmation mode - only y/n/esc
+		if m.confirmDelete {
+			switch msg.String() {
+			case "y":
+				if m.selected >= 0 && m.selected < len(m.entries) {
+					entry := m.entries[m.selected]
+					if err := os.Remove(entry.path); err != nil {
+						m.err = err
+					} else {
+						m.entries = append(m.entries[:m.selected], m.entries[m.selected+1:]...)
+						if m.selected >= len(m.entries) && len(m.entries) > 0 {
+							m.selected = len(m.entries) - 1
+						}
+						if len(m.entries) == 0 {
+							m.mode = "browse"
+						}
+					}
+				}
+				m.confirmDelete = false
+				return m, nil
+			case "n", "esc", "q":
+				m.confirmDelete = false
+				return m, nil
+			}
+			return m, nil
+		}
+
+		// Search mode - capture character input
+		if m.searching {
+			switch msg.String() {
+			case "esc", "enter":
+				m.searching = false
+				return m, nil
+			case "backspace":
+				if len(m.searchQuery) > 0 {
+					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+				}
+				return m, nil
+			default:
+				if msg.Type == tea.KeyRunes {
+					m.searchQuery += msg.String()
+				}
+				return m, nil
+			}
+		}
+
 		switch msg.String() {
 		case "up", "k":
-			if m.selected > 0 {
+			if m.mode == "browse" && m.selected > 0 {
 				m.selected--
 			}
 		case "down", "j":
-			if m.selected < 13 {
+			if m.mode == "browse" && m.selected < len(m.entries)-1 {
 				m.selected++
 			}
 		case "enter":
-			formats := []ExportFormat{ExportJSON, ExportMarkdown, ExportCSV, ExportPDF, ExportHTML, ExportNarrativeMarkdown, ExportNarrativeHTML, ExportTrustMarkdown, ExportTrustHTML, ExportTrustJSON, ExportReviewMarkdown, ExportReviewHTML, ExportConfidenceMarkdown, ExportConfidenceHTML}
-			if m.selected < len(formats) {
-				m.format = formats[m.selected]
-				m.showConfirmation = true
+			if m.mode == "browse" && len(m.entries) > 0 && m.selected >= 0 && m.selected < len(m.entries) {
+				m.mode = "detail"
+			} else if m.mode == "detail" {
+				m.mode = "browse"
 			}
-		case "esc":
-			m.showConfirmation = false
-			m.done = false
-			m.err = nil
-		case "y":
-			if m.showConfirmation && !m.done {
-				if m.result != nil {
-					path, err := ExportResult(m.result, m.format, m.outputDir)
-					if err != nil {
-						m.err = err
-					} else {
-						m.done = true
-						m.exportPath = path
-					}
+		case "o":
+			if m.mode == "detail" && m.selected >= 0 && m.selected < len(m.entries) {
+				entry := m.entries[m.selected]
+				if err := openFile(entry.path); err != nil {
+					m.err = err
 				}
 			}
+		case "c":
+			if m.mode == "detail" && m.selected >= 0 && m.selected < len(m.entries) {
+				entry := m.entries[m.selected]
+				if err := copyToClipboard(entry.path); err != nil {
+					m.err = err
+				}
+			}
+		case "r":
+			m.entries = scanReportsDirs()
+			m.err = nil
+			if m.selected >= len(m.entries) && len(m.entries) > 0 {
+				m.selected = len(m.entries) - 1
+			}
+		case "d":
+			if m.mode == "detail" && m.selected >= 0 && m.selected < len(m.entries) {
+				m.confirmDelete = true
+			}
+		case "esc", "q":
+			if m.mode == "detail" {
+				m.mode = "browse"
+			}
+		case "?":
 		}
 	}
 	return m, nil
 }
 
+func openFile(path string) error {
+	return fmt.Errorf("open not supported in terminal UI: %s", path)
+}
+
+func copyToClipboard(path string) error {
+	return fmt.Errorf("clipboard not supported in terminal UI: %s", path)
+}
+
 func (m mainModel) viewReports() string {
 	s := m.styles
-	ex := m.reportsV
+	r := m.reportsV
+	width := m.mainWidth() - 4
 
-	if ex.result == nil {
-		return s.Card("Reports",
-			lipgloss.JoinVertical(lipgloss.Left,
-				s.EmptyState.Render("No reports generated."),
-				"",
-				s.DimText.Render("  Run an analysis first to generate a case."),
-				s.DimText.Render("  Then open the case and press 'e' to export reports."),
-			),
-			m.mainWidth())
+	// Delete confirmation overlay
+	if r.confirmDelete && r.selected >= 0 && r.selected < len(r.entries) {
+		entry := r.entries[r.selected]
+		confirmContent := lipgloss.JoinVertical(lipgloss.Left,
+			s.StatusWarn.Render(" Delete Report? "),
+			"",
+			s.DimText.Render("  File: "+entry.name),
+			s.DimText.Render("  Path: "+entry.path),
+			"",
+			s.DimText.Render("  This action cannot be undone."),
+			"",
+			s.Label.Render("  Press y to delete, n or esc to cancel."),
+		)
+		header := s.PremiumHeader("Exported Reports", m.mainWidth())
+		return lipgloss.JoinVertical(lipgloss.Left,
+			header,
+			"",
+			s.Card("", confirmContent, width),
+		)
 	}
 
-	if ex.err != nil {
-		return s.CardAccent("Export Error",
-			lipgloss.JoinVertical(lipgloss.Center,
-				s.StatusBad.Render("✗ Export Failed"),
-				"",
-				s.DimText.Render(ex.err.Error()),
-				"",
-				s.DimText.Render("Press Esc to return."),
-			),
-			m.mainWidth()-4)
+	if m.reportsV.mode == "detail" && len(m.reportsV.entries) > 0 {
+		return m.viewReportDetail()
 	}
 
-	if ex.done {
-		return s.Card("Export Complete",
-			lipgloss.JoinVertical(lipgloss.Center,
-				s.StatusGood.Render("✓ Export Complete"),
-				"",
-				s.Value.Render(ex.exportPath),
-				"",
-				s.DimText.Render("Press Esc to return."),
-			),
-			m.mainWidth()-4)
+	// Filter entries by search query
+	type displayItem struct {
+		entry   reportEntry
+		origIdx int
+	}
+	var items []displayItem
+	q := strings.ToLower(r.searchQuery)
+	for i, entry := range r.entries {
+		if q != "" {
+			if !strings.Contains(strings.ToLower(entry.name), q) &&
+				!strings.Contains(strings.ToLower(entry.caseName), q) {
+				continue
+			}
+		}
+		items = append(items, displayItem{entry, i})
 	}
 
-	if ex.showConfirmation {
-		return s.Card("Confirm Export",
-			lipgloss.JoinVertical(lipgloss.Center,
-				s.DimText.Render(fmt.Sprintf("Export as %s?", ex.format)),
-				"",
-				s.Accent.Render("Press Y to confirm, Esc to cancel."),
-			),
-			m.mainWidth()-4)
+	// Search bar
+	var searchBar string
+	if r.searching {
+		searchBar = s.SearchActive.Render("Search: " + r.searchQuery + "█")
 	}
 
-	formats := []struct {
-		name   string
-		format ExportFormat
-	}{
-		{"JSON (.json)", ExportJSON},
-		{"Markdown (.md)", ExportMarkdown},
-		{"HTML (.html)", ExportHTML},
-		{"CSV (.csv)", ExportCSV},
-		{"PDF (.pdf)", ExportPDF},
-		{"Narrative Markdown (.md)", ExportNarrativeMarkdown},
-		{"Narrative HTML (.html)", ExportNarrativeHTML},
-		{"Trust Chain Markdown (.md)", ExportTrustMarkdown},
-		{"Trust Chain HTML (.html)", ExportTrustHTML},
-		{"Trust Chain JSON (.json)", ExportTrustJSON},
-		{"Review Workbench Markdown (.md)", ExportReviewMarkdown},
-		{"Review Workbench HTML (.html)", ExportReviewHTML},
-		{"Confidence Report Markdown (.md)", ExportConfidenceMarkdown},
-		{"Confidence Report HTML (.html)", ExportConfidenceHTML},
+	// Empty state
+	if len(items) == 0 {
+		header := s.PremiumHeader("Exported Reports", m.mainWidth())
+		var content []string
+		if q != "" {
+			content = append(content, s.EmptyState.Render("No reports match \""+r.searchQuery+"\"."))
+		} else {
+			content = append(content, s.EmptyState.Render("No exported reports yet."))
+			content = append(content, "")
+			content = append(content, s.DimText.Render("  Export a report from any case workspace."))
+			content = append(content, s.DimText.Render("  Open a case → press E / Export → choose format."))
+			content = append(content, s.DimText.Render("  Reports you export will appear here."))
+		}
+		return lipgloss.JoinVertical(lipgloss.Left,
+			header,
+			searchBar,
+			s.Card("", lipgloss.JoinVertical(lipgloss.Left, content...), width),
+		)
 	}
 
-	var items []string
-	for i, f := range formats {
+	// Build list items
+	selDisplayIdx := -1
+	for di, item := range items {
+		if item.origIdx == r.selected {
+			selDisplayIdx = di
+			break
+		}
+	}
+
+	var lines []string
+	for di, item := range items {
 		prefix := "  "
 		style := s.SectionItem
-		if i == ex.selected {
+		if di == selDisplayIdx {
 			prefix = s.Fox.Render("▶ ")
 			style = s.MenuSelected
 		}
-		items = append(items, style.Render(prefix+f.name))
+		entry := item.entry
+		dateStr := entry.modTime.Format("2006-01-02 15:04")
+		sizeStr := formatSize(entry.size)
+		line := fmt.Sprintf("%s%s  [%s]  %s  %s  Case: %s", prefix, entry.name, entry.format, dateStr, sizeStr, entry.caseName)
+		lines = append(lines, style.Render(line))
 	}
 
-	header := s.PremiumHeader("Reports", m.mainWidth())
+	header := s.PremiumHeader("Exported Reports", m.mainWidth())
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
+		searchBar,
+		s.Card("", strings.Join(lines, "\n"), width),
+	)
+}
+
+func (m mainModel) viewReportDetail() string {
+	s := m.styles
+	r := m.reportsV
+	width := m.mainWidth() - 4
+
+	if len(r.entries) == 0 {
+		return m.viewReports()
+	}
+
+	entry := r.entries[r.selected]
+
+	detail := []string{
+		s.SubSectionTitle.Render("Report Details"),
 		"",
-		s.Card("Select Export Format", strings.Join(items, "\n"), m.mainWidth()-4),
+		s.Label.Render("File:") + "  " + s.Value.Render(entry.name),
+		s.Label.Render("Path:") + "  " + s.DimText.Render(entry.path),
+		s.Label.Render("Case:") + "  " + s.Value.Render(entry.caseName),
+		s.Label.Render("Format:") + "  " + s.MenuSelected.Render(entry.format),
+		s.Label.Render("Created:") + "  " + s.Value.Render(entry.modTime.Format("2006-01-02 15:04:05")),
+		s.Label.Render("Size:") + "  " + s.Value.Render(formatSize(entry.size)),
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		s.PremiumHeader("Report Details", m.mainWidth()),
+		"",
+		s.Card("", strings.Join(detail, "\n"), width),
 	)
 }
 
