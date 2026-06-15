@@ -9,24 +9,29 @@ import (
 )
 
 type tabState struct {
-	selectedIndex int
-	detailOpen    bool
-	searchQuery   string
-	filterActive  bool
-	showHelp      bool
-	selectedLine  int // rendered line offset of selected item within tab content
-	contentOffset int // number of viewport lines before tab content starts
+	selectedIndex  int
+	detailOpen     bool
+	searchQuery    string
+	SearchActive   bool
+	filterActive   bool
+	showHelp       bool
+	selectedLine   int
+	contentOffset  int
+	ViewportOffset int
+	DetailOffset   int
+	filteredCount  int
 }
 
 type resultsModel struct {
-	result    *AnalysisResult
-	resultTab int
-	tabs      []resultTabDef
-	tabScroll map[int]int
-	tabStates map[int]*tabState
-	vpReady   bool
-	vpWidth   int
-	vpHeight  int
+	result      *AnalysisResult
+	resultTab   int
+	tabs        []resultTabDef
+	tabScroll   map[int]int
+	tabStates   map[int]*tabState
+	detailFocus bool
+	vpReady     bool
+	vpWidth     int
+	vpHeight    int
 }
 
 func (m *resultsModel) tabStateFor(tab int) *tabState {
@@ -120,13 +125,47 @@ func newResultsModel() resultsModel {
 			{name: "Controls"},
 			{name: "SDRI"},
 		},
-		tabScroll: make(map[int]int),
-		tabStates: make(map[int]*tabState),
+		tabScroll:   make(map[int]int),
+		tabStates:   make(map[int]*tabState),
+		detailFocus: false,
 	}
 }
 
 func (m resultsModel) Update(msg tea.Msg) (resultsModel, tea.Cmd) {
 	return m, nil
+}
+
+func ensureSelectedVisible(ts *tabState, itemCount int, visibleHeight int) {
+	if itemCount <= 0 {
+		ts.selectedIndex = 0
+		ts.ViewportOffset = 0
+		return
+	}
+	if ts.selectedIndex < 0 {
+		ts.selectedIndex = 0
+	}
+	if ts.selectedIndex >= itemCount {
+		ts.selectedIndex = itemCount - 1
+	}
+	if visibleHeight < 1 {
+		visibleHeight = 1
+	}
+	if ts.selectedIndex < ts.ViewportOffset {
+		ts.ViewportOffset = ts.selectedIndex
+	}
+	if ts.selectedIndex >= ts.ViewportOffset+visibleHeight {
+		ts.ViewportOffset = ts.selectedIndex - visibleHeight + 1
+	}
+	maxOffset := itemCount - visibleHeight
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+	if ts.ViewportOffset > maxOffset {
+		ts.ViewportOffset = maxOffset
+	}
+	if ts.ViewportOffset < 0 {
+		ts.ViewportOffset = 0
+	}
 }
 
 func (m mainModel) viewResults() string {
@@ -151,25 +190,9 @@ func (m mainModel) viewResults() string {
 	}
 
 	r := m.results.result
-	var content string
 	tab := m.results.resultTab
 	ts := m.results.tabStateFor(tab)
-	switch tab {
-	case 0:
-		content = renderResultSummary(s, r, ts, m.mainWidth()-4)
-	case 1:
-		content = renderResultAssumptions(s, r, ts, m.mainWidth()-4)
-	case 2:
-		content = renderResultVerification(s, r, ts, m.mainWidth()-4)
-	case 3:
-		content = renderResultContradictions(s, r, ts, m.mainWidth()-4)
-	case 4:
-		content = renderResultTrust(s, r, ts, m.mainWidth()-4)
-	case 5:
-		content = renderResultControls(s, r, ts, m.mainWidth()-4)
-	case 6:
-		content = renderResultSDRI(s, r, ts, m.mainWidth()-4)
-	}
+	totalWidth := m.mainWidth() - 4
 
 	tabBar := m.renderResultTabs()
 	sectionName := m.results.tabs[tab].name
@@ -180,10 +203,155 @@ func (m mainModel) viewResults() string {
 	}
 	header := s.PremiumHeader(titleStr, m.mainWidth())
 	ts.contentOffset = strings.Count(lipgloss.JoinVertical(lipgloss.Left, header, tabBar), "\n") + 1
+
+	if tab == 0 {
+		content := renderResultSummary(s, r, ts, totalWidth)
+		return lipgloss.JoinVertical(lipgloss.Left,
+			header,
+			tabBar,
+			content,
+		)
+	}
+
+	// Split pane for tabs 1-6
+	paneHeight := m.mainHeight() - ts.contentOffset - 1
+	if paneHeight < 10 {
+		paneHeight = 10
+	}
+
+	const minSplitWidth = 100
+	listWidth := totalWidth * 40 / 100
+	detailWidth := totalWidth - listWidth - 3
+	if totalWidth < minSplitWidth {
+		listWidth = totalWidth
+		detailWidth = 0
+	}
+	if listWidth < 30 {
+		listWidth = 30
+	}
+	if detailWidth < 30 && totalWidth >= minSplitWidth {
+		detailWidth = 30
+		listWidth = totalWidth - detailWidth - 3
+	}
+
+	var listContent string
+	switch tab {
+	case 1:
+		listContent = renderAssumptionsList(s, r, ts, listWidth)
+	case 2:
+		listContent = renderVerificationList(s, r, ts, listWidth)
+	case 3:
+		listContent = renderContradictionsList(s, r, ts, listWidth)
+	case 4:
+		listContent = renderTrustList(s, r, ts, listWidth)
+	case 5:
+		listContent = renderControlsList(s, r, ts, listWidth)
+	case 6:
+		listContent = renderSDRISummaryList(s, r, ts, listWidth)
+	}
+
+	listLines := strings.Split(listContent, "\n")
+	totalListLines := len(listLines)
+
+	// Count header lines (everything before the first item line)
+	headerLines := totalListLines - ts.filteredCount
+	if headerLines < 0 {
+		headerLines = 0
+	}
+	// Item visible height = paneHeight minus header area
+	itemVisHeight := paneHeight - headerLines
+	if itemVisHeight < 1 {
+		itemVisHeight = 1
+	}
+	// Clamp viewport in item-space using correct visible height
+	ensureSelectedVisible(ts, ts.filteredCount, itemVisHeight)
+	// Convert item-space ViewportOffset to line-space for slicing
+	lineOffset := headerLines + ts.ViewportOffset
+	if lineOffset < 0 {
+		lineOffset = 0
+	}
+	if lineOffset >= totalListLines && totalListLines > 0 {
+		lineOffset = max(0, totalListLines-1)
+	}
+	visFrom := lineOffset
+	visTo := visFrom + paneHeight
+	if visTo > totalListLines {
+		visTo = totalListLines
+	}
+	if visFrom < totalListLines {
+		listLines = listLines[visFrom:visTo]
+	} else {
+		listLines = nil
+	}
+	for len(listLines) < paneHeight {
+		listLines = append(listLines, "")
+	}
+	renderedList := strings.Join(listLines, "\n")
+
+	listBorder := s.DetailBox
+	if !m.results.detailFocus {
+		listBorder = s.SelectedItem
+	}
+	listPane := listBorder.Render(renderedList)
+
+	if totalWidth < minSplitWidth {
+		return lipgloss.JoinVertical(lipgloss.Left,
+			header,
+			tabBar,
+			listPane,
+		)
+	}
+
+	var detailContent string
+	switch tab {
+	case 1:
+		detailContent = renderAssumptionsDetail(s, r, ts, detailWidth)
+	case 2:
+		detailContent = renderVerificationDetail(s, r, ts, detailWidth)
+	case 3:
+		detailContent = renderContradictionsDetail(s, r, ts, detailWidth)
+	case 4:
+		detailContent = renderTrustDetail(s, r, ts, detailWidth)
+	case 5:
+		detailContent = renderControlsDetail(s, r, ts, detailWidth)
+	case 6:
+		detailContent = renderSDRIDetail(s, r, ts, detailWidth)
+	}
+
+	detailLines := strings.Split(detailContent, "\n")
+	totalDetailLines := len(detailLines)
+	if ts.DetailOffset >= totalDetailLines && ts.DetailOffset > 0 {
+		ts.DetailOffset = max(0, totalDetailLines-1)
+	}
+
+	detailLines2 := detailLines
+	if ts.DetailOffset < len(detailLines2) {
+		detailLines2 = detailLines2[ts.DetailOffset:]
+	}
+	if len(detailLines2) > paneHeight {
+		detailLines2 = detailLines2[:paneHeight]
+	}
+	for len(detailLines2) < paneHeight {
+		detailLines2 = append(detailLines2, "")
+	}
+	renderedDetail := strings.Join(detailLines2, "\n")
+
+	detailBorder := s.DetailBox
+	if m.results.detailFocus {
+		detailBorder = s.SelectedItem
+	}
+	detailPane := detailBorder.Render(renderedDetail)
+
+	splitContent := lipgloss.JoinHorizontal(lipgloss.Top,
+		listPane,
+		s.DimText.Render(" │ "),
+		detailPane,
+	)
+
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
 		tabBar,
-		content,
+		splitContent,
 	)
 }
 
@@ -206,7 +374,7 @@ func (m mainModel) renderBreadcrumb(tab int, ts *tabState) string {
 		itemStr := fmt.Sprintf(" / #%d", ts.selectedIndex+1)
 		parts = append(parts, s.BreadcrumbSep.Render(itemStr))
 	}
-	if ts.detailOpen {
+	if m.results.detailFocus {
 		parts = append(parts, s.BreadcrumbSep.Render(" / "), s.BreadcrumbSep.Render("detail"))
 	}
 	if ts.filterActive || ts.searchQuery != "" {
@@ -269,22 +437,39 @@ func resultTabCount(r *AnalysisResult, tab int) int {
 	return 0
 }
 
+func (m mainModel) paneHeight() int {
+	h := m.mainHeight() - 4 // subtract header + tab bar
+	if h < 10 {
+		h = 10
+	}
+	return h
+}
+
 func (m mainModel) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.MouseMsg:
 		tab := m.results.resultTab
 		if tab > 0 && m.router.focus == focusContent {
 			ts := m.results.tabStateFor(tab)
-			maxIdx := m.results.tabCount(tab) - 1
 			switch msg.Type {
 			case tea.MouseWheelUp:
-				if ts.selectedIndex > 0 {
-					ts.selectedIndex--
+				if m.results.detailFocus {
+					if ts.DetailOffset > 0 {
+						ts.DetailOffset--
+					}
+				} else {
+					if ts.selectedIndex > 0 {
+						ts.selectedIndex--
+					}
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
 				}
 				return m, nil
 			case tea.MouseWheelDown:
-				if ts.selectedIndex < maxIdx {
+				if m.results.detailFocus {
+					ts.DetailOffset++
+				} else if ts.selectedIndex < m.results.tabCount(tab)-1 {
 					ts.selectedIndex++
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
 				}
 				return m, nil
 			}
@@ -295,63 +480,128 @@ func (m mainModel) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if tab > 0 && m.router.focus == focusContent {
 			ts := m.results.tabStateFor(tab)
 			maxIdx := m.results.tabCount(tab) - 1
-			switch msg.String() {
-			case "up", "k":
-				if !ts.filterActive && ts.selectedIndex > 0 {
-					ts.selectedIndex--
-				}
-				return m, nil
-			case "down", "j":
-				if !ts.filterActive && ts.selectedIndex < maxIdx {
-					ts.selectedIndex++
-				}
-				return m, nil
-			case "enter":
-				if !ts.filterActive && maxIdx >= 0 {
-					ts.detailOpen = !ts.detailOpen
-				}
-				return m, nil
-			case "/":
-				ts.filterActive = true
-				ts.searchQuery = ""
-				return m, nil
-			case "n":
-				if ts.filterActive && ts.searchQuery != "" && ts.selectedIndex < maxIdx {
-					ts.selectedIndex++
-				}
-				return m, nil
-			case "N":
-				if ts.filterActive && ts.searchQuery != "" && ts.selectedIndex > 0 {
-					ts.selectedIndex--
-				}
-				return m, nil
-			case "backspace":
-				if ts.filterActive && len(ts.searchQuery) > 0 {
-					ts.searchQuery = ts.searchQuery[:len(ts.searchQuery)-1]
-				}
-				return m, nil
-			case "esc":
-				if ts.showHelp {
-					ts.showHelp = false
-					return m, nil
-				}
-				if ts.detailOpen {
-					ts.detailOpen = false
-					return m, nil
-				}
-				if ts.filterActive {
+
+			// Search input mode
+			if ts.filterActive {
+				switch msg.String() {
+				case "esc":
 					ts.filterActive = false
 					ts.searchQuery = ""
 					if ts.selectedIndex >= m.results.tabCount(tab) {
 						ts.selectedIndex = 0
 					}
 					return m, nil
+				case "backspace":
+					if len(ts.searchQuery) > 0 {
+						ts.searchQuery = ts.searchQuery[:len(ts.searchQuery)-1]
+					}
+					return m, nil
+				case "n":
+					if ts.searchQuery != "" && ts.selectedIndex < maxIdx {
+						ts.selectedIndex++
+						ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+					}
+					return m, nil
+				case "N":
+					if ts.searchQuery != "" && ts.selectedIndex > 0 {
+						ts.selectedIndex--
+						ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+					}
+					return m, nil
+				default:
+					if len(msg.String()) == 1 && msg.String() != "\t" {
+						ts.searchQuery += msg.String()
+						return m, nil
+					}
 				}
-			default:
-				if ts.filterActive && len(msg.String()) == 1 && msg.String() != "\t" {
-					ts.searchQuery += msg.String()
+				return m, nil
+			}
+
+			switch msg.String() {
+			case "up", "k":
+				if m.results.detailFocus {
+					if ts.DetailOffset > 0 {
+						ts.DetailOffset--
+					}
+				} else {
+					if ts.selectedIndex > 0 {
+						ts.selectedIndex--
+					}
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+				}
+				return m, nil
+			case "down", "j":
+				if m.results.detailFocus {
+					ts.DetailOffset++
+				} else {
+					if ts.selectedIndex < maxIdx {
+						ts.selectedIndex++
+					}
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+				}
+				return m, nil
+			case "pgup":
+				if m.results.detailFocus {
+					ts.DetailOffset -= m.paneHeight()
+					if ts.DetailOffset < 0 {
+						ts.DetailOffset = 0
+					}
+				} else {
+					ts.selectedIndex -= m.paneHeight()
+					if ts.selectedIndex < 0 {
+						ts.selectedIndex = 0
+					}
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+				}
+				return m, nil
+			case "pgdown":
+				if m.results.detailFocus {
+					ts.DetailOffset += m.paneHeight()
+				} else {
+					ts.selectedIndex += m.paneHeight()
+					if ts.selectedIndex > maxIdx {
+						ts.selectedIndex = maxIdx
+					}
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+				}
+				return m, nil
+			case "home":
+				if m.results.detailFocus {
+					ts.DetailOffset = 0
+				} else {
+					ts.selectedIndex = 0
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+				}
+				return m, nil
+			case "end":
+				if m.results.detailFocus {
+					ts.DetailOffset = 1 << 30
+				} else {
+					ts.selectedIndex = maxIdx
+					ensureSelectedVisible(ts, m.results.tabCount(tab), m.paneHeight())
+				}
+				return m, nil
+			case "enter":
+				if !m.results.detailFocus && maxIdx >= 0 {
+					m.results.detailFocus = true
+					ts.DetailOffset = 0
+				}
+				return m, nil
+			case "/":
+				m.results.detailFocus = false
+				ts.filterActive = true
+				ts.searchQuery = ""
+				return m, nil
+			case "esc":
+				if ts.showHelp {
+					ts.showHelp = false
 					return m, nil
 				}
+				if m.results.detailFocus {
+					m.results.detailFocus = false
+					return m, nil
+				}
+			default:
 			}
 		} else if tab == 0 {
 			switch msg.String() {
@@ -365,6 +615,9 @@ func (m mainModel) updateResults(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.results, cmd = m.results.Update(msg)
 	if m.results.resultTab != tabSwitch {
+		m.results.detailFocus = false
+		ts := m.results.tabStateFor(m.results.resultTab)
+		ensureSelectedVisible(ts, m.results.tabCount(m.results.resultTab), m.paneHeight())
 		m.results.tabScroll[tabSwitch] = m.vp.YOffset
 		if y, ok := m.results.tabScroll[m.results.resultTab]; ok {
 			m.vp.YOffset = y
@@ -559,6 +812,107 @@ func renderResultSummary(s StyleSet, r *AnalysisResult, ts *tabState, width int)
 	return result
 }
 
+func renderAssumptionsList(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if len(r.Assumptions) == 0 {
+		return s.EmptyState.Render("No assumptions found.")
+	}
+	q := strings.ToLower(ts.searchQuery)
+	var filtered []Assumption
+	for _, a := range r.Assumptions {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(a.ID), q) ||
+				strings.Contains(strings.ToLower(a.Description), q) ||
+				strings.Contains(strings.ToLower(string(a.Risk)), q)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, a)
+	}
+	if len(filtered) == 0 {
+		return s.EmptyState.Render(fmt.Sprintf("No assumptions match \"%s\".", ts.searchQuery))
+	}
+	var rows []string
+	if ts.showHelp {
+		rows = append(rows, s.DimText.Render("  ↑↓ Select  |  Enter Detail  |  r Review  |  v Validate  |  / Search"))
+		rows = append(rows, "")
+	}
+	rows = append(rows, s.DimText.Render(fmt.Sprintf("  %d of %d assumptions", len(filtered), len(r.Assumptions))))
+	rows = append(rows, s.SectionRule.Render(strings.Repeat("─", max(1, width-4))))
+	rows = append(rows, s.DimText.Render("  ID   Risk      Conf %  Description"))
+	ts.filteredCount = len(filtered)
+	for i, a := range filtered {
+		sel := i == ts.selectedIndex
+		prefix := "  "
+		style := s.Value
+		if sel {
+			prefix = "▸ "
+			style = s.SelectedItem
+		}
+		riskSt := riskStyle(s, a.Risk)
+		confPct := int(a.Confidence * 100)
+		confSt := confidenceStyle(s, confPct)
+		rows = append(rows, style.Render(fmt.Sprintf("%s%s %s %s  %s",
+			prefix, a.ID,
+			riskSt.Render(padRight(string(a.Risk), 10)),
+			confSt.Render(fmt.Sprintf("%3d%%", confPct)),
+			a.Description)))
+	}
+	return strings.Join(rows, "\n")
+}
+
+func renderAssumptionsDetail(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if len(r.Assumptions) == 0 {
+		return ""
+	}
+	q := strings.ToLower(ts.searchQuery)
+	var filtered []Assumption
+	for _, a := range r.Assumptions {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(a.ID), q) ||
+				strings.Contains(strings.ToLower(a.Description), q) ||
+				strings.Contains(strings.ToLower(string(a.Risk)), q)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, a)
+	}
+	if ts.selectedIndex < 0 || ts.selectedIndex >= len(filtered) {
+		return s.DimText.Render("No item selected")
+	}
+	a := filtered[ts.selectedIndex]
+	var detail []string
+	detail = append(detail, s.SubSectionTitle.Render(fmt.Sprintf("  %s — Detail", a.ID)))
+	detail = append(detail, "")
+	detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  ID: %s", a.ID)))
+	detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Risk: %s", a.Risk)))
+	detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Confidence: %.0f%%", a.Confidence*100)))
+	if a.Component != "" {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Component: %s", a.Component)))
+	}
+	if a.Category != "" {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Category: %s", a.Category)))
+	}
+	if a.VerificationStatus != "" {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Status: %s", a.VerificationStatus)))
+	}
+	if len(a.Stride) > 0 {
+		strideStrs := make([]string, len(a.Stride))
+		for i, st := range a.Stride {
+			strideStrs[i] = string(st)
+		}
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  STRIDE: %s", strings.Join(strideStrs, ", "))))
+	}
+	if len(a.EvidenceSources) > 0 {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Evidence: %s", strings.Join(a.EvidenceSources, ", "))))
+	}
+	if a.Rationale != "" {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Rationale: %s", a.Rationale)))
+	}
+	return strings.Join(detail, "\n")
+}
+
 func renderResultAssumptions(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
 	if len(r.Assumptions) == 0 {
 		return s.Card("", s.EmptyState.Render("No assumptions found."), width)
@@ -648,6 +1002,176 @@ func renderResultAssumptions(s StyleSet, r *AnalysisResult, ts *tabState, width 
 	}
 
 	return s.Card(sectionTitle, strings.Join(rows, "\n"), width)
+}
+
+func renderVerificationList(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if r.VerificationOutput == nil || r.VerificationOutput.Assessment == nil {
+		return s.EmptyState.Render("No verification data.")
+	}
+	a := r.VerificationOutput.Assessment
+	var rows []string
+	if ts.showHelp {
+		rows = append(rows, s.DimText.Render("  ↑↓ Select  |  Enter Detail  |  / Search"))
+		rows = append(rows, "")
+	}
+	cardW := (width - 12) / 4
+	if cardW < 10 {
+		cardW = 10
+	}
+	rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top,
+		s.StatusCardLarge("VERIFIED", a.VerifiedCount, "", cardW),
+		"  ",
+		s.StatusCardLarge("PARTIAL", a.PartialCount, "", cardW),
+		"  ",
+		s.StatusCardLarge("UNVERIFIED", a.UnverifiedCount, "", cardW),
+		"  ",
+		s.StatusCardLarge("NO EVIDENCE", a.NoEvidenceCount, "", cardW),
+	))
+	if a.OverallConfidence > 0 {
+		rows = append(rows, "")
+		rows = append(rows, s.SubHeader("Overall Confidence"))
+		rows = append(rows, "  "+s.ProgressWithLabel(a.OverallConfidence*100, width-8))
+	}
+	if r.VerificationOutput.CISOView == nil {
+		return strings.Join(rows, "\n")
+	}
+	cv := r.VerificationOutput.CISOView
+	q := strings.ToLower(ts.searchQuery)
+	type vItem struct {
+		label           string
+		howToValidate   string
+		evidenceMissing string
+		group           string
+		isWarn          bool
+	}
+	var filtered []vItem
+	for _, plan := range cv.TopAssumptionsToVerify {
+		label := plan.AssumptionText
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		var emStr string
+		if len(plan.EvidenceMissing) > 0 {
+			var missing []string
+			for _, em := range plan.EvidenceMissing {
+				name := em.Name
+				if name == "" {
+					name = em.Description
+				}
+				if name != "" {
+					missing = append(missing, name)
+				}
+			}
+			emStr = strings.Join(missing, ", ")
+		}
+		group := string(plan.Status)
+		if group == "" {
+			group = "Unknown"
+		}
+		filtered = append(filtered, vItem{label: label, howToValidate: plan.HowToValidate, evidenceMissing: emStr, group: group})
+	}
+	for _, g := range cv.EvidenceGaps {
+		label := g
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		filtered = append(filtered, vItem{label: "⚠ " + label, group: "Evidence Gaps", isWarn: true})
+	}
+	if len(filtered) == 0 {
+		return strings.Join(rows, "\n")
+	}
+	ts.filteredCount = len(filtered)
+	prevGroup := ""
+	for i, item := range filtered {
+		sel := i == ts.selectedIndex
+		prefix := "  • "
+		style := s.Value
+		if sel {
+			prefix = "▸ "
+			style = s.SelectedItem
+		}
+		if item.group != prevGroup {
+			if prevGroup != "" {
+				rows = append(rows, "")
+			}
+			rows = append(rows, s.SubSectionTitle.Render("  "+item.group))
+			prevGroup = item.group
+		}
+		if sel {
+			ts.selectedLine = len(rows)
+		}
+		rows = append(rows, style.Render(prefix+item.label))
+	}
+	return strings.Join(rows, "\n")
+}
+
+func renderVerificationDetail(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if r.VerificationOutput == nil || r.VerificationOutput.CISOView == nil {
+		return s.DimText.Render("No detail available.")
+	}
+	cv := r.VerificationOutput.CISOView
+	q := strings.ToLower(ts.searchQuery)
+	type vItem struct {
+		label           string
+		howToValidate   string
+		evidenceMissing string
+		group           string
+		isWarn          bool
+	}
+	var filtered []vItem
+	for _, plan := range cv.TopAssumptionsToVerify {
+		label := plan.AssumptionText
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		var emStr string
+		if len(plan.EvidenceMissing) > 0 {
+			var missing []string
+			for _, em := range plan.EvidenceMissing {
+				name := em.Name
+				if name == "" {
+					name = em.Description
+				}
+				if name != "" {
+					missing = append(missing, name)
+				}
+			}
+			emStr = strings.Join(missing, ", ")
+		}
+		group := string(plan.Status)
+		if group == "" {
+			group = "Unknown"
+		}
+		filtered = append(filtered, vItem{label: label, howToValidate: plan.HowToValidate, evidenceMissing: emStr, group: group})
+	}
+	for _, g := range cv.EvidenceGaps {
+		label := g
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		filtered = append(filtered, vItem{label: "⚠ " + label, group: "Evidence Gaps", isWarn: true})
+	}
+	if ts.selectedIndex < 0 || ts.selectedIndex >= len(filtered) {
+		return s.DimText.Render("No item selected")
+	}
+	item := filtered[ts.selectedIndex]
+	var detail []string
+	detail = append(detail, s.SubSectionTitle.Render("  Detail"))
+	detail = append(detail, "")
+	if item.isWarn {
+		detail = append(detail, s.DetailBox.Render("  Evidence Gap — requires additional evidence collection."))
+	} else {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Assumption: %s", item.label)))
+		if item.howToValidate != "" {
+			detail = append(detail, "")
+			detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  How to Validate: %s", item.howToValidate)))
+		}
+		if item.evidenceMissing != "" {
+			detail = append(detail, "")
+			detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Evidence Missing: %s", item.evidenceMissing)))
+		}
+	}
+	return strings.Join(detail, "\n")
 }
 
 func renderResultVerification(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
@@ -793,6 +1317,96 @@ func renderResultVerification(s StyleSet, r *AnalysisResult, ts *tabState, width
 	return s.Card("Verification Assessment", strings.Join(rows, "\n"), width)
 }
 
+func renderContradictionsList(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if len(r.Contradictions) == 0 {
+		return s.EmptyState.Render("No contradictions detected.")
+	}
+	q := strings.ToLower(ts.searchQuery)
+	var filtered []Contradiction
+	for _, c := range r.Contradictions {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(c.Description), q) ||
+				strings.Contains(strings.ToLower(c.Explanation), q)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, c)
+	}
+	if len(filtered) == 0 {
+		return s.EmptyState.Render(fmt.Sprintf("No contradictions match \"%s\".", ts.searchQuery))
+	}
+	ts.filteredCount = len(filtered)
+	var rows []string
+	if ts.showHelp {
+		rows = append(rows, s.DimText.Render("  ↑↓ Select  |  Enter Detail  |  / Search"))
+		rows = append(rows, "")
+	}
+	rows = append(rows, s.DimText.Render(fmt.Sprintf("  %d of %d contradictions", len(filtered), len(r.Contradictions))))
+	for i, c := range filtered {
+		sel := i == ts.selectedIndex
+		prefix := "  "
+		style := s.Value
+		if sel {
+			prefix = "▸ "
+			style = s.SelectedItem
+		}
+		sevStyle := s.StatusWarn
+		if c.Severity == RiskHigh || c.Severity == RiskCritical {
+			sevStyle = s.StatusBad
+		} else if c.Severity == RiskLow {
+			sevStyle = s.StatusGood
+		}
+		if sel {
+			ts.selectedLine = len(rows)
+		}
+		rows = append(rows, style.Render(fmt.Sprintf("%s%s %s",
+			prefix, sevStyle.Render("["+strings.ToUpper(string(c.Severity))+"]"), c.Description)))
+	}
+	return strings.Join(rows, "\n")
+}
+
+func renderContradictionsDetail(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if len(r.Contradictions) == 0 {
+		return ""
+	}
+	q := strings.ToLower(ts.searchQuery)
+	var filtered []Contradiction
+	for _, c := range r.Contradictions {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(c.Description), q) ||
+				strings.Contains(strings.ToLower(c.Explanation), q)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, c)
+	}
+	if ts.selectedIndex < 0 || ts.selectedIndex >= len(filtered) {
+		return s.DimText.Render("No item selected")
+	}
+	c := filtered[ts.selectedIndex]
+	var detail []string
+	detail = append(detail, s.SubSectionTitle.Render(fmt.Sprintf("  [%s] — Detail", strings.ToUpper(string(c.Severity)))))
+	detail = append(detail, "")
+	detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Description: %s", c.Description)))
+	if c.RuleName != "" {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Rule: %s", c.RuleName)))
+	}
+	if c.Explanation != "" {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Reason: %s", c.Explanation)))
+	}
+	if len(c.AffectedAssumptions) > 0 {
+		detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Affects: %s", strings.Join(c.AffectedAssumptions, ", "))))
+	}
+	if len(c.Evidence) > 0 {
+		for _, ev := range c.Evidence {
+			detail = append(detail, s.DetailBox.Render(fmt.Sprintf("  Evidence: %s", ev)))
+		}
+	}
+	return strings.Join(detail, "\n")
+}
+
 func renderResultContradictions(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
 	if len(r.Contradictions) == 0 {
 		return s.Card("", s.EmptyState.Render("No contradictions detected."), width)
@@ -870,6 +1484,191 @@ func renderResultContradictions(s StyleSet, r *AnalysisResult, ts *tabState, wid
 
 	title := s.SubSectionTitle.Render(sectionTitle)
 	return title + "\n" + strings.Join(items, "\n")
+}
+
+func renderTrustList(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if r.TrustOutput == nil {
+		return s.EmptyState.Render("No trust chain data.")
+	}
+	type tItem struct {
+		section string
+		label   string
+	}
+	var items []tItem
+	q := strings.ToLower(ts.searchQuery)
+	for _, chain := range r.TrustOutput.TrustChains {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(chain.ID), q) ||
+				strings.Contains(strings.ToLower(chain.RootNode), q) ||
+				strings.Contains(strings.ToLower(chain.LeafNode), q)
+			if !match {
+				continue
+			}
+		}
+		items = append(items, tItem{section: "chain",
+			label: fmt.Sprintf("Chain %s | Length: %d | %s | %.0f%%",
+				chain.ID, chain.Length, chain.Risk, chain.Confidence*100)})
+	}
+	if r.TrustOutput != nil {
+		for _, spof := range r.TrustOutput.SinglePointsOfTrust {
+			if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(spof.AssumptionText), q) {
+				continue
+			}
+			items = append(items, tItem{section: "spof", label: "⚠ SPOF: " + spof.AssumptionText})
+		}
+		for _, fc := range r.TrustOutput.FailureCascades {
+			if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(fc.RootAssumptionText), q) {
+				continue
+			}
+			items = append(items, tItem{section: "cascade",
+				label: fmt.Sprintf("Cascade: %s | Steps: %d | %s", fc.RootAssumptionText, len(fc.Steps), fc.Severity)})
+		}
+	}
+	if r.ReviewOutput != nil && r.ReviewOutput.Queue != nil {
+		for _, item := range r.ReviewOutput.Queue.Items {
+			if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(item.AssumptionText), q) {
+				continue
+			}
+			items = append(items, tItem{section: "queue",
+				label: fmt.Sprintf("#%d [%.0f] %s", item.Rank, item.PriorityScore, item.AssumptionText)})
+		}
+	}
+	if len(items) == 0 {
+		return s.EmptyState.Render("No trust data.")
+	}
+	ts.filteredCount = len(items)
+	var rows []string
+	if ts.showHelp {
+		rows = append(rows, s.DimText.Render("  ↑↓ Select  |  Enter Detail  |  / Search"))
+		rows = append(rows, "")
+	}
+	rows = append(rows, s.DimText.Render(fmt.Sprintf("  %d trust items", len(items))))
+	for i, it := range items {
+		sel := i == ts.selectedIndex
+		prefix := "  "
+		style := s.Value
+		if sel {
+			prefix = "▸ "
+			style = s.SelectedItem
+		}
+		tag := ""
+		switch it.section {
+		case "chain":
+			tag = "[Chain] "
+		case "spof":
+			tag = "[SPOF] "
+		case "cascade":
+			tag = "[Cascade] "
+		case "queue":
+			tag = "[Queue] "
+		}
+		if sel {
+			ts.selectedLine = len(rows)
+		}
+		rows = append(rows, style.Render(prefix+tag+it.label))
+	}
+	return strings.Join(rows, "\n")
+}
+
+func renderTrustDetail(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if r.TrustOutput == nil {
+		return ""
+	}
+	type tItem struct {
+		section string
+		label   string
+		detail  string
+	}
+	var items []tItem
+	q := strings.ToLower(ts.searchQuery)
+	for _, chain := range r.TrustOutput.TrustChains {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(chain.ID), q) ||
+				strings.Contains(strings.ToLower(chain.RootNode), q) ||
+				strings.Contains(strings.ToLower(chain.LeafNode), q)
+			if !match {
+				continue
+			}
+		}
+		var nodes []string
+		if len(chain.Nodes) > 0 {
+			nodes = chain.Nodes
+		} else {
+			nodes = []string{chain.RootNode, chain.LeafNode}
+		}
+		d := fmt.Sprintf("Nodes: %s", strings.Join(nodes, " → "))
+		if chain.Risk != "" {
+			d += fmt.Sprintf("\nRisk: %s", chain.Risk)
+		}
+		items = append(items, tItem{section: "chain",
+			label: fmt.Sprintf("Chain %s | Length: %d | %s | %.0f%%",
+				chain.ID, chain.Length, chain.Risk, chain.Confidence*100),
+			detail: d})
+	}
+	if r.TrustOutput != nil {
+		for _, spof := range r.TrustOutput.SinglePointsOfTrust {
+			if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(spof.AssumptionText), q) {
+				continue
+			}
+			var dl []string
+			dl = append(dl, "Single Point of Trust Failure")
+			if spof.DependentsCount > 0 {
+				dl = append(dl, fmt.Sprintf("Dependents: %d", spof.DependentsCount))
+			}
+			if len(spof.DependentNodes) > 0 {
+				dl = append(dl, "Affected: "+strings.Join(spof.DependentNodes, ", "))
+			}
+			if spof.Recommendation != "" {
+				dl = append(dl, "Recommendation: "+spof.Recommendation)
+			}
+			items = append(items, tItem{section: "spof",
+				label: "⚠ SPOF: " + spof.AssumptionText, detail: strings.Join(dl, "\n")})
+		}
+		for _, fc := range r.TrustOutput.FailureCascades {
+			if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(fc.RootAssumptionText), q) {
+				continue
+			}
+			d := fmt.Sprintf("Root: %s (%s)\nSeverity: %s\nTotal Affected: %d\nMax Depth: %d",
+				fc.RootAssumptionText, fc.RootAssumptionID, fc.Severity, fc.TotalAffected, fc.MaxDepth)
+			if len(fc.Steps) > 0 {
+				var steps []string
+				for _, step := range fc.Steps {
+					s := fmt.Sprintf("  Step %d: %s", step.Step, step.AssumptionText)
+					if step.Reason != "" {
+						s += " — " + step.Reason
+					}
+					steps = append(steps, s)
+				}
+				d += "\nCascade Chain:\n" + strings.Join(steps, "\n")
+			}
+			items = append(items, tItem{section: "cascade",
+				label:  fmt.Sprintf("Cascade: %s | Steps: %d | %s", fc.RootAssumptionText, len(fc.Steps), fc.Severity),
+				detail: d})
+		}
+	}
+	if r.ReviewOutput != nil && r.ReviewOutput.Queue != nil {
+		for _, item := range r.ReviewOutput.Queue.Items {
+			if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(item.AssumptionText), q) {
+				continue
+			}
+			items = append(items, tItem{section: "queue",
+				label:  fmt.Sprintf("#%d [%.0f] %s", item.Rank, item.PriorityScore, item.AssumptionText),
+				detail: fmt.Sprintf("Risk: %s | Priority: %.0f", item.Risk, item.PriorityScore)})
+		}
+	}
+	if ts.selectedIndex < 0 || ts.selectedIndex >= len(items) {
+		return s.DimText.Render("No item selected")
+	}
+	it := items[ts.selectedIndex]
+	var detail []string
+	detail = append(detail, s.SubSectionTitle.Render("  Detail"))
+	detail = append(detail, "")
+	if it.detail != "" {
+		detail = append(detail, s.DetailBox.Render("  "+it.detail))
+	} else {
+		detail = append(detail, s.DimText.Render("  No additional details."))
+	}
+	return strings.Join(detail, "\n")
 }
 
 func renderResultTrust(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
@@ -1122,6 +1921,97 @@ func renderResultBlindSpots(s StyleSet, r *AnalysisResult, width int) string {
 	return strings.Join(cards, "\n")
 }
 
+func renderControlsList(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if len(r.Controls) == 0 {
+		return s.EmptyState.Render("No recommended controls.")
+	}
+	q := strings.ToLower(ts.searchQuery)
+	var filtered []ControlDetail
+	for _, c := range r.Controls {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(c.Description), q) ||
+				strings.Contains(strings.ToLower(c.Rationale), q)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, c)
+	}
+	if len(filtered) == 0 {
+		return s.EmptyState.Render(fmt.Sprintf("No controls match \"%s\".", ts.searchQuery))
+	}
+	ts.filteredCount = len(filtered)
+	var rows []string
+	if ts.showHelp {
+		rows = append(rows, s.DimText.Render("  ↑↓ Select  |  Enter Detail  |  / Search"))
+		rows = append(rows, "")
+	}
+	rows = append(rows, s.DimText.Render(fmt.Sprintf("  %d of %d controls", len(filtered), len(r.Controls))))
+	if r.CoverageOutput != nil {
+		var cov []string
+		if len(r.CoverageOutput.BlindSpots) > 0 {
+			cov = append(cov, fmt.Sprintf("  Blind Spots: %d", len(r.CoverageOutput.BlindSpots)))
+		}
+		if len(r.CoverageOutput.DomainBlindSpots) > 0 {
+			cov = append(cov, fmt.Sprintf("  Domain Blind Spots: %d", len(r.CoverageOutput.DomainBlindSpots)))
+		}
+		if r.CoverageOutput.Assessment != nil && len(r.CoverageOutput.Assessment.Gaps) > 0 {
+			cov = append(cov, fmt.Sprintf("  Coverage Gaps: %d", len(r.CoverageOutput.Assessment.Gaps)))
+		}
+		if len(cov) > 0 {
+			rows = append(rows, s.Card("Coverage Overview", strings.Join(cov, "\n"), width-4))
+			rows = append(rows, "")
+		}
+	}
+	for i, c := range filtered {
+		sel := i == ts.selectedIndex
+		prefix := "  "
+		style := s.Value
+		if sel {
+			prefix = "▸ "
+			style = s.SelectedItem
+			ts.selectedLine = len(rows)
+		}
+		rows = append(rows, style.Render(prefix+c.Description))
+	}
+	return strings.Join(rows, "\n")
+}
+
+func renderControlsDetail(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if len(r.Controls) == 0 {
+		return ""
+	}
+	q := strings.ToLower(ts.searchQuery)
+	var filtered []ControlDetail
+	for _, c := range r.Controls {
+		if ts.filterActive && q != "" {
+			match := strings.Contains(strings.ToLower(c.Description), q) ||
+				strings.Contains(strings.ToLower(c.Rationale), q)
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, c)
+	}
+	if ts.selectedIndex < 0 || ts.selectedIndex >= len(filtered) {
+		return s.DimText.Render("No item selected")
+	}
+	c := filtered[ts.selectedIndex]
+	var detail []string
+	detail = append(detail, s.SubSectionTitle.Render("  Control Detail"))
+	detail = append(detail, "")
+	if c.Rationale != "" {
+		detail = append(detail, s.DetailBox.Render("  Rationale: "+c.Rationale))
+	}
+	if c.Category != "" {
+		detail = append(detail, s.DetailBox.Render("  Category: "+c.Category))
+	}
+	if len(c.MitigatedAssumptionIDs) > 0 {
+		detail = append(detail, s.DetailBox.Render("  Mitigates: "+strings.Join(c.MitigatedAssumptionIDs, ", ")))
+	}
+	return strings.Join(detail, "\n")
+}
+
 func renderResultControls(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
 	if len(r.Controls) == 0 {
 		return s.Card("", s.EmptyState.Render("No recommended controls."), width)
@@ -1241,6 +2131,164 @@ func renderResultReports(s StyleSet, r *AnalysisResult, width int) string {
 		width))
 
 	return strings.Join(cards, "\n")
+}
+
+func renderSDRISummaryList(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if r.SDRISummary == "" && len(r.SDRIControls) == 0 &&
+		len(r.SDRIDesignFindings) == 0 && len(r.SDRIAchitecturalWeaknesses) == 0 &&
+		len(r.SDRIRemediations) == 0 && len(r.SDRIComplianceAlignments) == 0 {
+		return s.EmptyState.Render("No SDRI data available.")
+	}
+	type sdriItem struct {
+		section string
+		label   string
+	}
+	var items []sdriItem
+	q := strings.ToLower(ts.searchQuery)
+	if r.SDRISummary != "" {
+		items = append(items, sdriItem{section: "summary", label: "Executive Summary"})
+	}
+	for _, c := range r.SDRIControls {
+		status := c.Status
+		if status == "" {
+			status = "unknown"
+		}
+		label := fmt.Sprintf("Control: %s (%s)", c.Name, status)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "controls", label: label})
+	}
+	for _, f := range r.SDRIDesignFindings {
+		label := fmt.Sprintf("[%s] %s", f.Severity, f.Title)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) && !strings.Contains(strings.ToLower(f.Description), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "findings", label: label})
+	}
+	for _, w := range r.SDRIAchitecturalWeaknesses {
+		label := fmt.Sprintf("Weakness: %s [%s]", w.Pattern, w.Severity)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) && !strings.Contains(strings.ToLower(w.Description), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "weaknesses", label: label})
+	}
+	for _, rem := range r.SDRIRemediations {
+		label := fmt.Sprintf("Remediation #%d [%.0f]", rem.Priority, rem.RiskScore)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(rem.Description), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "remediations", label: label})
+	}
+	for _, m := range r.SDRIComplianceAlignments {
+		label := fmt.Sprintf("Compliance: %s (%.0f%% %s)", m.Framework, m.Coverage, m.Status)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "compliance", label: label})
+	}
+	if len(items) == 0 {
+		return s.EmptyState.Render("No SDRI data matches filter.")
+	}
+	ts.filteredCount = len(items)
+	var rows []string
+	if ts.showHelp {
+		rows = append(rows, s.DimText.Render("  ↑↓ Select  |  Enter Detail  |  / Search"))
+		rows = append(rows, "")
+	}
+	rows = append(rows, s.DimText.Render(fmt.Sprintf("  %d SDRI items", len(items))))
+	for i, it := range items {
+		sel := i == ts.selectedIndex
+		prefix := "  "
+		style := s.Value
+		if sel {
+			prefix = "▸ "
+			style = s.SelectedItem
+			ts.selectedLine = len(rows)
+		}
+		rows = append(rows, style.Render(prefix+it.label))
+	}
+	return s.SubSectionTitle.Render(fmt.Sprintf("SDRI (%d)", len(items))) + "\n" + strings.Join(rows, "\n")
+}
+
+func renderSDRIDetail(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {
+	if r.SDRISummary == "" && len(r.SDRIControls) == 0 &&
+		len(r.SDRIDesignFindings) == 0 && len(r.SDRIAchitecturalWeaknesses) == 0 &&
+		len(r.SDRIRemediations) == 0 && len(r.SDRIComplianceAlignments) == 0 {
+		return ""
+	}
+	type sdriItem struct {
+		section string
+		label   string
+		detail  string
+	}
+	var items []sdriItem
+	q := strings.ToLower(ts.searchQuery)
+	if r.SDRISummary != "" {
+		items = append(items, sdriItem{section: "summary", label: "Executive Summary", detail: r.SDRISummary})
+	}
+	for _, c := range r.SDRIControls {
+		status := c.Status
+		if status == "" {
+			status = "unknown"
+		}
+		label := fmt.Sprintf("Control: %s (%s)", c.Name, status)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "controls", label: label,
+			detail: fmt.Sprintf("Status: %s | Category: %s", c.Status, c.Category)})
+	}
+	for _, f := range r.SDRIDesignFindings {
+		label := fmt.Sprintf("Finding: %s [%s]", f.Title, f.Severity)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) && !strings.Contains(strings.ToLower(f.Description), q) {
+			continue
+		}
+		d := f.Description
+		if f.Recommendation != "" {
+			d += " → " + f.Recommendation
+		}
+		items = append(items, sdriItem{section: "findings", label: label, detail: d})
+	}
+	for _, w := range r.SDRIAchitecturalWeaknesses {
+		label := fmt.Sprintf("Weakness: %s [%s]", w.Pattern, w.Severity)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) && !strings.Contains(strings.ToLower(w.Description), q) {
+			continue
+		}
+		d := w.Description
+		if w.Recommendation != "" {
+			d += " → " + w.Recommendation
+		}
+		items = append(items, sdriItem{section: "weaknesses", label: label, detail: d})
+	}
+	for _, rem := range r.SDRIRemediations {
+		label := fmt.Sprintf("Remediation #%d [%.0f]", rem.Priority, rem.RiskScore)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(rem.Description), q) {
+			continue
+		}
+		d := rem.Description
+		if rem.Recommendation != "" {
+			d += " → " + rem.Recommendation + " (effort: " + rem.Effort + ")"
+		}
+		items = append(items, sdriItem{section: "remediations", label: label, detail: d})
+	}
+	for _, m := range r.SDRIComplianceAlignments {
+		label := fmt.Sprintf("Compliance: %s (%.0f%% %s)", m.Framework, m.Coverage, m.Status)
+		if ts.filterActive && q != "" && !strings.Contains(strings.ToLower(label), q) {
+			continue
+		}
+		items = append(items, sdriItem{section: "compliance", label: label,
+			detail: fmt.Sprintf("Framework: %s | Coverage: %.0f%% | Status: %s", m.Framework, m.Coverage, m.Status)})
+	}
+	if ts.selectedIndex < 0 || ts.selectedIndex >= len(items) {
+		return s.DimText.Render("No item selected")
+	}
+	it := items[ts.selectedIndex]
+	var detail []string
+	detail = append(detail, s.SubSectionTitle.Render("  SDRI Detail"))
+	detail = append(detail, "")
+	detail = append(detail, s.DetailBox.Render("  "+it.detail))
+	return strings.Join(detail, "\n")
 }
 
 func renderResultSDRI(s StyleSet, r *AnalysisResult, ts *tabState, width int) string {

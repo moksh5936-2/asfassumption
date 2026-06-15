@@ -264,6 +264,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.styles = NewStyles(theme)
 		m.vp.Width = m.mainWidth()
 		m.vp.Height = m.mainHeight()
+		if m.results.resultTab > 0 && m.results.result != nil {
+			ts := m.results.tabStateFor(m.results.resultTab)
+			ensureSelectedVisible(ts, m.results.tabCount(m.results.resultTab), m.paneHeight())
+		}
 
 	case tea.KeyMsg:
 		if m.searchActive {
@@ -363,7 +367,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "esc":
 				if m.results.resultTab > 0 && m.router.focus == focusContent {
 					ts := m.results.tabStateFor(m.results.resultTab)
-					if ts.detailOpen || ts.filterActive || ts.showHelp {
+					if m.results.detailFocus || ts.filterActive || ts.showHelp {
 						return m.updateResults(msg)
 					}
 				}
@@ -857,7 +861,7 @@ func (m *mainModel) renderBreadcrumbBar() string {
 	if tab > 0 && ts.selectedIndex >= 0 && ts.selectedIndex < m.results.tabCount(tab) {
 		parts = append(parts, s.BreadcrumbSep.Render(" / "), s.DimText.Render(fmt.Sprintf("#%d", ts.selectedIndex+1)))
 	}
-	if ts.detailOpen {
+	if m.results.detailFocus {
 		parts = append(parts, s.BreadcrumbSep.Render(" / "), s.DimText.Render("detail"))
 	}
 	if ts.filterActive || ts.searchQuery != "" {
@@ -911,20 +915,6 @@ func (m mainModel) View() string {
 	m.vp.Width = m.mainWidth()
 	m.vp.Height = m.mainHeight()
 	m.vp.SetContent(content)
-
-	if m.router.currentView == caseView && m.results.resultTab > 0 {
-		ts := m.results.tabStateFor(m.results.resultTab)
-		targetLine := ts.contentOffset + ts.selectedLine
-		if targetLine > 0 {
-			visibleTop := m.vp.YOffset
-			visibleBot := visibleTop + m.vp.Height
-			if targetLine < visibleTop {
-				m.vp.YOffset = targetLine
-			} else if targetLine >= visibleBot {
-				m.vp.YOffset = targetLine - m.vp.Height + 1
-			}
-		}
-	}
 
 	mainArea := m.styles.App.Render(m.vp.View())
 
@@ -1074,12 +1064,17 @@ func (m mainModel) renderHintsBar() string {
 		guidance = "Case Workspace — Explore findings across tabs"
 		if m.results.resultTab > 0 {
 			ts := m.results.tabStateFor(m.results.resultTab)
-			hints = append(hints, s.DimText.Render("↑↓ Select"))
-			hints = append(hints, s.DimText.Render("Enter Detail"))
+			if m.results.detailFocus {
+				hints = append(hints, s.DimText.Render("↑↓ Scroll Detail"))
+				hints = append(hints, s.DimText.Render("Esc List"))
+			} else {
+				hints = append(hints, s.DimText.Render("↑↓ Select"))
+				hints = append(hints, s.DimText.Render("Enter Detail"))
+				hints = append(hints, s.DimText.Render("/ Search"))
+			}
 			if ts.filterActive || ts.searchQuery != "" {
 				hints = append(hints, s.Accent.Render(fmt.Sprintf("filter: %s", ts.searchQuery)))
 			}
-			hints = append(hints, s.DimText.Render("/ Search"))
 		} else {
 			hints = append(hints, s.DimText.Render("↑↓ Scroll"))
 		}

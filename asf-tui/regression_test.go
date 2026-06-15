@@ -500,10 +500,10 @@ func TestBreadcrumbRendering(t *testing.T) {
 		t.Error("breadcrumb should update item number to '#2'")
 	}
 
-	ts.detailOpen = true
+	m.results.detailFocus = true
 	breadcrumb3 := m.renderBreadcrumb(1, ts)
 	if !strings.Contains(breadcrumb3, "detail") {
-		t.Error("breadcrumb should contain 'detail' when details open")
+		t.Error("breadcrumb should contain 'detail' when detail pane is focused")
 	}
 }
 
@@ -598,25 +598,22 @@ func TestDetailToggleInUpdateResults(t *testing.T) {
 	}
 	m.results.resultTab = 1
 
-	ts := m.results.tabStateFor(1)
-	if ts.detailOpen {
-		t.Error("detailOpen should be false initially")
+	if m.results.detailFocus {
+		t.Error("detailFocus should be false initially")
 	}
 
-	// Press Enter to open detail
+	// Press Enter to focus detail pane
 	model, _ := m.updateResults(msgFromString("enter"))
 	mm := model.(mainModel)
-	ts = mm.results.tabStateFor(1)
-	if !ts.detailOpen {
-		t.Error("detailOpen should be true after Enter")
+	if !mm.results.detailFocus {
+		t.Error("detailFocus should be true after Enter")
 	}
 
-	// Press Enter again to close
-	model, _ = mm.updateResults(msgFromString("enter"))
+	// Press Esc to return to list
+	model, _ = mm.updateResults(msgFromString("esc"))
 	mm = model.(mainModel)
-	ts = mm.results.tabStateFor(1)
-	if ts.detailOpen {
-		t.Error("detailOpen should be false after second Enter")
+	if mm.results.detailFocus {
+		t.Error("detailFocus should be false after Esc")
 	}
 }
 
@@ -1097,5 +1094,405 @@ func TestMouseWheelChangesSelectionOnContentTab(t *testing.T) {
 	ts2 = mm2.results.tabStateFor(0)
 	if ts2.selectedIndex != 0 {
 		t.Errorf("overview tab: selectedIndex should stay 0 after MouseWheelDown, got %d", ts2.selectedIndex)
+	}
+}
+
+func make69SDRIFindings() *AnalysisResult {
+	findings := make([]SDRIDesignFinding, 69)
+	for i := range findings {
+		findings[i] = SDRIDesignFinding{
+			Title:       fmt.Sprintf("SDRI-Finding-%d", i+1),
+			Severity:    "Critical",
+			Description: fmt.Sprintf("Description for finding %d", i+1),
+		}
+	}
+	return &AnalysisResult{
+		SDRIDesignFindings: findings,
+	}
+}
+
+func Test69SDRIFindingsNavigation(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	ts := m.results.tabStateFor(6)
+	if ts.selectedIndex != 0 {
+		t.Errorf("initial selectedIndex = %d, want 0", ts.selectedIndex)
+	}
+
+	// Navigate from item 1 to item 69
+	for i := 0; i < 68; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		*m = mm
+		ts = m.results.tabStateFor(6)
+
+		if ts.selectedIndex != i+1 {
+			t.Fatalf("step %d: selectedIndex = %d, want %d", i, ts.selectedIndex, i+1)
+		}
+
+		visHeight := m.paneHeight()
+		if ts.selectedIndex < ts.ViewportOffset || ts.selectedIndex >= ts.ViewportOffset+visHeight {
+			t.Fatalf("step %d: selectedIndex %d outside viewport [%d, %d)",
+				i, ts.selectedIndex, ts.ViewportOffset, ts.ViewportOffset+visHeight)
+		}
+	}
+
+	if ts.selectedIndex != 68 {
+		t.Errorf("final selectedIndex = %d, want 68", ts.selectedIndex)
+	}
+}
+
+func TestEnterOnLastItemShowsDetailPane(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+	m.results.detailFocus = false
+
+	// Navigate to last item
+	for i := 0; i < 68; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		*m = mm
+	}
+
+	// Press Enter to focus detail pane
+	model, _ := m.updateResults(msgFromString("enter"))
+	mm := model.(mainModel)
+	*m = mm
+	if !m.results.detailFocus {
+		t.Error("detailFocus should be true after Enter on last item")
+	}
+
+	// Esc returns to list
+	model, _ = m.updateResults(msgFromString("esc"))
+	mm = model.(mainModel)
+	*m = mm
+	if m.results.detailFocus {
+		t.Error("detailFocus should be false after Esc")
+	}
+}
+
+func TestEnsureSelectedVisibleOnResize(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	// Navigate to item 60
+	ts := m.results.tabStateFor(6)
+	for i := 0; i < 60; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		*m = mm
+	}
+	ts = m.results.tabStateFor(6)
+	if ts.selectedIndex != 60 {
+		t.Fatalf("selectedIndex = %d, want 60", ts.selectedIndex)
+	}
+
+	// Simulate resize to 80x24
+	model, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	mm := model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+
+	visHeight := m.paneHeight()
+	if ts.selectedIndex < ts.ViewportOffset || ts.selectedIndex >= ts.ViewportOffset+visHeight {
+		t.Errorf("after resize: selectedIndex %d outside viewport [%d, %d)",
+			ts.selectedIndex, ts.ViewportOffset, ts.ViewportOffset+visHeight)
+	}
+}
+
+func TestSearchSelectsVisibleItem(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	// Activate search
+	model, _ := m.updateResults(msgFromString("/"))
+	mm := model.(mainModel)
+	*m = mm
+	ts := m.results.tabStateFor(6)
+	if !ts.filterActive {
+		t.Fatal("filterActive should be true after /")
+	}
+
+	// Search for "50"
+	for _, ch := range "50" {
+		model, _ = m.updateResults(msgFromString(string(ch)))
+		mm = model.(mainModel)
+		*m = mm
+	}
+	ts = m.results.tabStateFor(6)
+
+	// n to navigate to first match
+	model, _ = m.updateResults(msgFromString("n"))
+	mm = model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+
+	visHeight := m.paneHeight()
+	if ts.selectedIndex < ts.ViewportOffset || ts.selectedIndex >= ts.ViewportOffset+visHeight {
+		t.Errorf("after search: selectedIndex %d outside viewport [%d, %d)",
+			ts.selectedIndex, ts.ViewportOffset, ts.ViewportOffset+visHeight)
+	}
+
+	// Esc to exit search
+	model, _ = m.updateResults(msgFromString("esc"))
+	mm = model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+	if ts.filterActive {
+		t.Error("filterActive should be false after Esc")
+	}
+}
+
+func make100TrustChains() *AnalysisResult {
+	chains := make([]trust.TrustChain, 100)
+	for i := range chains {
+		chains[i] = trust.TrustChain{
+			ID:         fmt.Sprintf("TC-%d", i+1),
+			Length:     i + 1,
+			Risk:       "High",
+			Confidence: 0.85,
+			RootNode:   fmt.Sprintf("Node-%d-A", i+1),
+			LeafNode:   fmt.Sprintf("Node-%d-B", i+1),
+		}
+	}
+	return &AnalysisResult{
+		TrustOutput: &trust.ChainOutput{
+			TrustChains: chains,
+		},
+	}
+}
+
+func Test100TrustChainsNavigation(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make100TrustChains()
+	m.results.resultTab = 4
+
+	// Navigate to last chain using pgdn several times then individual steps
+	ts := m.results.tabStateFor(4)
+	for i := 0; i < 99; i++ {
+		model, _ := m.updateResults(msgFromString("down"))
+		mm := model.(mainModel)
+		*m = mm
+		ts = m.results.tabStateFor(4)
+
+		visHeight := m.paneHeight()
+		if ts.selectedIndex < ts.ViewportOffset || ts.selectedIndex >= ts.ViewportOffset+visHeight {
+			t.Fatalf("step %d: selectedIndex %d outside viewport [%d, %d)",
+				i, ts.selectedIndex, ts.ViewportOffset, ts.ViewportOffset+visHeight)
+		}
+	}
+
+	if ts.selectedIndex != 99 {
+		t.Errorf("final selectedIndex = %d, want 99", ts.selectedIndex)
+	}
+
+	// Enter to focus detail pane
+	model, _ := m.updateResults(msgFromString("enter"))
+	mm := model.(mainModel)
+	*m = mm
+	if !m.results.detailFocus {
+		t.Error("detailFocus should be true after Enter on last trust chain")
+	}
+}
+
+func TestNoInlineDropdownExpansion(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	ts := m.results.tabStateFor(6)
+	if ts.detailOpen {
+		t.Error("detailOpen should be false initially (no dropdown expansion)")
+	}
+
+	// Press Enter — should set detailFocus, not detailOpen
+	model, _ := m.updateResults(msgFromString("enter"))
+	mm := model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+
+	if !m.results.detailFocus {
+		t.Error("detailFocus should be true after Enter (split pane), not detailOpen")
+	}
+	if ts.detailOpen {
+		t.Error("detailOpen must remain false — no inline dropdown expansion allowed")
+	}
+}
+
+func TestPageUpDownNavigation(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	// pgdn should jump by visibleHeight
+	model, _ := m.updateResults(msgFromString("pgdn"))
+	mm := model.(mainModel)
+	*m = mm
+	ts := m.results.tabStateFor(6)
+	if ts.selectedIndex <= 0 {
+		t.Error("pgdn should increase selectedIndex")
+	}
+	visHeight := m.paneHeight()
+	if ts.selectedIndex < ts.ViewportOffset || ts.selectedIndex >= ts.ViewportOffset+visHeight {
+		t.Errorf("after pgdn: selectedIndex %d outside viewport [%d, %d)",
+			ts.selectedIndex, ts.ViewportOffset, ts.ViewportOffset+visHeight)
+	}
+
+	// Navigate to a middle position
+	for i := 0; i < 30; i++ {
+		model, _ = m.updateResults(msgFromString("down"))
+		mm = model.(mainModel)
+		*m = mm
+	}
+	ts = m.results.tabStateFor(6)
+
+	// pgup should jump back
+	model, _ = m.updateResults(msgFromString("pgup"))
+	mm = model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+	if ts.selectedIndex < ts.ViewportOffset || ts.selectedIndex >= ts.ViewportOffset+visHeight {
+		t.Errorf("after pgup: selectedIndex %d outside viewport [%d, %d)",
+			ts.selectedIndex, ts.ViewportOffset, ts.ViewportOffset+visHeight)
+	}
+
+	// home should go to first item
+	for i := 0; i < 68; i++ {
+		model, _ = m.updateResults(msgFromString("down"))
+		mm = model.(mainModel)
+		*m = mm
+	}
+	model, _ = m.updateResults(msgFromString("home"))
+	mm = model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+	if ts.selectedIndex != 0 {
+		t.Errorf("after home: selectedIndex = %d, want 0", ts.selectedIndex)
+	}
+
+	// end should go to last item
+	model, _ = m.updateResults(msgFromString("end"))
+	mm = model.(mainModel)
+	*m = mm
+	ts = m.results.tabStateFor(6)
+	if ts.selectedIndex != 68 {
+		t.Errorf("after end: selectedIndex = %d, want 68", ts.selectedIndex)
+	}
+}
+
+func TestViewResultsRendersSplitPane(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.width = 120
+	m.height = 40
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	output := m.viewResults()
+	if output == "" {
+		t.Fatal("viewResults returned empty output")
+	}
+	if !strings.Contains(output, "SDRI") {
+		t.Error("output should contain SDRI tab content")
+	}
+}
+
+func TestNarrowTerminalFallback(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.width = 80
+	m.height = 24
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	// viewResults should not panic on narrow terminal
+	output := m.viewResults()
+	if output == "" {
+		t.Fatal("viewResults returned empty on narrow terminal")
+	}
+}
+
+func TestDetailPaneScroll(t *testing.T) {
+	m := defaultTestModel()
+	m.router.currentView = caseView
+	m.router.focus = focusContent
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	// Focus detail pane
+	model, _ := m.updateResults(msgFromString("enter"))
+	mm := model.(mainModel)
+	*m = mm
+
+	if !m.results.detailFocus {
+		t.Fatal("detailFocus should be true after Enter")
+	}
+
+	ts := m.results.tabStateFor(6)
+	if ts.DetailOffset != 0 {
+		t.Errorf("initial DetailOffset = %d, want 0", ts.DetailOffset)
+	}
+
+	// Scroll detail pane down
+	for i := 0; i < 5; i++ {
+		model, _ = m.updateResults(msgFromString("down"))
+		mm = model.(mainModel)
+		*m = mm
+	}
+	ts = m.results.tabStateFor(6)
+	if ts.DetailOffset < 5 {
+		t.Errorf("after 5 down: DetailOffset = %d, want >= 5", ts.DetailOffset)
+	}
+
+	// Scroll detail pane up
+	for i := 0; i < 3; i++ {
+		model, _ = m.updateResults(msgFromString("up"))
+		mm = model.(mainModel)
+		*m = mm
+	}
+	ts = m.results.tabStateFor(6)
+	if ts.DetailOffset >= 5 {
+		t.Errorf("after 3 up: DetailOffset = %d, want < 5", ts.DetailOffset)
+	}
+}
+
+func TestTabStatePreservedOnSwitch(t *testing.T) {
+	m := defaultTestModel()
+	m.results.result = make69SDRIFindings()
+	m.results.resultTab = 6
+
+	ts := m.results.tabStateFor(6)
+	ts.selectedIndex = 30
+	ts.ViewportOffset = 20
+
+	// Switch to tab 4 then back
+	m.results.resultTab = 4
+	m.results.resultTab = 6
+
+	tsBack := m.results.tabStateFor(6)
+	if tsBack.selectedIndex != 30 {
+		t.Errorf("after tab switch: selectedIndex = %d, want 30", tsBack.selectedIndex)
+	}
+	if tsBack.ViewportOffset != 20 {
+		t.Errorf("after tab switch: ViewportOffset = %d, want 20", tsBack.ViewportOffset)
 	}
 }
